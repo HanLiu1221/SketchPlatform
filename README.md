@@ -1,7 +1,2 @@
-# myPlatform
-
-graphics platform in c#
-
-including:
-vector
-matrix
+# CGPlatform
+my C# platform, implementing basic 3D operations, and more..
