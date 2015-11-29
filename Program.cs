@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace MyPlatform
+namespace GraphicsPlatform
 {
 	static class Program
 	{

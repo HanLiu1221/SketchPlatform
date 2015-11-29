@@ -3,29 +3,35 @@
 
 namespace Geometry
 {
-	public class vector2d
+	public class Vector2d
 	{
 		public double x, y;
 
 		// initialization
-		public vector2d()
+		public Vector2d()
 		{
 			x = 0; 
 			y = 0;
 		}
 
-		public vector2d(double x, double y)
+		public Vector2d(double x, double y)
 		{
 			this.x = x;
 			this.y = y;
 		}
 
-		public vector2d(double[] array)
+		public Vector2d(double[] array)
 		{
 			if (array.Length < 2) return;
 			this.x = array[0];
 			this.y = array[1];
 		}
+
+        public Vector2d(Vector2d v)
+        {
+            this.x = v.x;
+            this.y = v.y;
+        }
 
 		public double this[int index]
 		{
@@ -38,8 +44,11 @@ namespace Geometry
 			set
 			{
 				if (index == 0) x = value;
-				if (index == 1) y = value;
-				throw new ArgumentOutOfRangeException();
+                else if (index == 1) y = value;
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
 			}
 		}
 
@@ -52,14 +61,14 @@ namespace Geometry
 			return array;
 		}
 
-		public vector3d ToVector3D()
+		public Vector3d ToVector3D()
 		{
-			return new vector3d(x, y, 0);
+			return new Vector3d(x, y, 0);
 		}
 
-		public vector3d ToHomoVector3D()
+		public Vector3d ToHomoVector3D()
 		{
-			return new vector3d(x, y, 1.0);
+			return new Vector3d(x, y, 1.0);
 		}
 
 		public double Length()
@@ -74,19 +83,23 @@ namespace Geometry
 			y /= length;
 		}
 
-		public double Dot(vector2d v)
+        public Vector2d GetNormVector()
+        {
+            Vector2d v = new Vector2d(x, y);
+            double length = this.Length();
+            v.x /= length;
+            v.y /= length;
+            return v;
+        }
+
+		public double Dot(Vector2d v)
 		{
 			return x * v.x + y * v.y;
 		}
 
-		public double Cross(vector2d v)
+		public double Cross(Vector2d v)
 		{
 			return x * v.y - y * v.x;
-		}
-
-		public bool Equals(vector2d v)
-		{
-			return (x == v.x) && (y == v.y) ? true : false;
 		}
 
 		// following the guiderlines of implementing operator == and overide Equals, GetHashCode
@@ -94,7 +107,7 @@ namespace Geometry
 		public override bool Equals(Object obj)
 		{
 			if (obj == null) return false;
-			vector2d v = obj as vector2d;
+			Vector2d v = obj as Vector2d;
 			if ((Object)v == null) return false;
 			return (x == v.x) && (y == v.y) ? true : false;
 		}
@@ -105,63 +118,96 @@ namespace Geometry
 		}
 
 		// Operators
-		static public vector2d operator +(vector2d v1, vector2d v2)
+		static public Vector2d operator +(Vector2d v1, Vector2d v2)
 		{
-			return new vector2d(v1.x + v2.x, v1.y + v2.y);
+			return new Vector2d(v1.x + v2.x, v1.y + v2.y);
 		}
 
-		static public vector2d operator -(vector2d v1, vector2d v2)
+		static public Vector2d operator -(Vector2d v1, Vector2d v2)
 		{
-			return new vector2d(v1.x - v2.x, v1.y - v2.y);
+			return new Vector2d(v1.x - v2.x, v1.y - v2.y);
 		}
 
-		static public vector2d operator *(vector2d v, double d)
+		static public Vector2d operator *(double factor, Vector2d v)
 		{
-			return new vector2d(v.x * d, v.y * d);
+			return new Vector2d(v.x * factor, v.y * factor);
 		}
 
-		static public vector2d operator /(vector2d v, double d)
+		static public Vector2d operator /(Vector2d v, double factor)
 		{
-			return new vector2d(v.x / d, v.y / d);
+			return new Vector2d(v.x / factor, v.y / factor);
 		}
 
-		static public bool operator ==(vector2d v1, vector2d v2)
+		static public bool operator ==(Vector2d v1, Vector2d v2)
 		{
 			return (v1.x == v2.x) && (v1.y == v2.y) ? true : false;
 		}
 
-		static public bool operator !=(vector2d v1, vector2d v2)
+		static public bool operator !=(Vector2d v1, Vector2d v2)
 		{
 			return !(v1 == v2);
 		}
-	}//class-vector2d
 
-	public class vector3d
+        static public Vector2d Min(Vector2d v1, Vector2d v2)
+        {
+            Vector2d v = new Vector2d();
+            v.x = v1.x < v2.x ? v1.x : v2.x;
+            v.y = v1.y < v2.y ? v1.y : v2.y;
+            return v;
+        }
+
+        static public Vector2d Max(Vector2d v1, Vector2d v2)
+        {
+            Vector2d v = new Vector2d();
+            v.x = v1.x > v2.x ? v1.x : v2.x;
+            v.y = v1.y > v2.y ? v1.y : v2.y;
+            return v;
+        }
+
+        static public Vector2d MaxCoord()
+        {
+            return new Vector2d(double.MaxValue, double.MaxValue);
+        }
+
+        static public Vector2d MinCoord()
+        {
+            return new Vector2d(double.MinValue, double.MinValue);
+        }
+	}//class-Vector2d
+
+	public class Vector3d
 	{
 		public double x, y, z;
 
 		// initialization
-		public vector3d()
+		public Vector3d()
 		{
 			x = 0; 
 			y = 0; 
 			z = 0;
 		}
 
-		public vector3d(double x, double y, double z)
+		public Vector3d(double x, double y, double z)
 		{
 			this.x = x;
 			this.y = y;
 			this.z = z;
 		}
 
-		public vector3d(double[] array)
+		public Vector3d(double[] array)
 		{
 			if (array.Length < 3) return;
 			x = array[0];
 			y = array[1];
 			z = array[2];
 		}
+
+        public Vector3d(Vector3d v)
+        {
+            this.x = v.x;
+            this.y = v.y;
+            this.z = v.z;
+        }
 
 		public double this[int index]
 		{
@@ -175,9 +221,12 @@ namespace Geometry
 			set
 			{
 				if (index == 0) x = value;
-				if (index == 1) y = value;
-				if (index == 2) z = value;
-				throw new ArgumentOutOfRangeException();
+                else if (index == 1) y = value;
+                else if (index == 2) z = value;
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
 			}
 		}
 
@@ -191,15 +240,15 @@ namespace Geometry
 			return array;
 		}
 
-		public vector2d ToVector2D()
+		public Vector2d ToVector2D()
 		{
-			return new vector2d(x, y);
+			return new Vector2d(x, y);
 		}
 
-		public vector2d HomogeneousVector2D()
+		public Vector2d HomogeneousVector2D()
 		{
 			if (z == 0) return ToVector2D();
-			return new vector2d(x / z, y / z);
+			return new Vector2d(x / z, y / z);
 		}
 
 		public double Length()
@@ -215,6 +264,16 @@ namespace Geometry
 			z /= length;
 		}
 
+        public Vector3d GetNormVector()
+        {
+            Vector3d v = new Vector3d(x, y, z);
+            double length = this.Length();
+            v.x /= length;
+            v.y /= length;
+            v.z /= length;
+            return v;
+        }
+
 		public void HomogeneousNormalize()
 		{
 			if (z == 0) return;
@@ -223,22 +282,17 @@ namespace Geometry
 			z = 1.0;
 		}
 
-		public double Dot(vector3d v)
+		public double Dot(Vector3d v)
 		{
 			return x * v.x + y * v.y + z * v.z;
 		}
 
-		public vector3d Cross(vector3d v)
+		public Vector3d Cross(Vector3d v)
 		{
-			return new vector3d(
+			return new Vector3d(
 				y * v.z - z * v.y,
 				z * v.x - x * v.z,
 				x * v.y - y * v.x);
-		}
-
-		public bool Equals(vector3d v)
-		{
-			return (x == v.x) && (y == v.y) && (z == v.z) ? true : false;
 		}
 
 		// following the guiderlines of implementing operator == and overide Equals, GetHashCode
@@ -246,7 +300,7 @@ namespace Geometry
 		public override bool Equals(Object obj)
 		{
 			if (obj == null) return false;
-			vector3d v = obj as vector3d;
+			Vector3d v = obj as Vector3d;
 			if ((Object)v == null) return false;
 			return (x == v.x) && (y == v.y) && (z == v.z) ? true : false;
 		}
@@ -257,48 +311,76 @@ namespace Geometry
 		}
 
 		// Operators
-		static public vector3d operator +(vector3d v1, vector3d v2)
+		static public Vector3d operator +(Vector3d v1, Vector3d v2)
 		{
-			return new vector3d(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+			return new Vector3d(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
 		}
 
-		static public vector3d operator -(vector3d v1, vector3d v2)
+		static public Vector3d operator -(Vector3d v1, Vector3d v2)
 		{
-			return new vector3d(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+			return new Vector3d(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
 		}
 
-		static public vector3d operator *(vector3d v, double d)
+		static public Vector3d operator *(double factor, Vector3d v)
 		{
-			return new vector3d(v.x * d, v.y * d, v.z * d);
+			return new Vector3d(v.x * factor, v.y * factor, v.z * factor);
 		}
 
-		static public vector3d operator /(vector3d v, double d)
+		static public Vector3d operator /(Vector3d v, double factor)
 		{
-			return new vector3d(v.x / d, v.y / d, v.z / d);
+			return new Vector3d(v.x / factor, v.y / factor, v.z / factor);
 		}
 
-		static public bool operator ==(vector3d v1, vector3d v2)
+		static public bool operator ==(Vector3d v1, Vector3d v2)
 		{
 			return (v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z) ? true : false;
 		}
 
-		static public bool operator !=(vector3d v1, vector3d v2)
+		static public bool operator !=(Vector3d v1, Vector3d v2)
 		{
 			return !(v1 == v2);
 		}
-	}//class-vector3d
 
-	public class vector4d
+        static public Vector3d Min(Vector3d v1, Vector3d v2)
+        {
+            Vector3d v = new Vector3d();
+            v.x = v1.x < v2.x ? v1.x : v2.x;
+            v.y = v1.y < v2.y ? v1.y : v2.y;
+            v.z = v1.z < v2.z ? v1.z : v2.z;
+            return v;
+        }
+
+        static public Vector3d Max(Vector3d v1, Vector3d v2)
+        {
+            Vector3d v = new Vector3d();
+            v.x = v1.x > v2.x ? v1.x : v2.x;
+            v.y = v1.y > v2.y ? v1.y : v2.y;
+            v.z = v1.z > v2.z ? v1.z : v2.z;
+            return v;
+        }
+
+        static public Vector3d MaxCoord()
+        {
+            return new Vector3d(double.MaxValue, double.MaxValue, double.MaxValue);
+        }
+
+        static public Vector3d MinCoord()
+        {
+            return new Vector3d(double.MinValue, double.MinValue, double.MinValue);
+        }
+	}//class-Vector3d
+
+	public class Vector4d
 	{ 
 		public double x, y, z, w;
 
 		// initialization
-		public vector4d()
+		public Vector4d()
 		{
 			x = 0; y = 0; z = 0;
 		}
 
-		public vector4d(double x, double y, double z, double w)
+		public Vector4d(double x, double y, double z, double w)
 		{
 			this.x = x;
 			this.y = y;
@@ -306,7 +388,7 @@ namespace Geometry
 			this.w = w;
 		}
 
-		public vector4d(double[] array)
+		public Vector4d(double[] array)
 		{
 			if (array.Length < 4) return;
 			x = array[0];
@@ -314,6 +396,14 @@ namespace Geometry
 			z = array[2];
 			w = array[3];
 		}
+
+        public Vector4d(Vector4d v)
+        {
+            this.x = v.x;
+            this.y = v.y;
+            this.z = v.z;
+            this.w = v.w;
+        }
 
 		public double this[int index]
 		{
@@ -328,10 +418,13 @@ namespace Geometry
 			set
 			{
 				if (index == 0) x = value;
-				if (index == 1) y = value;
-				if (index == 2) z = value;
-				if (index == 3) w = value;
-				throw new ArgumentOutOfRangeException();
+				else if (index == 1) y = value;
+				else if (index == 2) z = value;
+                else if (index == 3) w = value;
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
 			}
 		}
 
@@ -346,16 +439,16 @@ namespace Geometry
 			return array;
 		}
 
-		public vector3d ToVector3D()
+		public Vector3d ToVector3D()
 		{
-			return new vector3d(x, y, z);
+			return new Vector3d(x, y, z);
 				
 		}
 
-		public vector3d ToHomogeneousVector()
+		public Vector3d ToHomogeneousVector()
 		{
 			if (w == 0) return ToVector3D();
-			return new vector3d(x / w, y / w, z / w);
+			return new Vector3d(x / w, y / w, z / w);
 		}
 
 		public double Length()
@@ -372,6 +465,17 @@ namespace Geometry
 			z /= length;
 		}
 
+        public Vector4d GetNormVector()
+        {
+            Vector4d v = new Vector4d(x, y, z, w);
+            double length = this.Length();
+            v.x /= length;
+            v.y /= length;
+            v.z /= length;
+            v.w /= length;
+            return v;
+        }
+
 		public void HomogeneousNormalize()
 		{
 			if (w == 0) return;
@@ -381,63 +485,90 @@ namespace Geometry
 			w = 1.0;
 		}
 
-		public double Dot(vector4d v)
+		public double Dot(Vector4d v)
 		{
 			return x * v.x + y * v.y + z * v.z + z * v.w;
 		}
 
-
-		public bool Equals(vector4d v)
+		public override bool Equals(Object obj)
 		{
+			if (obj == null) return false;
+			Vector4d v = obj as Vector4d;
+			if ((Object)v == null) return false;
 			return (x == v.x) && (y == v.y) && (z == v.z) && (w == v.w) ? true : false;
 		}
 
+		public override int GetHashCode()
+		{
+			return base.GetHashCode();
+		}
+
 		// Operators
-		static public vector4d operator +(vector4d v1, vector4d v2)
+		static public Vector4d operator +(Vector4d v1, Vector4d v2)
 		{
-			return new vector4d(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
+			return new Vector4d(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
 		}
 
-		static public vector4d operator -(vector4d v1, vector4d v2)
+		static public Vector4d operator -(Vector4d v1, Vector4d v2)
 		{
-			return new vector4d(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w);
+			return new Vector4d(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w);
 		}
 
-		static public vector4d operator *(vector4d v, double d)
+		static public Vector4d operator *(double factor, Vector4d v)
 		{
-			return new vector4d(v.x * d, v.y * d, v.z * d, v.w * d);
+			return new Vector4d(v.x * factor, v.y * factor, v.z * factor, v.w * factor);
 		}
 
-		static public vector4d operator /(vector4d v, double d)
+		static public Vector4d operator /(Vector4d v, double factor)
 		{
-			return new vector4d(v.x / d, v.y / d, v.z / d, v.w / d);
+			return new Vector4d(v.x / factor, v.y / factor, v.z / factor, v.w / factor);
 		}
 
-		static public bool operator ==(vector4d v1, vector4d v2)
+		static public bool operator ==(Vector4d v1, Vector4d v2)
 		{
 			return (v1.x == v2.x) && (v1.y == v2.y) 
 				&& (v1.z == v2.z) && (v1.w == v2.w)? true : false;
 		}
 
-		static public bool operator !=(vector4d v1, vector4d v2)
+		static public bool operator !=(Vector4d v1, Vector4d v2)
 		{
 			return !(v1 == v2);
 		}
 
-	}//class-vector4d
+        static public Vector4d Min(Vector4d v1, Vector4d v2)
+        {
+            Vector4d v = new Vector4d();
+            v.x = v1.x < v2.x ? v1.x : v2.x;
+            v.y = v1.y < v2.y ? v1.y : v2.y;
+            v.z = v1.z < v2.z ? v1.z : v2.z;
+            v.w = v1.w < v2.w ? v1.w : v2.w;
+            return v;
+        }
 
-	public class vectorNd
+        static public Vector4d Max(Vector4d v1, Vector4d v2)
+        {
+            Vector4d v = new Vector4d();
+            v.x = v1.x > v2.x ? v1.x : v2.x;
+            v.y = v1.y > v2.y ? v1.y : v2.y;
+            v.z = v1.z > v2.z ? v1.z : v2.z;
+            v.w = v1.w > v2.w ? v1.w : v2.w;
+            return v;
+        }
+
+	}//class-Vector4d
+
+	public class VectorNd
 	{
 		public double[] val;
 		int dim = 0;
 		// initialization
-		public vectorNd(int n)
+		public VectorNd(int n)
 		{
 			val = new double[n];
 			dim = n;
 		}
 
-		public vectorNd(double[] array)
+		public VectorNd(double[] array)
 		{
 			if (array == null) return;
 			dim = array.Length;
@@ -502,7 +633,7 @@ namespace Geometry
 			}
 		}
 
-		public double Dot(vectorNd v)
+		public double Dot(VectorNd v)
 		{
 			if(v.dim != this.dim)
 			{
@@ -516,12 +647,15 @@ namespace Geometry
 			return sum;
 		}
 		
-		public bool Equals(vectorNd v)
+		public override bool Equals(Object obj)
 		{
+			if (obj == null) return false;
+			VectorNd v = obj as VectorNd;
+			if ((Object)v == null) return false;
 			bool isEqual = true;
 			for (int i = 0; i < dim; ++i)
 			{
-				if(Math.Abs(val[i]-v[i]) < 1e-6)
+				if (Math.Abs(val[i] - v[i]) < 1e-6)
 				{
 					isEqual = false;
 					break;
@@ -530,14 +664,19 @@ namespace Geometry
 			return isEqual;
 		}
 
+		public override int GetHashCode()
+		{
+			return base.GetHashCode();
+		}
+
 		// Operators
-		static public vectorNd operator +(vectorNd v1, vectorNd v2)
+		static public VectorNd operator +(VectorNd v1, VectorNd v2)
 		{
 			if(v1.dim!=v2.dim)
 			{
 				return null;
 			}
-			vectorNd v = new vectorNd(v1.dim);
+			VectorNd v = new VectorNd(v1.dim);
 			for (int i = 0; i < v.dim; ++i)
 			{
 				v[i] = v1[i] + v2[i];
@@ -545,13 +684,13 @@ namespace Geometry
 			return v;
 		}
 
-		static public vectorNd operator -(vectorNd v1, vectorNd v2)
+		static public VectorNd operator -(VectorNd v1, VectorNd v2)
 		{
 			if (v1.dim != v2.dim)
 			{
 				return null;
 			}
-			vectorNd v = new vectorNd(v1.dim);
+			VectorNd v = new VectorNd(v1.dim);
 			for (int i = 0; i < v.dim; ++i)
 			{
 				v[i] = v1[i] - v2[i];
@@ -559,31 +698,31 @@ namespace Geometry
 			return v;
 		}
 
-		static public vectorNd operator *(vectorNd v, double d)
+		static public VectorNd operator *(double factor, VectorNd v)
 		{
-			vectorNd vn = new vectorNd(v.dim);
+			VectorNd vn = new VectorNd(v.dim);
 			for (int i = 0; i < vn.dim; ++i)
 			{
-				vn[i] = v[i] * d;
+				vn[i] = v[i] * factor;
 			}
 			return vn;
 		}
 
-		static public vectorNd operator /(vectorNd v, double d)
+		static public VectorNd operator /(VectorNd v, double factor)
 		{
-			if(Math.Abs(d) < 1e-6)
+			if(Math.Abs(factor) < 1e-6)
 			{
 				throw new DivideByZeroException();
 			}
-			vectorNd vn = new vectorNd(v.dim);
+			VectorNd vn = new VectorNd(v.dim);
 			for (int i = 0; i < vn.dim; ++i)
 			{
-				vn[i] = v[i] / d;
+				vn[i] = v[i] / factor;
 			}
 			return vn;
 		}
 
-		static public bool operator ==(vectorNd v1, vectorNd v2)
+		static public bool operator ==(VectorNd v1, VectorNd v2)
 		{
 			bool isEqual = true;
 			for (int i = 0; i < v1.dim; ++i)
@@ -597,9 +736,9 @@ namespace Geometry
 			return isEqual;
 		}
 
-		static public bool operator !=(vectorNd v1, vectorNd v2)
+		static public bool operator !=(VectorNd v1, VectorNd v2)
 		{
 			return !(v1 == v2);
 		}
-	}//class-vectorNd
+	}//class-VectorNd
 }
