@@ -55,6 +55,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Geometry\Polygon.cs" />
     <Compile Include="Geometry\SparseMatrix.cs" />
     <Compile Include="GLView\GLViewer.cs">
       <SubType>UserControl</SubType>

@@ -76,7 +76,7 @@ namespace Geometry
 			return Math.Sqrt(x * x + y * y);
 		}
 
-		public void Normalize()
+		public void normalize()
 		{
 			double length = this.Length();
 			x /= length;
@@ -256,7 +256,7 @@ namespace Geometry
 			return Math.Sqrt(x * x + y * y + z * z);
 		}
 
-		public void Normalize()
+		public void normalize()
 		{
 			double length = this.Length();
 			x /= length;
@@ -456,7 +456,7 @@ namespace Geometry
 			return Math.Sqrt(x * x + y * y + z * z + w * w);
 		}
 
-		public void Normalize()
+		public void normalize()
 		{
 			double length = this.Length();
 			x /= length;
@@ -624,7 +624,7 @@ namespace Geometry
 			return Math.Sqrt(sum);
 		}
 
-		public void Normalize()
+		public void normalize()
 		{
 			double length = this.Length();
 			for (int i = 0; i < dim; ++i)

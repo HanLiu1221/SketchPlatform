@@ -38,7 +38,7 @@ namespace Geometry
             }
         }
 
-        public int FaceInde
+        public int FaceIndex
         {
             get
             {
@@ -124,15 +124,15 @@ namespace Geometry
 			string extension = Path.GetExtension(meshFileName); 
 			if(extension.Equals(".off"))
 			{
-				LoadOffMesh(sr);
+				loadOffMesh(sr);
 			} else // default ".obj"
             {
-                LoadObjMesh(sr);
+                loadObjMesh(sr);
             }
 			sr.Close();
 		}
 
-		private void LoadObjMesh(StreamReader sr)
+		private void loadObjMesh(StreamReader sr)
 		{
 			List<double> vertexArray = new List<double>();
 			List<int> faceArray = new List<int>();
@@ -213,16 +213,16 @@ namespace Geometry
 			this.halfEdges = halfEdgeArray.ToArray();
             this.edges = edgeArray.ToArray();
             this.edgeIter = this.halfEdges[0];
-            this.Normalize();
-			this.CalculateFaceVertexNormal();
-		}//LoadObjMesh
+            this.normalize();
+			this.calculateFaceVertexNormal();
+		}//loadObjMesh
 
-		private void LoadOffMesh(StreamReader sr)
+		private void loadOffMesh(StreamReader sr)
 		{
 
-		}//LoadOffMesh
+		}//loadOffMesh
 
-		private void CalculateFaceVertexNormal()
+		private void calculateFaceVertexNormal()
 		{
 			if(this.faceVertexIndex == null || this.faceVertexIndex.Length == 0)
 			{
@@ -244,7 +244,7 @@ namespace Geometry
                 Vector3d v21 = v2 - v1;
                 Vector3d v31 = v3 - v1;
                 Vector3d normal = v21.Cross(v31);
-                normal.Normalize();
+                normal.normalize();
                 for (int j = 0; j < 3; ++j)
                 {
                     this.faceNormal[3 * i + j] = normal[j];
@@ -258,14 +258,14 @@ namespace Geometry
                 Vector3d vn = new Vector3d(this.vertexNormal[3 * i],
                     this.vertexNormal[3 * i + 1],
                     this.vertexNormal[3 * i + 2]);
-                vn.Normalize();
+                vn.normalize();
                 this.vertexNormal[3 * i] = vn.x;
                 this.vertexNormal[3 * i + 1] = vn.y;
                 this.vertexNormal[3 * i + 2] = vn.z;
 			}
-		}//CalculateFaceVertexNormal
+		}//calculateFaceVertexNormal
 
-        private void Normalize()
+        private void normalize()
         {
             Vector3d c = (this.maxCoord + this.minCoord) / 2;
             Vector3d d = this.maxCoord - this.minCoord;

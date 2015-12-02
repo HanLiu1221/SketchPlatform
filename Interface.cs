@@ -16,7 +16,6 @@ namespace GraphicsPlatform
 		public Interface()
 		{
 			InitializeComponent();
-            
 		}
 
         private void open3D_Click(object sender, EventArgs e)
@@ -28,12 +27,16 @@ namespace GraphicsPlatform
             {
                 string filename = dialog.FileName;
                 // load mesh
-                this.glViewer.LoadMesh(filename);
+                this.glViewer.loadMesh(filename);
                 // set tab page
                 TabPage tp = new TabPage(Path.GetFileName(filename));
                 this.fileNameTabs.TabPages.Add(tp);
                 this.fileNameTabs.SelectedTab = tp;
                 this.glViewer.setTabIndex(this.fileNameTabs.TabCount);
+                int[] stats = this.glViewer.getStatistics();
+                this.statistics.Text = "# number of vertex: " + stats[0] + "\n"
+                    + "# number of edges: " + stats[1] + "\n"
+                    + "# number of faces: " + stats[2] + "\n";
             }
             this.glViewer.Refresh();
         }
@@ -70,6 +73,32 @@ namespace GraphicsPlatform
         {
             this.displayAxis.Checked = !this.displayAxis.Checked;
             this.glViewer.displayAxes();
+        }
+
+        private void modelColorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ColorDialog colorDialog = new ColorDialog();
+            colorDialog.Color = GLViewer.ModelColor;
+            if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                GLViewer.ModelColor = colorDialog.Color;
+                this.glViewer.Refresh();
+            }
+        }
+
+        private void vertexSelection_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setUIMode(2);
+        }
+
+        private void edgeSelection_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setUIMode(3);
+        }
+
+        private void faceSelection_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setUIMode(4);
         }
 	}
 }

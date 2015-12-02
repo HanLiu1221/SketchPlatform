@@ -479,7 +479,7 @@ namespace Geometry
 			double cos = Math.Cos(angle);
 			double sin = Math.Sin(angle);
 
-			axis.Normalize();
+			axis.normalize();
 			double x = axis[0], y = axis[1], z = axis[2];
 
 			mat[0, 0] = cos + x * x * (1 - cos);

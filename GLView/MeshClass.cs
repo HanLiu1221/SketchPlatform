@@ -23,8 +23,209 @@ namespace GraphicsPlatform
         private float[] specular = { 1.0f, 1.0f, 1.0f, 1.0f };
         private float[] position = { 1.0f, 1.0f, 1.0f, 0.0f };
 
+        /******************** Function ********************/
+        private double[] modelViewMat = new double[16];
+        private double[] projectionMat = new double[16];
+        private int[] viewPort = new int[4];
+        private List<int> selectedVertices = new List<int>();
+        private List<int> selectedEdges = new List<int>();
+        private List<int> selectedFaces = new List<int>();
+        private bool unSelect = false;
+        
+        public Vector3d projectToScreen(Vector3d v)
+        {
+            // project a 3D point to screen coordinate
+            Vector3d screen = new Vector3d();
+            Glu.gluProject(v.x, v.y, v.z, this.modelViewMat, this.projectionMat, this.viewPort,
+                out screen.x, out screen.y, out screen.z);
+            screen.y = this.viewPort[3] - screen.y;
+            return screen;
+        }//projectToScreen
+
+        public Vector3d unProjectToModel(Vector3d v)
+        {
+            // unproject a screen coordinate to 3d coord
+            Vector3d coord = new Vector3d();
+            Glu.gluUnProject(v.x, v.y, v.z, this.modelViewMat, this.projectionMat, this.viewPort,
+                out coord.x, out coord.y, out coord.z);
+            return coord;
+        }//unProjectToModel
+
+        private void getViewMatrices()
+        {
+            // Get modelview, projection and viewport
+            Gl.glGetDoublev(Gl.GL_MODELVIEW_MATRIX, modelViewMat);
+            Gl.glGetDoublev(Gl.GL_PROJECTION_MATRIX, projectionMat);
+            Gl.glGetIntegerv(Gl.GL_VIEWPORT, viewPort);
+        }//getViewMatrices
+
+        public void selectMouseDown(int mode, bool isShift, bool isCtrl)
+        {
+            this.getViewMatrices();
+            this.unSelect = isCtrl;
+            switch (mode)
+            {
+                case 1:
+                    {
+                        if (!isShift && !this.unSelect)
+                        {
+                            this.selectedVertices = new List<int>();
+                        }
+                        break;
+                    }
+                case 2:
+                    {
+                        if (!isShift && !this.unSelect)
+                        {
+                            this.selectedEdges = new List<int>();
+                        }
+                        break;
+                    }
+                case 3:
+                    {
+                        if (!isShift && !this.unSelect)
+                        {
+                            this.selectedFaces = new List<int>();
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+
+        public void selectMouseMove(int mode, Quad2d q)
+        {
+            switch (mode)
+            {
+                case 1:
+                    {
+                        this.selectMeshVertex(q);
+                        break;
+                    }
+                case 2:
+                    {
+                        this.selectMeshEdges(q);
+                        break;
+                    }
+                case 3:
+                    {
+                        this.selectMeshFaces(q);
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+
+        public void selectMouseUp()
+        {
+            this.unSelect = false;
+        }
+
+        public void selectMeshVertex(Quad2d q)
+        {
+            double[] vertexPos = this.mesh.VertexPos;
+            for (int i = 0, j = 0; i < this.mesh.VertexCount; ++i, j += 3)
+            {
+                Vector3d screen = this.projectToScreen(new Vector3d(vertexPos[j], vertexPos[j + 1], vertexPos[j + 2]));                
+                if (Quad2d.isPointInQuad(new Vector2d(screen.x, screen.y), q))
+                {
+                    if (!this.unSelect)
+                    {
+                        if (!this.selectedVertices.Contains(i))
+                        {
+                            this.selectedVertices.Add(i);
+                        }
+                    }
+                    else
+                    {
+                        this.selectedVertices.Remove(i);
+                    }
+                }
+            }
+        }//selectMeshVertex
+
+        public void selectMeshEdges(Quad2d q)
+        {
+            HalfEdge[] edges = this.mesh.Edges;
+            double[] vertexPos = this.mesh.VertexPos;
+            for (int i = 0; i < edges.Length; ++i)
+            {
+                int fromIdx = edges[i].FromIndex;
+                int toIdx = edges[i].ToIndex;
+                Vector3d vf = new Vector3d(vertexPos[fromIdx * 3], 
+                    vertexPos[fromIdx * 3 + 1],
+                    vertexPos[fromIdx * 3 + 2]);
+                Vector3d vt = new Vector3d(vertexPos[toIdx * 3],
+                    vertexPos[toIdx * 3 + 1],
+                    vertexPos[toIdx * 3 + 2]);
+                Vector3d screenFrom = this.projectToScreen(vf);
+                Vector3d screenTo = this.projectToScreen(vt);
+                if (Quad2d.isPointInQuad(new Vector2d(screenFrom.x,screenFrom.y), q) ||
+                    Quad2d.isPointInQuad(new Vector2d(screenTo.x, screenTo.y), q))
+                {
+                    if (!this.unSelect)
+                    {
+                        if (!this.selectedEdges.Contains(i))
+                        {
+                            this.selectedEdges.Add(i);
+                        }
+                    }
+                    else
+                    {
+                        this.selectedEdges.Remove(i);
+                    }
+                }
+            }
+        }//selectMeshEdges
+
+        public void selectMeshFaces(Quad2d q)
+        {
+            fixed (double* vertexPos = this.mesh.VertexPos)
+            {
+                fixed (int* faceIndex = this.mesh.FaceVertex)
+                {
+                    for (int i = 0, j = 0; i < this.mesh.FaceCount; ++i, j += 3)
+                    {
+                        Vector3d[] verts = {new Vector3d(vertexPos[faceIndex[j] * 3],
+                                               vertexPos[faceIndex[j] * 3 + 1],
+                                               vertexPos[faceIndex[j] * 3 + 2]),
+                                               new Vector3d(vertexPos[faceIndex[j + 1] * 3],
+                                                   vertexPos[faceIndex[j + 1] * 3 + 1],
+                                                   vertexPos[faceIndex[j + 1] * 3 + 2]),
+                                               new Vector3d(vertexPos[faceIndex[j + 2] * 3],
+                                                   vertexPos[faceIndex[j + 2] * 3 + 1],
+                                                   vertexPos[faceIndex[j + 2] * 3 + 2])
+                               };
+                        for (int k = 0; k < 3; ++k)
+                        {
+                            Vector3d v3 = this.projectToScreen(verts[k]);
+                            Vector2d screen = new Vector2d(v3.x, v3.y);
+                            if (Quad2d.isPointInQuad(screen, q))
+                            {
+                                if (!this.unSelect)
+                                {
+                                    if (!this.selectedFaces.Contains(i))
+                                    {
+                                        this.selectedFaces.Add(i);
+                                    }
+                                    break;
+                                }
+                                else
+                                {
+                                    this.selectedFaces.Remove(i);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }//selectMeshFaces
+
         /******************** Render ********************/
-        public void RenderShaded()
+        public void renderShaded()
         {
             Gl.glEnable(Gl.GL_COLOR_MATERIAL);
             Gl.glColorMaterial(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE);
@@ -40,7 +241,7 @@ namespace GraphicsPlatform
             Gl.glEnable(Gl.GL_LIGHTING);
             Gl.glEnable(Gl.GL_NORMALIZE);
 
-            Gl.glColor3ub(GLViewer.colorSet[0].R, GLViewer.colorSet[0].G, GLViewer.colorSet[0].B);
+            Gl.glColor3ub(GLViewer.ModelColor.R, GLViewer.ModelColor.G, GLViewer.ModelColor.B);
 
             fixed (double* vp = this.mesh.VertexPos)
             fixed (double* vn = this.mesh.FaceNormal)
@@ -64,10 +265,10 @@ namespace GraphicsPlatform
             Gl.glDisable(Gl.GL_COLOR_MATERIAL);
         }
 
-        public void RenderWireFrame()
+        public void renderWireFrame()
         {
             Gl.glEnable(Gl.GL_LINE_SMOOTH);
-            Gl.glColor3ub(0, 0, 0);
+            Gl.glColor3ub(GLViewer.ColorSet[1].R, GLViewer.ColorSet[1].G, GLViewer.ColorSet[1].B);
             Gl.glBegin(Gl.GL_LINES);
             for (int i = 0; i < this.mesh.Edges.Length; ++i)
             {
@@ -85,10 +286,10 @@ namespace GraphicsPlatform
             Gl.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
         }
 
-        public void RenderVertices()
+        public void renderVertices()
         {
             Gl.glEnable(Gl.GL_POINT_SMOOTH);
-            Gl.glColor3ub(255, 0, 0);
+            Gl.glColor3ub(GLViewer.ColorSet[2].R, GLViewer.ColorSet[2].G, GLViewer.ColorSet[2].B);
             Gl.glPointSize(2.0f);
             Gl.glBegin(Gl.GL_POINTS);
             for (int i = 0; i < this.mesh.VertexCount; ++i)
@@ -98,6 +299,72 @@ namespace GraphicsPlatform
             Gl.glEnd();
             Gl.glDisable(Gl.GL_POINT_SMOOTH);
             Gl.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+        }
+
+        public void drawSelectedVertex()
+        {
+            if (this.selectedVertices.Count == 0)
+            {
+                return;
+            }
+            Gl.glEnable(Gl.GL_POINT_SMOOTH);
+            Gl.glColor3ub(255, 0, 0);
+            Gl.glPointSize(3.0f);
+            Gl.glBegin(Gl.GL_POINTS);
+            for (int j = 0; j < this.selectedVertices.Count; ++j )
+            {
+                int i = this.selectedVertices[j];
+                Gl.glVertex3d(this.mesh.VertexPos[i * 3], this.mesh.VertexPos[i * 3 + 1], this.mesh.VertexPos[i * 3 + 2]);
+            }
+            Gl.glEnd();
+            Gl.glDisable(Gl.GL_POINT_SMOOTH);
+            Gl.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+        }
+
+        public void drawSelectedEdges()
+        {
+            if (this.selectedEdges.Count == 0)
+            {
+                return;
+            }
+            Gl.glEnable(Gl.GL_LINE_SMOOTH);
+            Gl.glColor3ub(255, 0, 0);
+            Gl.glBegin(Gl.GL_LINES);
+            for (int i = 0; i < this.selectedEdges.Count; ++i)
+            {
+                int fromIdx = this.mesh.Edges[this.selectedEdges[i]].FromIndex;
+                int toIdx = this.mesh.Edges[this.selectedEdges[i]].ToIndex;
+                Gl.glVertex3d(this.mesh.VertexPos[fromIdx * 3],
+                    this.mesh.VertexPos[fromIdx * 3 + 1],
+                    this.mesh.VertexPos[fromIdx * 3 + 2]);
+                Gl.glVertex3d(this.mesh.VertexPos[toIdx * 3],
+                    this.mesh.VertexPos[toIdx * 3 + 1],
+                    this.mesh.VertexPos[toIdx * 3 + 2]);
+            }
+            Gl.glEnd();
+            Gl.glDisable(Gl.GL_LINE_SMOOTH);
+            Gl.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+        }//drawSelectedEdges
+
+        public void drawSelectedFaces()
+        {
+            if(this.selectedFaces.Count == 0)
+            {
+                return;
+            }
+            Gl.glColor3ub(255, 0, 0);
+            fixed (double* vp = this.mesh.VertexPos)
+            fixed (int* index = this.mesh.FaceVertex)
+            {
+                Gl.glBegin(Gl.GL_TRIANGLES);
+                for (int i = 0; i < this.selectedFaces.Count; ++i)
+                {
+                    Gl.glVertex3dv(new IntPtr(vp + index[this.selectedFaces[i] * 3] * 3));
+                    Gl.glVertex3dv(new IntPtr(vp + index[this.selectedFaces[i] * 3 + 1] * 3));
+                    Gl.glVertex3dv(new IntPtr(vp + index[this.selectedFaces[i] * 3 + 2] * 3));
+                }
+                Gl.glEnd();
+            }
         }
     }
 }

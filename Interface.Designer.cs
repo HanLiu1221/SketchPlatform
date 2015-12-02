@@ -34,6 +34,10 @@
             this.open3D = new System.Windows.Forms.ToolStripMenuItem();
             this.import3D = new System.Windows.Forms.ToolStripMenuItem();
             this.saveAs3D = new System.Windows.Forms.ToolStripMenuItem();
+            this.tools = new System.Windows.Forms.ToolStripDropDownButton();
+            this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.resetViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.modelColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renderOption = new System.Windows.Forms.ToolStripDropDownButton();
             this.vertexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.wireFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -42,14 +46,12 @@
             this.vertexSelection = new System.Windows.Forms.ToolStripMenuItem();
             this.edgeSelection = new System.Windows.Forms.ToolStripMenuItem();
             this.faceSelection = new System.Windows.Forms.ToolStripMenuItem();
-            this.viewPanel = new System.Windows.Forms.SplitContainer();
-            this.fileNameTabs = new System.Windows.Forms.TabControl();
-            this.tools = new System.Windows.Forms.ToolStripDropDownButton();
-            this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.resetViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.display = new System.Windows.Forms.ToolStripDropDownButton();
             this.displayAxis = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewPanel = new System.Windows.Forms.SplitContainer();
+            this.fileNameTabs = new System.Windows.Forms.TabControl();
             this.glViewer = new GraphicsPlatform.GLViewer();
+            this.statistics = new System.Windows.Forms.Label();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -104,6 +106,40 @@
             this.saveAs3D.Size = new System.Drawing.Size(150, 22);
             this.saveAs3D.Text = "Save As 3D file";
             // 
+            // tools
+            // 
+            this.tools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewToolStripMenuItem,
+            this.resetViewToolStripMenuItem,
+            this.modelColorToolStripMenuItem});
+            this.tools.Image = ((System.Drawing.Image)(resources.GetObject("tools.Image")));
+            this.tools.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tools.Name = "tools";
+            this.tools.Size = new System.Drawing.Size(49, 36);
+            this.tools.Text = "Tools";
+            this.tools.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
+            // 
+            // viewToolStripMenuItem
+            // 
+            this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
+            this.viewToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.viewToolStripMenuItem.Text = "View";
+            this.viewToolStripMenuItem.Click += new System.EventHandler(this.viewToolStripMenuItem_Click);
+            // 
+            // resetViewToolStripMenuItem
+            // 
+            this.resetViewToolStripMenuItem.Name = "resetViewToolStripMenuItem";
+            this.resetViewToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.resetViewToolStripMenuItem.Text = "Reset View";
+            this.resetViewToolStripMenuItem.Click += new System.EventHandler(this.resetViewToolStripMenuItem_Click);
+            // 
+            // modelColorToolStripMenuItem
+            // 
+            this.modelColorToolStripMenuItem.Name = "modelColorToolStripMenuItem";
+            this.modelColorToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.modelColorToolStripMenuItem.Text = "Model Color";
+            this.modelColorToolStripMenuItem.Click += new System.EventHandler(this.modelColorToolStripMenuItem_Click);
+            // 
             // renderOption
             // 
             this.renderOption.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -156,72 +192,23 @@
             // vertexSelection
             // 
             this.vertexSelection.Name = "vertexSelection";
-            this.vertexSelection.Size = new System.Drawing.Size(105, 22);
+            this.vertexSelection.Size = new System.Drawing.Size(152, 22);
             this.vertexSelection.Text = "vertex";
+            this.vertexSelection.Click += new System.EventHandler(this.vertexSelection_Click);
             // 
             // edgeSelection
             // 
             this.edgeSelection.Name = "edgeSelection";
-            this.edgeSelection.Size = new System.Drawing.Size(105, 22);
+            this.edgeSelection.Size = new System.Drawing.Size(152, 22);
             this.edgeSelection.Text = "edge";
+            this.edgeSelection.Click += new System.EventHandler(this.edgeSelection_Click);
             // 
             // faceSelection
             // 
             this.faceSelection.Name = "faceSelection";
-            this.faceSelection.Size = new System.Drawing.Size(105, 22);
+            this.faceSelection.Size = new System.Drawing.Size(152, 22);
             this.faceSelection.Text = "face";
-            // 
-            // viewPanel
-            // 
-            this.viewPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.viewPanel.Location = new System.Drawing.Point(0, 39);
-            this.viewPanel.Name = "viewPanel";
-            this.viewPanel.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // viewPanel.Panel1
-            // 
-            this.viewPanel.Panel1.Controls.Add(this.fileNameTabs);
-            // 
-            // viewPanel.Panel2
-            // 
-            this.viewPanel.Panel2.Controls.Add(this.glViewer);
-            this.viewPanel.Size = new System.Drawing.Size(784, 523);
-            this.viewPanel.SplitterDistance = 34;
-            this.viewPanel.TabIndex = 1;
-            // 
-            // fileNameTabs
-            // 
-            this.fileNameTabs.Location = new System.Drawing.Point(0, 0);
-            this.fileNameTabs.Name = "fileNameTabs";
-            this.fileNameTabs.SelectedIndex = 0;
-            this.fileNameTabs.Size = new System.Drawing.Size(783, 31);
-            this.fileNameTabs.TabIndex = 0;
-            // 
-            // tools
-            // 
-            this.tools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.viewToolStripMenuItem,
-            this.resetViewToolStripMenuItem});
-            this.tools.Image = ((System.Drawing.Image)(resources.GetObject("tools.Image")));
-            this.tools.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tools.Name = "tools";
-            this.tools.Size = new System.Drawing.Size(49, 36);
-            this.tools.Text = "Tools";
-            this.tools.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
-            // 
-            // viewToolStripMenuItem
-            // 
-            this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            this.viewToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
-            this.viewToolStripMenuItem.Text = "View";
-            this.viewToolStripMenuItem.Click += new System.EventHandler(this.viewToolStripMenuItem_Click);
-            // 
-            // resetViewToolStripMenuItem
-            // 
-            this.resetViewToolStripMenuItem.Name = "resetViewToolStripMenuItem";
-            this.resetViewToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
-            this.resetViewToolStripMenuItem.Text = "Reset View";
-            this.resetViewToolStripMenuItem.Click += new System.EventHandler(this.resetViewToolStripMenuItem_Click);
+            this.faceSelection.Click += new System.EventHandler(this.faceSelection_Click);
             // 
             // display
             // 
@@ -237,9 +224,36 @@
             // displayAxis
             // 
             this.displayAxis.Name = "displayAxis";
-            this.displayAxis.Size = new System.Drawing.Size(152, 22);
+            this.displayAxis.Size = new System.Drawing.Size(95, 22);
             this.displayAxis.Text = "Axis";
             this.displayAxis.Click += new System.EventHandler(this.displayAxis_Click);
+            // 
+            // viewPanel
+            // 
+            this.viewPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.viewPanel.Location = new System.Drawing.Point(0, 39);
+            this.viewPanel.Name = "viewPanel";
+            this.viewPanel.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // viewPanel.Panel1
+            // 
+            this.viewPanel.Panel1.Controls.Add(this.fileNameTabs);
+            // 
+            // viewPanel.Panel2
+            // 
+            this.viewPanel.Panel2.Controls.Add(this.statistics);
+            this.viewPanel.Panel2.Controls.Add(this.glViewer);
+            this.viewPanel.Size = new System.Drawing.Size(784, 523);
+            this.viewPanel.SplitterDistance = 34;
+            this.viewPanel.TabIndex = 1;
+            // 
+            // fileNameTabs
+            // 
+            this.fileNameTabs.Location = new System.Drawing.Point(0, 0);
+            this.fileNameTabs.Name = "fileNameTabs";
+            this.fileNameTabs.SelectedIndex = 0;
+            this.fileNameTabs.Size = new System.Drawing.Size(783, 31);
+            this.fileNameTabs.TabIndex = 0;
             // 
             // glViewer
             // 
@@ -261,6 +275,14 @@
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 0;
             // 
+            // statistics
+            // 
+            this.statistics.AutoSize = true;
+            this.statistics.Location = new System.Drawing.Point(6, 6);
+            this.statistics.Name = "statistics";
+            this.statistics.Size = new System.Drawing.Size(0, 13);
+            this.statistics.TabIndex = 1;
+            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -276,6 +298,7 @@
             this.menu.PerformLayout();
             this.viewPanel.Panel1.ResumeLayout(false);
             this.viewPanel.Panel2.ResumeLayout(false);
+            this.viewPanel.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).EndInit();
             this.viewPanel.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -307,6 +330,8 @@
         private System.Windows.Forms.ToolStripMenuItem resetViewToolStripMenuItem;
         private System.Windows.Forms.ToolStripDropDownButton display;
         private System.Windows.Forms.ToolStripMenuItem displayAxis;
+        private System.Windows.Forms.ToolStripMenuItem modelColorToolStripMenuItem;
+        private System.Windows.Forms.Label statistics;
 
 	}
 }

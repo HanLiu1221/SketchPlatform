@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using System.Windows.Forms;
 using System.IO;
 using Tao.OpenGl;
 using Tao.Platform.Windows;
@@ -19,7 +20,7 @@ namespace GraphicsPlatform
             this.InitializeComponent();
             this.InitializeContexts();
 
-            this.InitializeVariables();
+            this.initializeVariables();
         }
 
         private void InitializeComponent() 
@@ -31,37 +32,61 @@ namespace GraphicsPlatform
             this.ResumeLayout(false);
         }
 
-        private void InitializeVariables()
+        private void initializeVariables()
         {
             this.meshClasses = new List<MeshClass>();
             this.currModelTransformMatrix = Matrix4d.IdentityMatrix();
             this.arcBall = new ArcBall(this.Width, this.Height);
-            this.InitializeColors();
+            this.initializeColors();
         }
 
-        private void InitializeColors()
+        private void initializeColors()
         {
-            colorSet = new Color[256];
-            colorSet[0] = Color.LightBlue;
+            ColorSet = new Color[20];
+
+            ColorSet[0] = Color.FromArgb(203, 213, 232);
+            ColorSet[1] = Color.FromArgb(252, 141, 98);
+            ColorSet[2] = Color.FromArgb(102, 194, 165);
+            ColorSet[3] = Color.FromArgb(231, 138, 195);
+            ColorSet[4] = Color.FromArgb(166, 216, 84);
+            ColorSet[5] = Color.FromArgb(251, 180, 174);
+            ColorSet[6] = Color.FromArgb(204, 235, 197);
+            ColorSet[7] = Color.FromArgb(222, 203, 228);
+            ColorSet[8] = Color.FromArgb(31, 120, 180);
+            ColorSet[9] = Color.FromArgb(251, 154, 153);
+            ColorSet[10] = Color.FromArgb(227, 26, 28);
+            ColorSet[11] = Color.FromArgb(255, 127, 0);
+            ColorSet[12] = Color.FromArgb(51, 160, 44);
+            ColorSet[13] = Color.FromArgb(202, 178, 214);
+            ColorSet[14] = Color.FromArgb(141, 211, 199);
+            ColorSet[15] = Color.FromArgb(255, 255, 179);
+            ColorSet[16] = Color.FromArgb(251, 128, 114);
+            ColorSet[17] = Color.FromArgb(179, 222, 105);
+            ColorSet[18] = Color.FromArgb(188, 128, 189);
+            ColorSet[19] = Color.FromArgb(217, 217, 217);
+
+            ModelColor = ColorSet[0];
         }
+
 
         // modes
         public enum UIMode 
         {
+            // !Do not change the order of the modes --- used in the current program to retrieve the index (Integer)
             Viewing, VertexSelection, EdgeSelection, FaceSelection, ComponentSelection, NONE
         }
 
         private bool drawVertex = false;
         private bool drawEdge = false;
         private bool drawFace = true;
-
         private bool isDrawAxes = false;
+        private bool isDrawQuad = false;
 
         /******************** Variables ********************/
         private UIMode currUIMode = UIMode.Viewing;
         private Matrix4d currModelTransformMatrix;
         private ArcBall arcBall;
-
+        private Vector2d mouseDownPos;
         private Vector2d prevMousePos;
         private Vector2d currMousePos;
         private bool isMouseDown = false;
@@ -76,10 +101,12 @@ namespace GraphicsPlatform
                                       new Vector3d(0, 0, -1.2), new Vector3d(0, 0, 1.2),
                                       new Vector3d(-0.2, 0, 1), new Vector3d(0, 0, 1.2),
                                       new Vector3d(0.2, 0, 1), new Vector3d(0, 0, 1.2)};
+        private Quad2d highlightQuad;
+        private int[] stats;
 
         //########## static vars ##########//
-        public static Color[] colorSet;
-        
+        public static Color[] ColorSet;
+        static public Color ModelColor;
 
         /******************** Functions ********************/
 
@@ -95,12 +122,23 @@ namespace GraphicsPlatform
             }
         }
 
-        public void LoadMesh(string filename)
+
+        public void loadMesh(string filename)
         {
             Mesh m = new Mesh(filename);
             MeshClass mc = new MeshClass(m);
             this.meshClasses.Add(mc);
             this.currMeshClass = mc;
+
+            stats = new int[3];
+            stats[0] = m.VertexCount;
+            stats[1] = m.Edges.Length;
+            stats[2] = m.FaceCount;
+        }
+
+        public int[] getStatistics()
+        {
+            return this.stats;
         }
 
         //########## set modes ##########//
@@ -161,7 +199,7 @@ namespace GraphicsPlatform
 
         //########## Mouse ##########//
 
-        private void viewMouseDown(System.Windows.Forms.MouseEventArgs e)
+        private void viewMouseDown(MouseEventArgs e)
         {
             //if (this.currMeshClass == null) return;
             this.arcBall = new ArcBall(this.Width, this.Height);
@@ -199,25 +237,35 @@ namespace GraphicsPlatform
             this.arcBall.mouseUp();
         }
 
-        protected override void OnMouseDown(System.Windows.Forms.MouseEventArgs e)
+        protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-
+            this.mouseDownPos = new Vector2d(e.X, e.Y);
             this.currMousePos = new Vector2d(e.X, e.Y);
             this.isMouseDown = true;
 
             switch (this.currUIMode)
             {
                 case UIMode.VertexSelection:
-                    {
-                        break;
-                    }
                 case UIMode.EdgeSelection:
-                    {
-                        break;
-                    }
                 case UIMode.FaceSelection:
                     {
+                        if (this.currMeshClass != null)
+                        {
+                            Matrix4d m = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
+                            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+                            Gl.glPushMatrix();
+                            Gl.glMultMatrixd(m.Transpose().toArray());
+
+                            this.currMeshClass.selectMouseDown((int)this.currUIMode, 
+                                Control.ModifierKeys == Keys.Shift,
+                                Control.ModifierKeys == Keys.Control);
+
+                            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+                            Gl.glPopMatrix();
+
+                            this.isDrawQuad = true;
+                        }
                         break;
                     }
                 case UIMode.ComponentSelection:
@@ -234,7 +282,7 @@ namespace GraphicsPlatform
             }            
         }
 
-        protected override void OnMouseMove(System.Windows.Forms.MouseEventArgs e)
+        protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
 
@@ -244,15 +292,15 @@ namespace GraphicsPlatform
             switch (this.currUIMode)
             {
                 case UIMode.VertexSelection:
-                    {
-                        break;
-                    }
                 case UIMode.EdgeSelection:
-                    {
-                        break;
-                    }
                 case UIMode.FaceSelection:
                     {
+                        if (this.currMeshClass != null && this.isMouseDown)
+                        {
+                            this.highlightQuad = new Quad2d(this.mouseDownPos, this.currMousePos);
+                            this.currMeshClass.selectMouseMove((int)this.currUIMode, this.highlightQuad);
+                            this.Refresh();
+                        }
                         break;
                     }
                 case UIMode.ComponentSelection:
@@ -269,7 +317,7 @@ namespace GraphicsPlatform
             }            
         }
 
-        protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
+        protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
 
@@ -280,15 +328,12 @@ namespace GraphicsPlatform
             switch (this.currUIMode)
             {
                 case UIMode.VertexSelection:
-                    {
-                        break;
-                    }
                 case UIMode.EdgeSelection:
-                    {
-                        break;
-                    }
                 case UIMode.FaceSelection:
                     {
+                        this.isDrawQuad = false;
+                        this.currMeshClass.selectMouseUp();
+                        this.Refresh();
                         break;
                     }
                 case UIMode.ComponentSelection:
@@ -301,6 +346,26 @@ namespace GraphicsPlatform
                         this.viewMouseUp();
                         break;
                     }
+            }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            switch (e.KeyData)
+            {
+                case System.Windows.Forms.Keys.V:
+                    {
+                        this.currUIMode = UIMode.Viewing;
+                        break;
+                    }
+                case System.Windows.Forms.Keys.R:
+                    {
+                        this.resetView();
+                        break;
+                    }
+                default: 
+                    break;
             }
         }
 
@@ -358,7 +423,7 @@ namespace GraphicsPlatform
 
             if (this.isDrawAxes)
             {
-                this.DrawAxes();
+                this.drawAxes();
             }
 
             Gl.glEnable(Gl.GL_POLYGON_OFFSET_FILL);
@@ -366,24 +431,34 @@ namespace GraphicsPlatform
             {
                 if (this.drawFace)
                 {
-                    this.currMeshClass.RenderShaded();
+                    this.currMeshClass.renderShaded();
                 }
                 if (this.drawEdge)
                 {
-                    this.currMeshClass.RenderWireFrame();
+                    this.currMeshClass.renderWireFrame();
                 }
                 if (this.drawVertex)
                 {
-                    this.currMeshClass.RenderVertices();
+                    this.currMeshClass.renderVertices();
                 }
+                this.currMeshClass.drawSelectedVertex();
+                this.currMeshClass.drawSelectedEdges();
+                this.currMeshClass.drawSelectedFaces();
             }
 
             Gl.glDisable(Gl.GL_POLYGON_OFFSET_FILL);
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
+
+            if (this.isDrawQuad)
+            {
+                this.drawQuad(this.highlightQuad, ColorSet[3]);
+            }
+
             this.SwapBuffers();
         }// onPaint
 
-        private void DrawAxes()
+        private void drawAxes()
         {
             // draw axes with arrows
             Gl.glBegin(Gl.GL_LINES);
@@ -420,6 +495,46 @@ namespace GraphicsPlatform
             Gl.glDisable(Gl.GL_LIGHTING);
             Gl.glDisable(Gl.GL_NORMALIZE);
             Gl.glDisable(Gl.GL_DEPTH_TEST);
+        }
+
+        private void drawQuad(Quad2d q, Color c)
+        {
+            Gl.glMatrixMode(Gl.GL_PROJECTION);
+            Gl.glPushMatrix();
+            Gl.glLoadIdentity();
+            //Glu.gluOrtho2D(0, this.Width, 0, this.Height);
+            Glu.gluOrtho2D(0, this.Width, this.Height, 0);
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            Gl.glPushMatrix();
+            Gl.glLoadIdentity();
+
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glColor4ub(c.R, c.G, c.B, 100);
+            Gl.glBegin(Gl.GL_POLYGON);
+            for (int i = 0; i < 4; ++i)
+            {
+                Gl.glVertex2dv(q.points[i].ToArray());
+            }
+            Gl.glEnd();
+            Gl.glDisable(Gl.GL_BLEND);
+
+            Gl.glEnable(Gl.GL_LINE_SMOOTH);
+            Gl.glColor3ub(c.R, c.G, c.B);
+            Gl.glLineWidth(2.0f);
+            Gl.glBegin(Gl.GL_LINES);
+            for (int i = 0; i < 4; ++i)
+            {
+                Gl.glVertex2dv(q.points[i].ToArray());
+                Gl.glVertex2dv(q.points[(i + 1) % 4].ToArray());
+            }
+            Gl.glEnd();
+            Gl.glDisable(Gl.GL_LINE_SMOOTH);
+
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            Gl.glPopMatrix();
+            Gl.glMatrixMode(Gl.GL_PROJECTION);
+            Gl.glPopMatrix();
         }
 
     }// GLViewer

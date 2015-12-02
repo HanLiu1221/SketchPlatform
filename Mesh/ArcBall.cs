@@ -84,7 +84,7 @@ namespace Geometry
             double cosv = this.currPos.Dot(this.startPos)/(this.currPos.Length() * this.startPos.Length());
             angle = Math.Acos(cosv);
             rotAxis = this.currPos.Cross(this.startPos);
-            rotAxis.Normalize();
+            rotAxis.normalize();
         }
 
         public void mouseUp()
@@ -126,7 +126,7 @@ namespace Geometry
         {
             Vector3d vn = currPos.Cross(startPos) / (currPos.Length() * startPos.Length());
             Vector4d quaternion = new Vector4d(vn.x, vn.y, vn.z, currPos.Dot(startPos)) / (currPos.Length() * startPos.Length());
-            quaternion.Normalize();
+            quaternion.normalize();
 
             double x = quaternion.x;
             double y = quaternion.y;
