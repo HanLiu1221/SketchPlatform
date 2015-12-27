@@ -2,6 +2,251 @@
 
 namespace Geometry
 {
+    public class Matrix2d
+    {
+        private const int M = 2, N = 2, length = 4;
+
+        private double[] arr = new double[length];
+
+        public Matrix2d()
+        {
+            for (int i = 0; i < length; ++i)
+            {
+                arr[i] = 0;
+            }
+        }
+
+        public Matrix2d(double[] array, bool rowWise = true)
+        {
+            if (rowWise)
+            {
+                for (int i = 0; i < length; ++i)
+                {
+                    arr[i] = array[i];
+                }
+            }
+            else //col-wise
+            {
+                for (int i = 0; i < M; ++i)
+                {
+                    for (int j = 0; j < N; ++j)
+                    {
+                        arr[i * N + j] = array[j * M + i];
+                    }
+                }
+            }
+        }
+
+        public Matrix2d(double[,] array)
+        {
+            for (int i = 0; i < M; ++i)
+            {
+                for (int j = 0; j < N; ++j)
+                {
+                    arr[i * N + j] = array[i, j];
+                }
+            }
+        }
+
+        public Matrix2d(Vector2d v1, Vector2d v2)
+        {
+            for (int i = 0; i < N; i++)
+            {
+                this[i, 0] = v1[i];
+                this[i, 1] = v2[i];
+            }
+        }
+
+        public double this[int row, int col]
+        {
+            get
+            {
+                if (row >= 0 && row < M && col >= 0 && col < N)
+                {
+                    return arr[row * N + col];
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+            }
+            set
+            {
+                if (row >= 0 && row < M && col >= 0 && col < N)
+                {
+                    arr[row * N + col] = value;
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+
+        public double this[int index]
+        {
+            get
+            {
+                if (index >= 0 && index < length)
+                {
+                    return arr[index];
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+            }
+            set
+            {
+                if (index >= 0 && index < length)
+                {
+                    arr[index] = value;
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+
+        public Matrix2d(Matrix2d mat)
+        {
+            for (int i = 0; i < length; ++i)
+            {
+                arr[i] = mat[i];
+            }
+        }
+
+        public double[] ToArray()
+        {
+            return arr;
+        }
+
+        // operators
+        static public Matrix2d operator +(Matrix2d m1, Matrix2d m2)
+        {
+            Matrix2d m = new Matrix2d(m1);
+            for (int i = 0; i < length; ++i)
+            {
+                m[i] += m2[i];
+            }
+            return m;
+        }
+
+        static public Matrix2d operator -(Matrix2d m1, Matrix2d m2)
+        {
+            Matrix2d m = new Matrix2d(m1);
+            for (int i = 0; i < length; ++i)
+            {
+                m[i] -= m2[i];
+            }
+            return m;
+        }
+
+        static public Matrix2d operator *(double factor, Matrix2d m)
+        {
+            Matrix2d mat = new Matrix2d(m);
+            for (int i = 0; i < length; ++i)
+            {
+                mat[i] *= factor;
+            }
+            return mat;
+        }
+
+        static public Matrix2d operator *(Matrix2d m, double factor)
+        {
+            Matrix2d mat = new Matrix2d(m);
+            for (int i = 0; i < length; ++i)
+            {
+                mat[i] *= factor;
+            }
+            return mat;
+        }
+
+        public static Vector2d operator *(Matrix2d m, Vector2d v)
+        {
+            Vector2d vec = new Vector2d();
+            vec.x = m[0] * v.x + m[1] * v.y;
+            vec.y = m[2] * v.x + m[3] * v.y;
+            return vec;
+        }
+
+        static public Matrix2d operator *(Matrix2d m1, Matrix2d m2)
+        {
+            Matrix2d mat = new Matrix2d();
+            for (int i = 0; i < M; ++i)
+            {
+                for (int j = 0; j < N; ++j)
+                {
+                    for (int k = 0; k < N; ++k)
+                    {
+                        mat[i, j] += m1[i, k] * m2[k, j];
+                    }
+                }
+            }
+            return mat;
+        }
+
+        static public Matrix2d operator /(Matrix2d m, double factor)
+        {
+            Matrix2d mat = new Matrix2d(m);
+            if (Math.Abs(factor) < 1e-6)
+            {
+                throw new DivideByZeroException();
+            }
+            for (int i = 0; i < length; ++i)
+            {
+                mat[i] /= factor;
+            }
+            return mat;
+        }
+
+        // numerics
+        public static Matrix2d IdentityMatrix()
+        {
+            Matrix2d mat = new Matrix2d();
+            mat[0, 0] = mat[1, 1] = 1.0;
+            return mat;
+        }
+
+        public Matrix2d Transpose()
+        {
+            Matrix2d mat = new Matrix2d();
+            for (int i = 0; i < M; ++i)
+            {
+                for (int j = 0; j < N; ++j)
+                {
+                    mat[j, i] = this[i, j];
+                }
+            }
+            return mat;
+        }
+
+        public double Trace()
+        {
+            return this[0, 0] + this[1, 1];
+        }
+
+        public double Determinant()
+        {
+            return this[0, 0] * this[1, 1] - this[0, 1] * this[1, 0];
+        }
+
+        public Matrix2d Inverse()
+        {
+            Matrix2d mat = new Matrix2d();
+            double det = this.Determinant();
+            if (det == 0) throw new DivideByZeroException("Determinant equals to 0!");
+            mat[0, 0] = this[1, 1];
+            mat[0, 1] = -this[0, 1];
+            mat[1, 0] = -this[1, 0];
+            mat[1, 1] = this[1, 1];
+            mat = mat / det;
+            return mat;
+        }
+
+    }//class-Matrix2d
+
 	public class Matrix3d
 	{
 		private const int M = 3, N = 3, length = 9;
@@ -47,6 +292,16 @@ namespace Geometry
 				}
 			}
 		}
+
+        public Matrix3d(Vector3d v1, Vector3d v2, Vector3d v3)
+        {
+            for (int i = 0; i < N; i++)
+            {
+                this[i, 0] = v1[i];
+                this[i, 1] = v2[i];
+                this[i, 2] = v3[i];
+            }
+        }
 
 		public double this[int row, int col]
 		{
@@ -108,7 +363,7 @@ namespace Geometry
 			}
 		}
 
-        public double[] toArray()
+        public double[] ToArray()
         {
             return arr;
         }
@@ -143,6 +398,25 @@ namespace Geometry
 			}
 			return mat;
 		}
+
+        static public Matrix3d operator *(Matrix3d m, double factor)
+        {
+            Matrix3d mat = new Matrix3d(m);
+            for (int i = 0; i < length; ++i)
+            {
+                mat[i] *= factor;
+            }
+            return mat;
+        }
+
+        public static Vector3d operator *(Matrix3d m, Vector3d v)
+        {
+            Vector3d vec = new Vector3d();
+            vec.x = m[0] * v.x + m[1] * v.y + m[2] * v.z;
+            vec.y = m[3] * v.x + m[4] * v.y + m[5] * v.z;
+            vec.z = m[6] * v.x + m[7] * v.y + m[8] * v.z;
+            return vec;
+        }
 
         static public Matrix3d operator *(Matrix3d m1, Matrix3d m2)
         {
@@ -273,6 +547,13 @@ namespace Geometry
 			}
 		}
 
+        public Matrix4d(Matrix3d m)
+        {
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    this[i, j] = m[i, j];
+        }
+
 		public double this[int row, int col]
 		{
 			get
@@ -333,7 +614,7 @@ namespace Geometry
 			}
 		}
 
-        public double[] toArray()
+        public double[] ToArray()
         {
             return arr;
         }
@@ -385,6 +666,19 @@ namespace Geometry
             return mat;
         }
 
+        static public Vector4d operator *(Matrix4d m, Vector4d v)
+        {
+            Vector4d vec = new Vector4d();
+            for (int i = 0; i < M; ++i)
+            {
+                for (int j = 0; j < N; ++j)
+                {
+                    vec[i] += m[i, j] * v[j];
+                }
+            }
+            return vec;
+        }
+
 		static public Matrix4d operator /(double factor, Matrix4d m)
 		{
 			Matrix4d mat = new Matrix4d(m);
@@ -417,6 +711,13 @@ namespace Geometry
 			}
 			return mat;
 		}
+
+        public Matrix4d Inverse()
+        {
+            SVD svd = new SVD(this.arr, M, N);
+            if (svd.State == false) throw new ArithmeticException();
+            return new Matrix4d(svd.Inverse);
+        }
 
 		public double Trace()
 		{
@@ -471,6 +772,16 @@ namespace Geometry
 			}
 			return mat;
 		}
+
+        public static Matrix4d ScalingMatrix(double sx, double sy, double sz)
+        {
+            Matrix4d mat = IdentityMatrix();
+            mat[0, 0] = sx;
+            mat[1, 1] = sy;
+            mat[2, 2] = sz;
+            mat[3, 3] = 1.0;
+            return mat;
+        }
 
 		public static Matrix4d RotationMatrix(Vector3d axis, double angle)
 		{
@@ -592,7 +903,7 @@ namespace Geometry
 			}
 		}
 
-        public double[] toArray()
+        public double[] ToArray()
         {
             return arr;
         }

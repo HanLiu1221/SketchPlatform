@@ -9,19 +9,21 @@ using System.Windows.Forms;
 
 using System.IO;
 
-namespace GraphicsPlatform
+namespace SketchPlatform
 {
 	public partial class Interface : Form
 	{
 		public Interface()
 		{
 			InitializeComponent();
+            this.glViewer.Init();
 		}
 
+        /*********Var**********/
         private void open3D_Click(object sender, EventArgs e)
         {
             OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "3D model (*.obj; *.off)|*.obj; *.off|All Files(*.*)|*.*";
+            dialog.Filter = "3D model (*.obj; *.off; *.ply)|*.obj; *.off; *.ply|All Files(*.*)|*.*";
             dialog.CheckFileExists = true;
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
@@ -33,10 +35,10 @@ namespace GraphicsPlatform
                 this.fileNameTabs.TabPages.Add(tp);
                 this.fileNameTabs.SelectedTab = tp;
                 this.glViewer.setTabIndex(this.fileNameTabs.TabCount);
-                int[] stats = this.glViewer.getStatistics();
-                this.statistics.Text = "# number of vertex: " + stats[0] + "\n"
-                    + "# number of edges: " + stats[1] + "\n"
-                    + "# number of faces: " + stats[2] + "\n";
+                int[] meshStats = this.glViewer.getMeshStatistics();
+                this.statistics.Text = "# number of vertex: " + meshStats[0] + "\n"
+                    + "# number of edges: " + meshStats[1] + "\n"
+                    + "# number of faces: " + meshStats[2] + "\n";
             }
             this.glViewer.Refresh();
         }
@@ -100,5 +102,84 @@ namespace GraphicsPlatform
         {
             this.glViewer.setUIMode(4);
         }
+
+        private void loadSegmentsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog dialog = new FolderBrowserDialog();
+            dialog.SelectedPath = "D:\\Projects\\sketchingTutorial\\CGPlatform\\Data\\segments";
+            //dialog.SelectedPath = "D:\\Projects\\sketchingTutorial\\CGPlatform\\Data";
+            //if (dialog.ShowDialog(this) == DialogResult.OK)
+            //{
+                string folderName = dialog.SelectedPath;
+                this.glViewer.loadSegments(folderName);
+                int[] segStats = this.glViewer.getSegmentStatistics();
+                this.statistics.Text = "# number of segments: " + segStats[0] + "\n";
+            //}
+            this.glViewer.Refresh();
+        }
+
+        private void showBBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showBoundingbox = this.showBBox.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void showMesh_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showMesh = this.showMesh.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void showSketchyLines_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showSketchyLines = this.showSketchyLines.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void sketchyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.calculateSketch2D();
+            this.glViewer.Refresh();
+        }
+
+        private void pencilToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setStrokeStyle(0);
+            this.glViewer.Refresh();
+        }
+
+        private void pen1ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setStrokeStyle(1);
+            this.glViewer.Refresh();
+        }
+
+        private void pen2ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setStrokeStyle(2);
+            this.glViewer.Refresh();
+        }
+
+        private void crayonToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setStrokeStyle(3);
+            this.glViewer.Refresh();
+        }
+
+        private void ink1ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setStrokeStyle(4);
+            this.glViewer.Refresh();
+        }
+
+        private void ink2ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setStrokeStyle(5);
+            this.glViewer.Refresh();
+        }
+
+        
+
+
 	}
 }

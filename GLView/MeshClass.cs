@@ -6,7 +6,7 @@ using System.Text;
 using Tao.OpenGl;
 using Geometry;
 
-namespace GraphicsPlatform
+namespace SketchPlatform
 {
     public unsafe class MeshClass
     {
@@ -15,6 +15,13 @@ namespace GraphicsPlatform
             this.mesh = m;
         }
 
+        public Mesh Mesh
+        {
+            get
+            {
+                return this.mesh;
+            }
+        }
         private Mesh mesh;
         public int tabIndex; // list of meshes
         private float[] material = { 0.62f, 0.74f, 0.85f, 1.0f };

@@ -7,6 +7,8 @@ namespace Geometry
 {
     public class Polygon
     {
+        public static double thresh = 1e-6;
+
         public Polygon()
         { }
 
@@ -51,6 +53,176 @@ namespace Geometry
             }
             return v.x <= maxv.x && v.x >= minv.x && v.y <= maxv.y && v.y >= minv.y;
         }
+    }// Quad2d
+
+    public class Plane
+    {
+        public Vector3d[] points = null;
+        public Vector3d normal;
+        public Vector3d center;
+        private int Npoints = 0;
+
+        public Plane() { }
+
+        public Plane(Vector3d[] vs)
+        {
+            if (vs == null) return;
+            // newly created
+            this.Npoints = vs.Length;
+            this.points = new Vector3d[Npoints];
+            for (int i = 0; i < Npoints; ++i)
+            {
+                this.points[i] = new Vector3d(vs[i]);
+            }
+            this.calclulateCenterNormal();
+        }
+
+        public Plane(List<Vector3d> vs)
+        {
+            // copy points
+            this.points = vs.ToArray();
+            this.Npoints = this.points.Length;
+            this.calclulateCenterNormal();
+        }
+
+        public Plane(Vector3d center, Vector3d normal)
+        {
+            this.center = center;
+            this.normal = normal;
+        }
+
+        private void calclulateCenterNormal()
+        {
+            if (this.Npoints == 0) return;
+            this.center = new Vector3d();
+            for (int i = 0; i < this.Npoints; ++i)
+            {
+                this.center += this.points[i];
+            }
+            this.center /= this.Npoints;
+            Vector3d v1 = (this.points[1] - this.points[0]).normalize();
+            Vector3d v2 = (this.points[this.Npoints - 1] - this.points[0]).normalize();
+            this.normal = (v1.Cross(v2)).normalize();
+        }
+
+        public void Transform(Matrix4d T)
+        {
+            for (int i = 0; i < this.Npoints; ++i )
+            {
+                Vector3d v = this.points[i];
+                this.points[i] = (T * new Vector4d(v, 1)).ToVector3D();
+            }
+            if (this.Npoints > 0)
+            {
+                this.calclulateCenterNormal();
+            }
+            else
+            {
+                this.center = (T * new Vector4d(this.center, 1)).ToVector3D();
+                this.normal = (T * new Vector4d(this.normal, 1)).ToVector3D();
+            }
+        }
+
+        public Object clone()
+        {
+            Plane cloned = new Plane(this.points);
+            cloned.center = new Vector3d(this.center);
+            cloned.normal = new Vector3d(this.normal);
+            return cloned;
+        }
     }
+
+    public class Line2d
+    {
+        public Vector2d u;
+        public Vector2d v;
+
+        public Line2d(Vector2d v1, Vector2d v2)
+        {
+            this.u = v1;
+            this.v = v2;
+        }
+    }//Line2d
+
+    public class Line3d
+    {
+        public Vector3d u;
+        public Vector3d v;
+
+        public Line3d(Vector3d v1, Vector3d v2)
+        {
+            this.u = v1;
+            this.v = v2;
+        }
+    }//Line3d
+
+    public class Cube
+    {
+        public Vector3d[] points = null;
+        public Plane[] planes = null;
+        public GuideLine[] edges = null;
+
+        public Cube()
+        { }
+
+        public Cube(Vector3d[] vs)
+        {
+            this.points = new Vector3d[vs.Length];
+            for (int i = 0; i < vs.Length; ++i)
+            {
+                this.points[i] = new Vector3d(vs[i]);
+            }
+            // faces
+            this.planes = new Plane[6];
+            List<Vector3d> vslist = new List<Vector3d>();
+            for (int i = 0; i < 4; ++i)
+            {
+                vslist.Add(this.points[i]);
+            }
+            this.planes[0] = new Plane(vslist);
+            vslist = new List<Vector3d>();
+            for (int i = 4; i < 8; ++i)
+            {
+                vslist.Add(this.points[i]);
+            }
+            this.planes[1] = new Plane(vslist);
+            int r = 2;
+            for (int i = 0; i < 4; ++i)
+            {
+                vslist = new List<Vector3d>();
+                vslist.Add(this.points[i]);
+                vslist.Add(this.points[(i + 1) % 4]);
+                vslist.Add(this.points[((i + 1) % 4 + 4) % 8]);
+                vslist.Add(this.points[(i + 4) % 8]);
+                this.planes[r++] = new Plane(vslist);
+            }
+            this.edges = new GuideLine[12];
+            int s = 0;
+            Plane plane = new Plane();
+            for (int i = 0; i < 4; ++i)
+            {
+                plane = new Plane(this.points[i], this.planes[3].normal);
+                if (i % 2 == 0)
+                {
+                    plane.normal = this.planes[0].normal;
+                }
+                edges[s++] = new GuideLine(this.points[i], this.points[(i + 1) % 4], plane);
+            }
+            for (int i = 0; i < 4; ++i)
+            {
+                plane = new Plane(this.points[i], this.planes[3].normal);
+                edges[s++] = new GuideLine(this.points[i], this.points[i + 4], plane);
+            }
+            for (int i = 0; i < 4; ++i)
+            {
+                plane = new Plane(this.points[i + 4], this.planes[3].normal);
+                if (i % 2 == 0)
+                {
+                    plane.normal = this.planes[0].normal;
+                }
+                edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane);
+            }
+        }
+    }// Cube
     
 }

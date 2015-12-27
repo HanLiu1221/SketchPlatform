@@ -76,21 +76,13 @@ namespace Geometry
 			return Math.Sqrt(x * x + y * y);
 		}
 
-		public void normalize()
+		public Vector2d normalize()
 		{
 			double length = this.Length();
 			x /= length;
 			y /= length;
+            return new Vector2d(x, y);
 		}
-
-        public Vector2d GetNormVector()
-        {
-            Vector2d v = new Vector2d(x, y);
-            double length = this.Length();
-            v.x /= length;
-            v.y /= length;
-            return v;
-        }
 
 		public double Dot(Vector2d v)
 		{
@@ -132,6 +124,11 @@ namespace Geometry
 		{
 			return new Vector2d(v.x * factor, v.y * factor);
 		}
+
+        static public Vector2d operator *(Vector2d v, double factor)
+        {
+            return new Vector2d(v.x * factor, v.y * factor);
+        }
 
 		static public Vector2d operator /(Vector2d v, double factor)
 		{
@@ -209,6 +206,13 @@ namespace Geometry
             this.z = v.z;
         }
 
+        public Vector3d(Vector2d v, double val)
+        {
+            this.x = v.x;
+            this.y = v.y;
+            this.z = val;
+        }
+
 		public double this[int index]
 		{
 			get
@@ -240,14 +244,14 @@ namespace Geometry
 			return array;
 		}
 
-		public Vector2d ToVector2D()
+		public Vector2d ToVector2d()
 		{
 			return new Vector2d(x, y);
 		}
 
 		public Vector2d HomogeneousVector2D()
 		{
-			if (z == 0) return ToVector2D();
+			if (z == 0) return ToVector2d();
 			return new Vector2d(x / z, y / z);
 		}
 
@@ -256,23 +260,14 @@ namespace Geometry
 			return Math.Sqrt(x * x + y * y + z * z);
 		}
 
-		public void normalize()
+		public Vector3d normalize()
 		{
-			double length = this.Length();
+            double length = this.Length();
 			x /= length;
 			y /= length;
 			z /= length;
+            return new Vector3d(x, y, z);
 		}
-
-        public Vector3d GetNormVector()
-        {
-            Vector3d v = new Vector3d(x, y, z);
-            double length = this.Length();
-            v.x /= length;
-            v.y /= length;
-            v.z /= length;
-            return v;
-        }
 
 		public void HomogeneousNormalize()
 		{
@@ -325,6 +320,11 @@ namespace Geometry
 		{
 			return new Vector3d(v.x * factor, v.y * factor, v.z * factor);
 		}
+
+        static public Vector3d operator *(Vector3d v, double factor)
+        {
+            return new Vector3d(v.x * factor, v.y * factor, v.z * factor);
+        }
 
 		static public Vector3d operator /(Vector3d v, double factor)
 		{
@@ -405,6 +405,14 @@ namespace Geometry
             this.w = v.w;
         }
 
+        public Vector4d(Vector3d v, double val)
+        {
+            this.x = v.x;
+            this.y = v.y;
+            this.z = v.z;
+            this.w = val;
+        }
+
 		public double this[int index]
 		{
 			get
@@ -441,8 +449,7 @@ namespace Geometry
 
 		public Vector3d ToVector3D()
 		{
-			return new Vector3d(x, y, z);
-				
+			return new Vector3d(x, y, z);				
 		}
 
 		public Vector3d ToHomogeneousVector()
@@ -456,25 +463,16 @@ namespace Geometry
 			return Math.Sqrt(x * x + y * y + z * z + w * w);
 		}
 
-		public void normalize()
+        public Vector4d normalize()
 		{
 			double length = this.Length();
 			x /= length;
 			y /= length;
 			z /= length;
 			z /= length;
+            return new Vector4d(x, y, z, w);
 		}
 
-        public Vector4d GetNormVector()
-        {
-            Vector4d v = new Vector4d(x, y, z, w);
-            double length = this.Length();
-            v.x /= length;
-            v.y /= length;
-            v.z /= length;
-            v.w /= length;
-            return v;
-        }
 
 		public void HomogeneousNormalize()
 		{
@@ -518,6 +516,11 @@ namespace Geometry
 		{
 			return new Vector4d(v.x * factor, v.y * factor, v.z * factor, v.w * factor);
 		}
+
+        static public Vector4d operator *(Vector4d v, double factor)
+        {
+            return new Vector4d(v.x * factor, v.y * factor, v.z * factor, v.w * factor);
+        }
 
 		static public Vector4d operator /(Vector4d v, double factor)
 		{

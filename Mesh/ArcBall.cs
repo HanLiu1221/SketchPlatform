@@ -24,6 +24,9 @@ namespace Geometry
         }
         public MotionType motion = MotionType.NONE;
 
+        public ArcBall()
+        { }
+
         public ArcBall(double w, double h)
         {
             this.setDimension(w, h);

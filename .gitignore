@@ -6,3 +6,6 @@ bin/
 Properties/
 *.aht
 *.csproj
+*.DS_Store
+*.2xt
+Data/

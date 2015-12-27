@@ -10,7 +10,7 @@ using Tao.Platform.Windows;
 using System.Drawing;
 using Geometry;
 
-namespace GraphicsPlatform
+namespace SketchPlatform
 {
     public class GLViewer : SimpleOpenGlControl
     {
@@ -19,8 +19,18 @@ namespace GraphicsPlatform
         {
             this.InitializeComponent();
             this.InitializeContexts();
+        }
 
+        public void Init()
+        {
             this.initializeVariables();
+            // glsl shaders
+            this.shader = new Shader(
+                @"shaders\vertexshader.glsl",
+                @"shaders\fragmentshader.glsl");
+            this.shader.Link();
+
+            this.LoadTextures();
         }
 
         private void InitializeComponent() 
@@ -35,22 +45,24 @@ namespace GraphicsPlatform
         private void initializeVariables()
         {
             this.meshClasses = new List<MeshClass>();
+            this.segmentClasses = new List<SegmentClass>();
             this.currModelTransformMatrix = Matrix4d.IdentityMatrix();
             this.arcBall = new ArcBall(this.Width, this.Height);
             this.initializeColors();
+            this.camera = new Camera();
         }
 
         private void initializeColors()
         {
             ColorSet = new Color[20];
 
-            ColorSet[0] = Color.FromArgb(203, 213, 232);
-            ColorSet[1] = Color.FromArgb(252, 141, 98);
-            ColorSet[2] = Color.FromArgb(102, 194, 165);
-            ColorSet[3] = Color.FromArgb(231, 138, 195);
-            ColorSet[4] = Color.FromArgb(166, 216, 84);
-            ColorSet[5] = Color.FromArgb(251, 180, 174);
-            ColorSet[6] = Color.FromArgb(204, 235, 197);
+            ColorSet[0] = Color.Red;// Color.FromArgb(203, 213, 232);
+            ColorSet[1] = Color.Green;// Color.FromArgb(252, 141, 98);
+            ColorSet[2] = Color.Blue; // Color.FromArgb(102, 194, 165);
+            ColorSet[3] = Color.Black;// Color.FromArgb(231, 138, 195);
+            ColorSet[4] = Color.Cyan;// Color.FromArgb(166, 216, 84);
+            ColorSet[5] = Color.Magenta;// Color.FromArgb(251, 180, 174);
+            ColorSet[6] = Color.Yellow;// Color.FromArgb(204, 235, 197);
             ColorSet[7] = Color.FromArgb(222, 203, 228);
             ColorSet[8] = Color.FromArgb(31, 120, 180);
             ColorSet[9] = Color.FromArgb(251, 154, 153);
@@ -67,7 +79,21 @@ namespace GraphicsPlatform
 
             ModelColor = ColorSet[0];
         }
+        
+        private void initializeCamera()
+        {
+            // initialize vpCamera
+            int w = this.Width, h = this.Height;
+            this.vpCamera = new VPCamera();
+            this.vpCamera.Init(
+                new Vector2d(-200, h / 2 - 200),
+                new Vector2d(w + 200, h / 2 - 200),
+                w, h
+            );
+            int[] viewport = { 0, 0, w, h };
 
+            this.vpCamera.CubeCalibrate(viewport, this.Height, out this.cameraBox);
+        }
 
         // modes
         public enum UIMode 
@@ -82,16 +108,23 @@ namespace GraphicsPlatform
         private bool isDrawAxes = false;
         private bool isDrawQuad = false;
 
+        public bool showBoundingbox = true;
+        public bool showMesh = false;
+        public bool showSketchyLines = true;
+
         /******************** Variables ********************/
         private UIMode currUIMode = UIMode.Viewing;
-        private Matrix4d currModelTransformMatrix;
-        private ArcBall arcBall;
+        private Matrix4d currModelTransformMatrix = Matrix4d.IdentityMatrix();
+        private Matrix4d modelTransformMatrix = Matrix4d.IdentityMatrix();
+        private ArcBall arcBall = new ArcBall();
         private Vector2d mouseDownPos;
         private Vector2d prevMousePos;
         private Vector2d currMousePos;
         private bool isMouseDown = false;
         private List<MeshClass> meshClasses;
+        private List<SegmentClass> segmentClasses;
         private MeshClass currMeshClass;
+        private SegmentClass currSegmentClass;
         private Vector3d[] axes = { new Vector3d(-1.2, 0, 0), new Vector3d(1.2, 0, 0),
                                       new Vector3d(1, 0.2, 0), new Vector3d(1.2, 0, 0), 
                                       new Vector3d(1, -0.2, 0), new Vector3d(1.2, 0, 0), 
@@ -102,7 +135,14 @@ namespace GraphicsPlatform
                                       new Vector3d(-0.2, 0, 1), new Vector3d(0, 0, 1.2),
                                       new Vector3d(0.2, 0, 1), new Vector3d(0, 0, 1.2)};
         private Quad2d highlightQuad;
-        private int[] stats;
+        private int[] meshStats;
+        private int[] segStats;
+        private VPCamera vpCamera;
+        private Cube cameraBox;
+        private Camera camera;
+        private Shader shader;
+        public static uint pencilTextureId, crayonTextureId, inkTextureId, waterColorTextureId, charcoalTextureId,
+            brushTextureId;
 
         //########## static vars ##########//
         public static Color[] ColorSet;
@@ -122,24 +162,208 @@ namespace GraphicsPlatform
             }
         }
 
+        private void LoadTextures()					// load textures for canvas and brush
+        {
+            this.CreateTexture(@"data\pencil.png", out GLViewer.pencilTextureId);
+            this.CreateTexture(@"data\crayon.png", out GLViewer.crayonTextureId);
+            this.CreateTexture(@"data\ink.jpg", out GLViewer.inkTextureId);
+            this.CreateTexture(@"data\watercolor.png", out GLViewer.waterColorTextureId);
+            this.CreateTexture(@"data\charcoal.jpg", out GLViewer.charcoalTextureId);
+            this.CreateGaussianTexture(32);
+        }
+
+        private void CreateTexture(string imagefile, out uint textureid)
+        {
+            Bitmap image = new Bitmap(imagefile);
+
+            // to gl texture
+            Rectangle rect = new Rectangle(0, 0, image.Width, image.Height);
+            //	image.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            System.Drawing.Imaging.BitmapData bitmapdata = image.LockBits(rect,
+                System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            //System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            Gl.glGenTextures(1, out textureid);
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, textureid);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_MIN_FILTER, Gl.GL_LINEAR);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_MAG_FILTER, Gl.GL_LINEAR);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_WRAP_S, Gl.GL_CLAMP_TO_EDGE);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_WRAP_T, Gl.GL_CLAMP_TO_EDGE);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_WRAP_R, Gl.GL_CLAMP_TO_EDGE);
+            Gl.glTexImage2D(Gl.GL_TEXTURE_2D, 0, 4, image.Width, image.Height, 0, Gl.GL_BGRA,
+                Gl.GL_UNSIGNED_BYTE, bitmapdata.Scan0);
+        }
+
+        public byte[] CreateGaussianTexture(int size)
+        {
+            int w = size * 2, size2 = size * size;
+            Bitmap bitmap = new Bitmap(w, w);
+            byte[] alphas = new byte[w * w * 4];
+            for (int i = 0; i < w; ++i)
+            {
+                int dx = i - size;
+                for (int j = 0; j < w; ++j)
+                {
+                    int J = j * w + i;
+
+                    int dy = j - size;
+                    double dist2 = (dx * dx + dy * dy);
+
+                    byte alpha = 0;
+                    if (dist2 <= size2)	// -- not necessary actually, similar effects
+                    {
+                        // set gaussian values for the alphas
+                        // modify the denominator to get different over-paiting effects
+                        double gau_val = Math.Exp(-dist2 / (2 * size2 / 2)) / Math.E / 2;
+                        alpha = Math.Min((byte)255, (byte)((gau_val) * 255));
+                        //	alpha = 100; // Math.Min((byte)255, (byte)((gau_val) * 255));
+                    }
+
+                    byte beta = (byte)(255 - alpha);
+                    alphas[J * 4] = (byte)(beta);
+                    alphas[J * 4 + 1] = (byte)(beta);
+                    alphas[J * 4 + 2] = (byte)(beta);
+                    alphas[J * 4 + 3] = (byte)(alpha);
+
+                    bitmap.SetPixel(i, j, System.Drawing.Color.FromArgb(alpha, beta, beta, beta));
+                }
+            }
+            bitmap.Save(@"data\output.png");
+
+            // create gl texture
+            uint[] txtid = new uint[1];
+            // -- create texture --
+            Gl.glGenTextures(1, txtid);				// Create The Texture
+            GLViewer.brushTextureId = txtid[0];
+
+            // to gl texture
+            Rectangle rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+            //	image.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            System.Drawing.Imaging.BitmapData bitmapdata = bitmap.LockBits(rect,
+                System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, txtid[0]);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_MIN_FILTER, Gl.GL_LINEAR);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_MAG_FILTER, Gl.GL_LINEAR);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_WRAP_S, Gl.GL_CLAMP_TO_EDGE);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_WRAP_T, Gl.GL_CLAMP_TO_EDGE);
+            Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_WRAP_R, Gl.GL_CLAMP_TO_EDGE);
+            Gl.glTexImage2D(Gl.GL_TEXTURE_2D, 0, 4, bitmap.Width, bitmap.Height, 0, Gl.GL_RGBA,
+                Gl.GL_UNSIGNED_BYTE, bitmapdata.Scan0);
+
+            return alphas;
+        }
 
         public void loadMesh(string filename)
         {
-            Mesh m = new Mesh(filename);
+            Mesh m = new Mesh(filename, true);
             MeshClass mc = new MeshClass(m);
             this.meshClasses.Add(mc);
             this.currMeshClass = mc;
 
-            stats = new int[3];
-            stats[0] = m.VertexCount;
-            stats[1] = m.Edges.Length;
-            stats[2] = m.FaceCount;
+            meshStats = new int[3];
+            meshStats[0] = m.VertexCount;
+            meshStats[1] = m.Edges.Length;
+            meshStats[2] = m.FaceCount;
         }
 
-        public int[] getStatistics()
+        public void loadSegments(string segfolder)
         {
-            return this.stats;
+            this.segmentClasses = new List<SegmentClass>();
+            int idx = segfolder.LastIndexOf('\\');
+            string bbofolder = segfolder.Substring(0, idx + 1);
+            bbofolder += "bounding_boxes\\";
+            SegmentClass sc = new SegmentClass();
+            sc.ReadSegments(segfolder, bbofolder);
+            this.segmentClasses.Add(sc);
+            this.currSegmentClass = sc;
+
+            segStats = new int[2];
+            segStats[0] = sc.segments.Count;
+        }//loadSegments
+
+        public int[] getMeshStatistics()
+        {
+            return this.meshStats;
         }
+
+        public int[] getSegmentStatistics()
+        {
+            return this.segStats;
+        }
+
+        public void setStrokeStyle(int idx)
+        {
+            this.currSegmentClass.setStrokeStyle(idx);
+        }//setStrokeStyle
+
+        private void projectStrokePointsTo2d(Stroke stroke)
+        {
+            if (stroke.strokePoints3d == null || stroke.strokePoints3d.Count == 0)
+                return;
+            stroke.strokePoints2d = new List<Vector2d>();
+            foreach(Vector3d p in stroke.strokePoints3d)
+            {
+                Vector2d p2 = this.vpCamera.Project(p.x, p.y, p.z).ToVector2d();
+                stroke.strokePoints2d.Add(p2);
+            }
+        }
+
+        public void calculateSketch2D()
+        {
+            this.UpdateCamera();
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                foreach (GuideLine edge in seg.boundingbox.edges)
+                {
+                    foreach (Stroke stroke in edge.strokes)
+                    {
+                        stroke.u2 = this.camera.Project(stroke.u3.x, stroke.u3.y, stroke.u3.z).ToVector2d();
+                        stroke.v2 = this.camera.Project(stroke.v3.x, stroke.v3.y, stroke.v3.z).ToVector2d();
+                        Vector2d dir = (stroke.v2 - stroke.u2).normalize();
+                        Vector2d normal = new Vector2d(-dir.y, dir.x);
+                        normal.normalize();
+                        stroke.strokePoints2d = new List<Vector2d>();
+                        List<Vector2d> normals = new List<Vector2d>();
+                        foreach (Vector3d p3 in stroke.strokePoints3d)
+                        {
+                            Vector2d p2 = this.camera.Project(p3.x, p3.y, p3.z).ToVector2d();
+                            //p2.y = this.Height - p2.y;
+                            stroke.strokePoints2d.Add(p2);
+                            normals.Add(normal);
+                        }
+                        stroke.buildStrokeMesh(stroke.strokePoints2d, normals);
+                    }
+                    this.calculateStroke3D(edge);
+                }
+            }
+        }// calculateSketch2D
+
+        private void calculateStroke3D(GuideLine edge)
+        {
+            if (edge.hostPlane == null)
+                return;
+            Plane plane = edge.hostPlane.clone() as Plane;
+            plane.Transform(this.modelTransformMatrix);
+            // Transform back
+            Matrix4d invMat = this.modelTransformMatrix.Inverse();
+            foreach (Stroke stroke in edge.strokes)
+            {
+                if (stroke.meshVertices2d == null)
+                    continue;
+                stroke.hostPlane = edge.hostPlane;
+                stroke.meshVertices3d = new List<Vector3d>();
+                foreach(Vector2d v2 in stroke.meshVertices2d)
+                {
+                    Vector3d v3 = this.camera.ProjectPointToPlane(v2, plane.center, plane.normal);
+                    v3 = (invMat * new Vector4d(v3, 1)).ToVector3D();
+                    stroke.meshVertices3d.Add(v3);
+                }
+                stroke.changeStyle((int)this.currSegmentClass.strokeStyle);
+            }
+           
+
+        }//calculateStroke3D
 
         //########## set modes ##########//
         public void setTabIndex(int i)
@@ -185,6 +409,7 @@ namespace GraphicsPlatform
             this.Refresh();
         }//setRenderOption
 
+
         public void displayAxes()
         {
             this.isDrawAxes = !this.isDrawAxes;
@@ -195,6 +420,14 @@ namespace GraphicsPlatform
             this.arcBall.reset();
             this.currModelTransformMatrix = Matrix4d.IdentityMatrix();
             this.Refresh();
+        }
+
+        private void UpdateCamera()
+        {
+            Matrix4d m = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
+            double[] ballmat = m.Transpose().ToArray();	// matrix applied with arcball
+            this.camera.SetBallMatrix(ballmat);
+            this.camera.Update();
         }
 
         //########## Mouse ##########//
@@ -223,19 +456,19 @@ namespace GraphicsPlatform
                         break;
                     }
             }
-        }
+        }// viewMouseDown
 
         private void viewMouseMove(int x, int y)
         {
             if (!this.isMouseDown) return;
             this.arcBall.mouseMove(x, y);
-        }
+        }// viewMouseMove
 
         private void viewMouseUp()
         {
             this.currModelTransformMatrix = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
             this.arcBall.mouseUp();
-        }
+        }// viewMouseUp
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
@@ -255,7 +488,7 @@ namespace GraphicsPlatform
                             Matrix4d m = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
                             Gl.glMatrixMode(Gl.GL_MODELVIEW);
                             Gl.glPushMatrix();
-                            Gl.glMultMatrixd(m.Transpose().toArray());
+                            Gl.glMultMatrixd(m.Transpose().ToArray());
 
                             this.currMeshClass.selectMouseDown((int)this.currUIMode, 
                                 Control.ModifierKeys == Keys.Shift,
@@ -280,7 +513,7 @@ namespace GraphicsPlatform
                         break;
                     }
             }            
-        }
+        }// OnMouseDown
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -315,7 +548,7 @@ namespace GraphicsPlatform
                         break;
                     }
             }            
-        }
+        }// OnMouseMove
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
@@ -347,7 +580,7 @@ namespace GraphicsPlatform
                         break;
                     }
             }
-        }
+        }// OnMouseUp
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
@@ -367,7 +600,16 @@ namespace GraphicsPlatform
                 default: 
                     break;
             }
-        }
+        }// OnKeyDown        
+
+        protected override void OnPaint(System.Windows.Forms.PaintEventArgs e)
+        {
+            //base.OnPaint(e);
+            this.MakeCurrent();
+            this.clearScene();
+            this.Draw2D();
+            this.Draw3D();
+        }// onPaint
 
         private void setViewMatrix()
         {
@@ -377,27 +619,23 @@ namespace GraphicsPlatform
             {
                 h = 1;
             }
-            this.MakeCurrent();
+            //this.MakeCurrent();
 
-            this.clearScene();
             Gl.glViewport(0, 0, w, h);
 
             double aspect = (double)w / h;
-
-            //Glu.gluPerspective(180.0, aspect, 0.01, 100);           
 
             Gl.glMatrixMode(Gl.GL_PROJECTION);
             Gl.glLoadIdentity();
             if (w >= h)
             {
                 Glu.gluOrtho2D(-1.0 * aspect, 1.0 * aspect, -1.0, 1.0);
-                //Gl.glOrtho(-1.0 * aspect, 1.0 * aspect, -1.0, 1.0, -100, 100);
             }
             else
             {
                 Glu.gluOrtho2D(-1.0, 1.0, -1.0 * aspect, 1.0 * aspect);
-                //Gl.glOrtho(-1.0, 1.0, -1.0 * aspect, 1.0 * aspect, -100, 100);
             }
+            //Glu.gluPerspective(50, 1.0, -1, 3);
 
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glLoadIdentity();
@@ -405,21 +643,18 @@ namespace GraphicsPlatform
             //Glu.gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         }
 
-        protected override void OnPaint(System.Windows.Forms.PaintEventArgs e)
+        private void Draw3D()
         {
-            //base.OnPaint(e);
-
-            this.MakeCurrent();
-
             this.setViewMatrix();
 
             Matrix4d m = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPushMatrix();
-            Gl.glMultMatrixd(m.Transpose().toArray());
+            Gl.glMultMatrixd(m.Transpose().ToArray());
+            this.modelTransformMatrix = m.Transpose();
 
             /***** Draw *****/
-            clearScene();
+            //clearScene();
 
             if (this.isDrawAxes)
             {
@@ -431,7 +666,8 @@ namespace GraphicsPlatform
             {
                 if (this.drawFace)
                 {
-                    this.currMeshClass.renderShaded();
+                    //this.currMeshClass.renderShaded();
+                    this.drawMesh(this.currMeshClass.Mesh, Color.Blue, true);
                 }
                 if (this.drawEdge)
                 {
@@ -446,23 +682,254 @@ namespace GraphicsPlatform
                 this.currMeshClass.drawSelectedFaces();
             }
 
+            this.drawSegments();
+            this.drawSketchyLines3D();
+
             Gl.glDisable(Gl.GL_POLYGON_OFFSET_FILL);
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
 
             if (this.isDrawQuad)
             {
-                this.drawQuad(this.highlightQuad, ColorSet[3]);
+                this.drawQuad2d(this.highlightQuad, ColorSet[3]);
             }
 
             this.SwapBuffers();
-        }// onPaint
+        }// Draw3D
+
+        private void Draw2D()
+        {
+            int w = this.Width, h = this.Height;
+
+            Gl.glViewport(0, 0, w, h);
+            Gl.glMatrixMode(Gl.GL_PROJECTION);
+            Gl.glLoadIdentity();
+            Glu.gluOrtho2D(0, w, 0, h);
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            Gl.glLoadIdentity();
+            Gl.glPushMatrix();
+
+            this.drawSketchyLines2D();            
+
+            Gl.glPopMatrix();
+            Gl.glPopMatrix();
+        }
+
+        private void drawSegments()
+        {
+            if (this.currSegmentClass == null)
+            {
+                return;
+            }
+            
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (this.showMesh)
+                {
+                    this.drawMesh(seg.mesh, seg.color, false);
+                }
+                if (this.showBoundingbox)
+                {
+                    this.drawBoundingbox(seg.boundingbox, seg.color);
+                }
+            }
+        }//drawSegments
+
+        private void drawSketchyLines2D()
+        {
+            if (this.currSegmentClass == null)
+            {
+                return;
+            }
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                foreach(GuideLine edge in seg.boundingbox.edges)
+                {
+                    //this.drawLines(edge.u, edge.v, Color.Gray);
+                    foreach (Stroke stroke in edge.strokes)
+                    {
+                        //this.drawStrokeMesh2d(stroke);
+                    }
+                }
+            }
+        }// drawSketchyLines2D
+
+        private void drawSketchyLines3D()
+        {
+            if (this.currSegmentClass == null || !this.showSketchyLines)
+            {
+                return;
+            }
+            int drawmethod = this.currSegmentClass.drawOrTexture();
+
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                foreach (GuideLine edge in seg.boundingbox.edges)
+                {
+                    this.drawGuideLine(edge, Color.Gray);
+                    foreach (Stroke stroke in edge.strokes)
+                    {
+                        if (stroke.meshVertices3d == null || stroke.meshVertices3d.Count == 0)
+                        {
+                            this.drawLines(stroke.u3, stroke.v3, Color.Gray);
+                        }
+                        if (drawmethod == 0)
+                        {
+                            this.drawTriMeshShaded3D(stroke, false);
+                            //this.drawStrokeMesh3d(stroke);
+                        }
+                        else
+                        {
+                            this.drawTriMeshTextured3D(stroke, false);
+                        }
+                    }
+                }
+            }
+        }// drawSketchyLines2D
+
+        private void drawGuideLine(GuideLine gline, Color c)
+        {
+            Gl.glColor3ub(c.R, c.G, c.B);
+            Gl.glPointSize(10.0f);
+            Gl.glBegin(Gl.GL_POINTS);
+            Gl.glVertex3dv(gline.u.ToArray());
+            Gl.glVertex3dv(gline.v.ToArray());
+            Gl.glEnd();
+        }
+
+        public void drawStrokeMesh3d(Stroke stroke)
+        {
+            Gl.glEnable(Gl.GL_COLOR_MATERIAL);
+            Gl.glColorMaterial(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE);
+            //Gl.glEnable(Gl.GL_CULL_FACE);
+            Gl.glEnable(Gl.GL_LIGHT0);
+            Gl.glDepthFunc(Gl.GL_LESS);
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+            Gl.glEnable(Gl.GL_LIGHTING);
+            Gl.glEnable(Gl.GL_NORMALIZE);
+
+            Gl.glDisable(Gl.GL_CULL_FACE);
+            Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+            Gl.glShadeModel(Gl.GL_SMOOTH);
+            Gl.glEnable(Gl.GL_POLYGON_SMOOTH);
+
+            Gl.glColor4ub(stroke.stokeColor.R, stroke.stokeColor.G, stroke.stokeColor.B, stroke.stokeColor.A);
+
+            Gl.glBegin(Gl.GL_TRIANGLES);
+            for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+            {
+                int vidx1 = stroke.faceIndex[j];
+                int vidx2 = stroke.faceIndex[j + 1];
+                int vidx3 = stroke.faceIndex[j + 2];
+                Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
+                Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
+                Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
+            }
+            Gl.glEnd();
+
+            //Gl.glLineWidth(1.0f);
+            //Gl.glBegin(Gl.GL_LINES);
+            //for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+            //{
+            //    int vidx1 = stroke.faceIndex[j];
+            //    int vidx2 = stroke.faceIndex[j + 1];
+            //    int vidx3 = stroke.faceIndex[j + 2];
+            //    Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
+            //    Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
+            //    Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
+            //    Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
+            //    Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
+            //    Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
+            //}
+            //Gl.glEnd();
+
+            //Gl.glColor3ub(0, 255, 0);
+            //Gl.glPointSize(2.0f);
+            //Gl.glBegin(Gl.GL_POINTS);
+            //foreach(Vector3d v in stroke.strokePoints3d)
+            //{
+            //    Gl.glVertex3dv(v.ToArray());
+            //}
+            //Gl.glEnd();
+
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+            Gl.glDisable(Gl.GL_NORMALIZE);
+            Gl.glDisable(Gl.GL_LIGHTING);
+            Gl.glDisable(Gl.GL_LIGHT0);
+            //Gl.glDisable(Gl.GL_CULL_FACE);
+            Gl.glDisable(Gl.GL_COLOR_MATERIAL);
+            Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+        }
+
+        private void drawStrokeMesh2d(Stroke stroke)
+        {
+            if(stroke.meshVertices2d == null || stroke.faceIndex == null)
+            {
+                return;
+            }
+
+            //Gl.glLineWidth(4.0f);
+            //Gl.glBegin(Gl.GL_LINES);
+            //Gl.glVertex2d(100, 100);
+            //Gl.glVertex2d(100, 200);
+            //Gl.glVertex2d(150, 300);
+            //Gl.glVertex2d(200, 300);
+            //Gl.glEnd();
+
+            Gl.glEnable(Gl.GL_CULL_FACE);
+            Gl.glEnable(Gl.GL_LIGHTING);
+
+            Gl.glColor4ub(stroke.stokeColor.R, stroke.stokeColor.G, stroke.stokeColor.B, stroke.stokeColor.A);
+
+            //Gl.glBegin(Gl.GL_TRIANGLES);
+            //for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+            //{
+            //    int vidx1 = stroke.faceIndex[j];
+            //    int vidx2 = stroke.faceIndex[j + 1];
+            //    int vidx3 = stroke.faceIndex[j + 2];
+            //    Gl.glVertex2dv(stroke.meshVertices2d[vidx1].ToArray());
+            //    Gl.glVertex2dv(stroke.meshVertices2d[vidx2].ToArray());
+            //    Gl.glVertex2dv(stroke.meshVertices2d[vidx3].ToArray());
+            //}
+            //Gl.glEnd();
+
+            Gl.glLineWidth(1.0f);
+            Gl.glBegin(Gl.GL_LINES);
+            for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+            {
+                int vidx1 = stroke.faceIndex[j];
+                int vidx2 = stroke.faceIndex[j + 1];
+                int vidx3 = stroke.faceIndex[j + 2];
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx1].ToArray());
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx2].ToArray());
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx2].ToArray());
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx3].ToArray());
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx3].ToArray());
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx1].ToArray());
+            }
+            Gl.glEnd();
+
+            Gl.glDisable(Gl.GL_LIGHTING);
+            Gl.glDisable(Gl.GL_CULL_FACE);
+
+            Gl.glLineWidth(2.0f);
+        }
+
+
+
+        private void drawLines(Vector3d v1, Vector3d v2, Color c)
+        {
+            Gl.glBegin(Gl.GL_LINES);
+            Gl.glColor3ub(c.R, c.G, c.B);
+            Gl.glVertex3dv(v1.ToArray());
+            Gl.glVertex3dv(v2.ToArray());
+            Gl.glEnd();
+        }
 
         private void drawAxes()
         {
             // draw axes with arrows
             Gl.glBegin(Gl.GL_LINES);
-
             Gl.glColor3ub(255, 0, 0);
             for (int i = 0; i < 6; i += 2)
             {
@@ -497,7 +964,7 @@ namespace GraphicsPlatform
             Gl.glDisable(Gl.GL_DEPTH_TEST);
         }
 
-        private void drawQuad(Quad2d q, Color c)
+        private void drawQuad2d(Quad2d q, Color c)
         {
             Gl.glMatrixMode(Gl.GL_PROJECTION);
             Gl.glPushMatrix();
@@ -537,5 +1004,322 @@ namespace GraphicsPlatform
             Gl.glPopMatrix();
         }
 
+        private void drawQuad3d(Plane q, Color c)
+        {
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            // face
+            Gl.glColor4ub(c.R, c.G, c.B, 100);
+            Gl.glBegin(Gl.GL_POLYGON);
+            for (int i = 0; i < 4; ++i)
+            {
+                Gl.glVertex3dv(q.points[i].ToArray());
+            }
+            Gl.glEnd();
+            Gl.glDisable(Gl.GL_BLEND);
+            // lines
+            Gl.glEnable(Gl.GL_LINE_SMOOTH);
+            Gl.glColor3ub(c.R, c.G, c.B);
+            Gl.glLineWidth(2.0f);
+            Gl.glBegin(Gl.GL_LINES);
+            for (int i = 0; i < 4; ++i)
+            {
+                Gl.glVertex3dv(q.points[i].ToArray());
+                Gl.glVertex3dv(q.points[(i + 1) % 4].ToArray());
+            }
+            Gl.glEnd();
+            Gl.glDisable(Gl.GL_LINE_SMOOTH);
+        }
+
+        // draw mesh
+        public void drawMesh(Mesh m, Color c, bool useMeshColor)
+        {
+            Gl.glEnable(Gl.GL_COLOR_MATERIAL);
+            Gl.glColorMaterial(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE);
+            //Gl.glEnable(Gl.GL_CULL_FACE);
+            Gl.glEnable(Gl.GL_LIGHT0);
+            Gl.glDepthFunc(Gl.GL_LESS);
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+            Gl.glEnable(Gl.GL_LIGHTING);
+            Gl.glEnable(Gl.GL_NORMALIZE);
+
+            Gl.glDisable(Gl.GL_CULL_FACE);
+            Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+            Gl.glShadeModel(Gl.GL_SMOOTH);
+            Gl.glEnable(Gl.GL_POLYGON_SMOOTH);
+
+            if (useMeshColor)
+            {
+                for (int i = 0, j = 0; i < m.FaceCount; ++i, j += 3)
+                {
+                    int vidx1 = m.FaceVertex[j];
+                    int vidx2 = m.FaceVertex[j + 1];
+                    int vidx3 = m.FaceVertex[j + 2];
+                    Vector3d v1 = new Vector3d(
+                        m.VertexPos[vidx1 * 3], m.VertexPos[vidx1 * 3 + 1], m.VertexPos[vidx1 * 3 + 2]);
+                    Vector3d v2 = new Vector3d(
+                        m.VertexPos[vidx2 * 3], m.VertexPos[vidx2 * 3 + 1], m.VertexPos[vidx2 * 3 + 2]);
+                    Vector3d v3 = new Vector3d(
+                        m.VertexPos[vidx3 * 3], m.VertexPos[vidx3 * 3 + 1], m.VertexPos[vidx3 * 3 + 2]);
+                    Color fc = Color.FromArgb(m.FaceColor[i * 4 + 3], m.FaceColor[i * 4], m.FaceColor[i * 4 + 1], m.FaceColor[i * 4 + 2]);
+                    Gl.glColor4ub(fc.R, fc.G, fc.B, fc.A);
+                    Gl.glBegin(Gl.GL_TRIANGLES);
+                    Gl.glNormal3d(m.VertexNormal[vidx1 * 3], m.VertexNormal[vidx1 * 3 + 1], m.VertexNormal[vidx1 * 3 + 2]);
+                    Gl.glVertex3d(v1.x, v1.y, v1.z);
+                    Gl.glNormal3d(m.VertexNormal[vidx2 * 3], m.VertexNormal[vidx2 * 3 + 1], m.VertexNormal[vidx2 * 3 + 2]);
+                    Gl.glVertex3d(v2.x, v2.y, v2.z);
+                    Gl.glNormal3d(m.VertexNormal[vidx3 * 3], m.VertexNormal[vidx3 * 3 + 1], m.VertexNormal[vidx3 * 3 + 2]);
+                    Gl.glVertex3d(v3.x, v3.y, v3.z);
+                    Gl.glEnd();
+                }
+            }
+            else
+            {
+                Gl.glColor3ub(c.R, c.G, c.B);
+                Gl.glBegin(Gl.GL_TRIANGLES);
+                for (int i = 0, j = 0; i < m.FaceCount; ++i, j += 3)
+                {
+                    int vidx1 = m.FaceVertex[j];
+                    int vidx2 = m.FaceVertex[j + 1];
+                    int vidx3 = m.FaceVertex[j + 2];
+                    Vector3d v1 = new Vector3d(
+                        m.VertexPos[vidx1 * 3], m.VertexPos[vidx1 * 3 + 1], m.VertexPos[vidx1 * 3 + 2]);
+                    Vector3d v2 = new Vector3d(
+                        m.VertexPos[vidx2 * 3], m.VertexPos[vidx2 * 3 + 1], m.VertexPos[vidx2 * 3 + 2]);
+                    Vector3d v3 = new Vector3d(
+                        m.VertexPos[vidx3 * 3], m.VertexPos[vidx3 * 3 + 1], m.VertexPos[vidx3 * 3 + 2]);
+                    Gl.glNormal3d(m.VertexNormal[vidx1 * 3], m.VertexNormal[vidx1 * 3 + 1], m.VertexNormal[vidx1 * 3 + 2]);
+                    Gl.glVertex3d(v1.x, v1.y, v1.z);
+                    Gl.glNormal3d(m.VertexNormal[vidx2 * 3], m.VertexNormal[vidx2 * 3 + 1], m.VertexNormal[vidx2 * 3 + 2]);
+                    Gl.glVertex3d(v2.x, v2.y, v2.z);
+                    Gl.glNormal3d(m.VertexNormal[vidx3 * 3], m.VertexNormal[vidx3 * 3 + 1], m.VertexNormal[vidx3 * 3 + 2]);
+                    Gl.glVertex3d(v3.x, v3.y, v3.z);
+                }
+                Gl.glEnd();
+            }            
+
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+            Gl.glDisable(Gl.GL_NORMALIZE);
+            Gl.glDisable(Gl.GL_LIGHTING);
+            Gl.glDisable(Gl.GL_LIGHT0);
+            //Gl.glDisable(Gl.GL_CULL_FACE);
+            Gl.glDisable(Gl.GL_COLOR_MATERIAL);
+            Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+        }
+
+        public void drawBoundingbox(Cube cube, Color c)
+        {
+            for (int i = 0; i < cube.planes.Length; ++i)
+            {
+                this.drawQuad3d(cube.planes[i], c);
+            }
+            //int j = 0;            
+            //Gl.glPointSize(10.0f);            
+            //foreach (Vector3d v in cube.points)
+            //{
+            //    Color cl = GLViewer.ColorSet[j++];
+            //    Gl.glColor3ub(cl.R,cl.G,cl.B);
+            //    Gl.glBegin(Gl.GL_POINTS);
+            //    Gl.glVertex3dv(v.ToArray());
+            //    Gl.glEnd();
+            //}
+        }
+
+        // draw
+
+        public void drawTriMeshShaded3D(Stroke stroke, bool useOcclusion)
+        {
+            Gl.glPushAttrib(Gl.GL_COLOR_BUFFER_BIT);
+
+            int iMultiSample = 0;
+            int iNumSamples = 0;
+            Gl.glGetIntegerv(Gl.GL_SAMPLE_BUFFERS, out iMultiSample);
+            Gl.glGetIntegerv(Gl.GL_SAMPLES, out iNumSamples);
+            if (iNumSamples == 0)
+            {
+                //Gl.glEnable(Gl.GL_CULL_FACE);
+                Gl.glEnable(Gl.GL_DEPTH_TEST);
+                Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+
+                Gl.glEnable(Gl.GL_POLYGON_SMOOTH);
+                Gl.glHint(Gl.GL_POLYGON_SMOOTH_HINT, Gl.GL_NICEST);
+                Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+
+
+                Gl.glEnable(Gl.GL_BLEND);
+                Gl.glBlendEquation(Gl.GL_ADD);
+                //Gl.glBlendFunc(Gl.GL_SRC_ALPHA_SATURATE, Gl.GL_ONE_MINUS_SRC_ALPHA);
+                Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+                Gl.glShadeModel(Gl.GL_SMOOTH);
+                Gl.glDepthMask(Gl.GL_FALSE);
+            }
+            else
+            {
+                Gl.glEnable(Gl.GL_MULTISAMPLE);
+                Gl.glHint(Gl.GL_MULTISAMPLE_FILTER_HINT_NV, Gl.GL_NICEST);
+                Gl.glEnable(Gl.GL_SAMPLE_ALPHA_TO_ONE);
+            }
+
+            int opa = (int)(stroke.depth * 255);
+
+            if (useOcclusion)
+            {
+                opa = opa >= 0 ? opa : stroke.opacity;
+                opa = opa < 255 ? opa : stroke.opacity;
+            }
+            else
+                opa = stroke.opacity;
+
+            Gl.glColor4ub(stroke.stokeColor.R, stroke.stokeColor.G, stroke.stokeColor.B, (byte)opa);
+
+            Gl.glBegin(Gl.GL_TRIANGLES);
+            for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+            {
+                int vidx1 = stroke.faceIndex[j];
+                int vidx2 = stroke.faceIndex[j + 1];
+                int vidx3 = stroke.faceIndex[j + 2];
+                Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
+                Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
+                Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
+            }
+            Gl.glEnd();
+
+
+            if (iNumSamples == 0)
+            {
+                Gl.glDisable(Gl.GL_BLEND);
+                Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+                Gl.glDepthMask(Gl.GL_TRUE);
+                Gl.glDisable(Gl.GL_DEPTH_TEST);
+                //Gl.glDisable(Gl.GL_CULL_FACE);
+            }
+            else
+            {
+                Gl.glDisable(Gl.GL_MULTISAMPLE);
+            }
+            Gl.glPopAttrib();
+        }
+
+        public void drawTriMeshTextured3D(Stroke stroke, bool useOcclusion)
+        {
+            uint tex_id = GLViewer.pencilTextureId;
+            switch ((int)this.currSegmentClass.strokeStyle)
+            {
+                case 3:
+                    tex_id = GLViewer.crayonTextureId;
+                    break;
+                case 4:
+                    tex_id = GLViewer.inkTextureId;
+                    break;
+                case 0:
+                default:
+                    tex_id = GLViewer.pencilTextureId;
+                    break;
+            }
+
+            Gl.glPushAttrib(Gl.GL_COLOR_BUFFER_BIT);
+
+            int iMultiSample = 0;
+            int iNumSamples = 0;
+            Gl.glGetIntegerv(Gl.GL_SAMPLE_BUFFERS, out iMultiSample);
+            Gl.glGetIntegerv(Gl.GL_SAMPLES, out iNumSamples);
+            if (iNumSamples == 0)
+            {
+                Gl.glEnable(Gl.GL_POINT_SMOOTH);
+                Gl.glEnable(Gl.GL_LINE_SMOOTH);
+                Gl.glEnable(Gl.GL_POLYGON_SMOOTH);
+
+                Gl.glDisable(Gl.GL_CULL_FACE);
+                Gl.glDisable(Gl.GL_LIGHTING);
+                Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+                Gl.glShadeModel(Gl.GL_SMOOTH);
+                Gl.glDisable(Gl.GL_DEPTH_TEST);
+
+                Gl.glEnable(Gl.GL_BLEND);
+                Gl.glBlendEquation(Gl.GL_ADD);
+                Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+                Gl.glHint(Gl.GL_PERSPECTIVE_CORRECTION_HINT, Gl.GL_NICEST);
+
+                Gl.glDepthMask(Gl.GL_FALSE);
+
+                Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+                Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
+                Gl.glHint(Gl.GL_POLYGON_SMOOTH_HINT, Gl.GL_NICEST);
+            }
+            else
+            {
+                Gl.glEnable(Gl.GL_MULTISAMPLE);
+                Gl.glHint(Gl.GL_MULTISAMPLE_FILTER_HINT_NV, Gl.GL_NICEST);
+                Gl.glEnable(Gl.GL_SAMPLE_ALPHA_TO_ONE);
+            }
+
+            Gl.glEnable(Gl.GL_TEXTURE_2D);
+            Gl.glTexEnvf(Gl.GL_TEXTURE_ENV, Gl.GL_TEXTURE_ENV_MODE, Gl.GL_MODULATE);
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, tex_id);
+
+            for (int j = 0; j < stroke.FaceCount; j += 3)
+            {
+                int i = j / 3;
+
+                int j1 = stroke.faceIndex[j];
+                int j2 = stroke.faceIndex[j + 1];
+                int j3 = stroke.faceIndex[j + 2];
+
+                Vector3d pos1 = stroke.meshVertices3d[j1];
+                Vector3d pos2 = stroke.meshVertices3d[j2];
+                Vector3d pos3 = stroke.meshVertices3d[j3];
+
+                int opa = (int)(stroke.depth * 255);
+
+                if (useOcclusion)
+                {
+                    opa = opa >= 0 ? opa : stroke.opacity;
+                    opa = opa < 255 ? opa : stroke.opacity;
+                }
+                else
+                    opa = stroke.opacity;
+
+                Gl.glColor4ub(255, 255, 255, (byte)opa);
+
+                Gl.glBegin(Gl.GL_POLYGON);
+
+                if (i % 2 == 1)
+                {
+                    Gl.glTexCoord2d(0, 0);
+                    Gl.glVertex3d(pos1.x, pos1.y, pos1.z);
+                    Gl.glTexCoord2d(0, 1);
+                    Gl.glVertex3d(pos2.x, pos2.y, pos2.z);
+                    Gl.glTexCoord2d(1, 1);
+                    Gl.glVertex3d(pos3.x, pos3.y, pos3.z);
+                }
+                else
+                {
+                    Gl.glTexCoord2d(0, 0);
+                    Gl.glVertex3d(pos1.x, pos1.y, pos1.z);
+                    Gl.glTexCoord2d(1, 1);
+                    Gl.glVertex3d(pos3.x, pos3.y, pos3.z);
+                    Gl.glTexCoord2d(1, 0);
+                    Gl.glVertex3d(pos2.x, pos2.y, pos2.z);
+                }
+
+                Gl.glEnd();
+            }
+
+            Gl.glDisable(Gl.GL_TEXTURE_2D);
+
+            if (iNumSamples == 0)
+            {
+                Gl.glDisable(Gl.GL_BLEND);
+                Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+                Gl.glDisable(Gl.GL_POINT_SMOOTH);
+                Gl.glDisable(Gl.GL_LINE_SMOOTH);
+                Gl.glDepthMask(Gl.GL_TRUE);
+            }
+            else
+            {
+                Gl.glDisable(Gl.GL_MULTISAMPLE);
+            }
+            Gl.glPopAttrib();
+        }
     }// GLViewer
 }// namespace

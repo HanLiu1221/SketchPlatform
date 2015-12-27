@@ -1,4 +1,4 @@
-﻿namespace GraphicsPlatform
+﻿namespace SketchPlatform
 {
 	partial class Interface
 	{
@@ -34,6 +34,7 @@
             this.open3D = new System.Windows.Forms.ToolStripMenuItem();
             this.import3D = new System.Windows.Forms.ToolStripMenuItem();
             this.saveAs3D = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadSegmentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tools = new System.Windows.Forms.ToolStripDropDownButton();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -48,15 +49,30 @@
             this.faceSelection = new System.Windows.Forms.ToolStripMenuItem();
             this.display = new System.Windows.Forms.ToolStripDropDownButton();
             this.displayAxis = new System.Windows.Forms.ToolStripMenuItem();
+            this.sketchyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.strokeStyle = new System.Windows.Forms.ToolStripDropDownButton();
+            this.pencilToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pen1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pen2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.crayonToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ink1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ink2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
-            this.glViewer = new GraphicsPlatform.GLViewer();
             this.statistics = new System.Windows.Forms.Label();
+            this.toolboxPanel = new System.Windows.Forms.Panel();
+            this.displayBox = new System.Windows.Forms.GroupBox();
+            this.showMesh = new System.Windows.Forms.CheckBox();
+            this.showBBox = new System.Windows.Forms.CheckBox();
+            this.glViewer = new SketchPlatform.GLViewer();
+            this.showSketchyLines = new System.Windows.Forms.CheckBox();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
             this.viewPanel.Panel2.SuspendLayout();
             this.viewPanel.SuspendLayout();
+            this.toolboxPanel.SuspendLayout();
+            this.displayBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // menu
@@ -67,7 +83,8 @@
             this.tools,
             this.renderOption,
             this.selectElement,
-            this.display});
+            this.display,
+            this.strokeStyle});
             this.menu.Location = new System.Drawing.Point(0, 0);
             this.menu.Name = "menu";
             this.menu.Size = new System.Drawing.Size(784, 39);
@@ -79,7 +96,8 @@
             this.ModelFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.open3D,
             this.import3D,
-            this.saveAs3D});
+            this.saveAs3D,
+            this.loadSegmentsToolStripMenuItem});
             this.ModelFile.Image = ((System.Drawing.Image)(resources.GetObject("ModelFile.Image")));
             this.ModelFile.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.ModelFile.Name = "ModelFile";
@@ -90,21 +108,28 @@
             // open3D
             // 
             this.open3D.Name = "open3D";
-            this.open3D.Size = new System.Drawing.Size(150, 22);
+            this.open3D.Size = new System.Drawing.Size(155, 22);
             this.open3D.Text = "Open 3D file";
             this.open3D.Click += new System.EventHandler(this.open3D_Click);
             // 
             // import3D
             // 
             this.import3D.Name = "import3D";
-            this.import3D.Size = new System.Drawing.Size(150, 22);
+            this.import3D.Size = new System.Drawing.Size(155, 22);
             this.import3D.Text = "Import 3D file";
             // 
             // saveAs3D
             // 
             this.saveAs3D.Name = "saveAs3D";
-            this.saveAs3D.Size = new System.Drawing.Size(150, 22);
+            this.saveAs3D.Size = new System.Drawing.Size(155, 22);
             this.saveAs3D.Text = "Save As 3D file";
+            // 
+            // loadSegmentsToolStripMenuItem
+            // 
+            this.loadSegmentsToolStripMenuItem.Name = "loadSegmentsToolStripMenuItem";
+            this.loadSegmentsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadSegmentsToolStripMenuItem.Text = "Load Segments";
+            this.loadSegmentsToolStripMenuItem.Click += new System.EventHandler(this.loadSegmentsToolStripMenuItem_Click);
             // 
             // tools
             // 
@@ -192,28 +217,29 @@
             // vertexSelection
             // 
             this.vertexSelection.Name = "vertexSelection";
-            this.vertexSelection.Size = new System.Drawing.Size(152, 22);
+            this.vertexSelection.Size = new System.Drawing.Size(105, 22);
             this.vertexSelection.Text = "vertex";
             this.vertexSelection.Click += new System.EventHandler(this.vertexSelection_Click);
             // 
             // edgeSelection
             // 
             this.edgeSelection.Name = "edgeSelection";
-            this.edgeSelection.Size = new System.Drawing.Size(152, 22);
+            this.edgeSelection.Size = new System.Drawing.Size(105, 22);
             this.edgeSelection.Text = "edge";
             this.edgeSelection.Click += new System.EventHandler(this.edgeSelection_Click);
             // 
             // faceSelection
             // 
             this.faceSelection.Name = "faceSelection";
-            this.faceSelection.Size = new System.Drawing.Size(152, 22);
+            this.faceSelection.Size = new System.Drawing.Size(105, 22);
             this.faceSelection.Text = "face";
             this.faceSelection.Click += new System.EventHandler(this.faceSelection_Click);
             // 
             // display
             // 
             this.display.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.displayAxis});
+            this.displayAxis,
+            this.sketchyToolStripMenuItem});
             this.display.Image = ((System.Drawing.Image)(resources.GetObject("display.Image")));
             this.display.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.display.Name = "display";
@@ -224,9 +250,74 @@
             // displayAxis
             // 
             this.displayAxis.Name = "displayAxis";
-            this.displayAxis.Size = new System.Drawing.Size(95, 22);
+            this.displayAxis.Size = new System.Drawing.Size(115, 22);
             this.displayAxis.Text = "Axis";
             this.displayAxis.Click += new System.EventHandler(this.displayAxis_Click);
+            // 
+            // sketchyToolStripMenuItem
+            // 
+            this.sketchyToolStripMenuItem.Name = "sketchyToolStripMenuItem";
+            this.sketchyToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
+            this.sketchyToolStripMenuItem.Text = "Sketchy";
+            this.sketchyToolStripMenuItem.Click += new System.EventHandler(this.sketchyToolStripMenuItem_Click);
+            // 
+            // strokeStyle
+            // 
+            this.strokeStyle.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.pencilToolStripMenuItem,
+            this.pen1ToolStripMenuItem,
+            this.pen2ToolStripMenuItem,
+            this.crayonToolStripMenuItem,
+            this.ink1ToolStripMenuItem,
+            this.ink2ToolStripMenuItem});
+            this.strokeStyle.Image = ((System.Drawing.Image)(resources.GetObject("strokeStyle.Image")));
+            this.strokeStyle.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.strokeStyle.Name = "strokeStyle";
+            this.strokeStyle.Size = new System.Drawing.Size(53, 36);
+            this.strokeStyle.Text = "Stroke";
+            this.strokeStyle.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
+            // 
+            // pencilToolStripMenuItem
+            // 
+            this.pencilToolStripMenuItem.Name = "pencilToolStripMenuItem";
+            this.pencilToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.pencilToolStripMenuItem.Text = "pencil";
+            this.pencilToolStripMenuItem.Click += new System.EventHandler(this.pencilToolStripMenuItem_Click);
+            // 
+            // pen1ToolStripMenuItem
+            // 
+            this.pen1ToolStripMenuItem.Name = "pen1ToolStripMenuItem";
+            this.pen1ToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.pen1ToolStripMenuItem.Text = "pen-1";
+            this.pen1ToolStripMenuItem.Click += new System.EventHandler(this.pen1ToolStripMenuItem_Click);
+            // 
+            // pen2ToolStripMenuItem
+            // 
+            this.pen2ToolStripMenuItem.Name = "pen2ToolStripMenuItem";
+            this.pen2ToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.pen2ToolStripMenuItem.Text = "pen-2";
+            this.pen2ToolStripMenuItem.Click += new System.EventHandler(this.pen2ToolStripMenuItem_Click);
+            // 
+            // crayonToolStripMenuItem
+            // 
+            this.crayonToolStripMenuItem.Name = "crayonToolStripMenuItem";
+            this.crayonToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.crayonToolStripMenuItem.Text = "crayon";
+            this.crayonToolStripMenuItem.Click += new System.EventHandler(this.crayonToolStripMenuItem_Click);
+            // 
+            // ink1ToolStripMenuItem
+            // 
+            this.ink1ToolStripMenuItem.Name = "ink1ToolStripMenuItem";
+            this.ink1ToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.ink1ToolStripMenuItem.Text = "ink-1";
+            this.ink1ToolStripMenuItem.Click += new System.EventHandler(this.ink1ToolStripMenuItem_Click);
+            // 
+            // ink2ToolStripMenuItem
+            // 
+            this.ink2ToolStripMenuItem.Name = "ink2ToolStripMenuItem";
+            this.ink2ToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.ink2ToolStripMenuItem.Text = "ink-2";
+            this.ink2ToolStripMenuItem.Click += new System.EventHandler(this.ink2ToolStripMenuItem_Click);
             // 
             // viewPanel
             // 
@@ -242,18 +333,80 @@
             // viewPanel.Panel2
             // 
             this.viewPanel.Panel2.Controls.Add(this.statistics);
+            this.viewPanel.Panel2.Controls.Add(this.toolboxPanel);
             this.viewPanel.Panel2.Controls.Add(this.glViewer);
             this.viewPanel.Size = new System.Drawing.Size(784, 523);
-            this.viewPanel.SplitterDistance = 34;
+            this.viewPanel.SplitterDistance = 29;
             this.viewPanel.TabIndex = 1;
             // 
             // fileNameTabs
             // 
-            this.fileNameTabs.Location = new System.Drawing.Point(0, 0);
+            this.fileNameTabs.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.fileNameTabs.Location = new System.Drawing.Point(3, 0);
             this.fileNameTabs.Name = "fileNameTabs";
             this.fileNameTabs.SelectedIndex = 0;
-            this.fileNameTabs.Size = new System.Drawing.Size(783, 31);
+            this.fileNameTabs.Size = new System.Drawing.Size(778, 35);
             this.fileNameTabs.TabIndex = 0;
+            // 
+            // statistics
+            // 
+            this.statistics.AutoSize = true;
+            this.statistics.Location = new System.Drawing.Point(180, 8);
+            this.statistics.Name = "statistics";
+            this.statistics.Size = new System.Drawing.Size(0, 13);
+            this.statistics.TabIndex = 1;
+            // 
+            // toolboxPanel
+            // 
+            this.toolboxPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.toolboxPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.toolboxPanel.Controls.Add(this.displayBox);
+            this.toolboxPanel.Location = new System.Drawing.Point(3, 3);
+            this.toolboxPanel.Name = "toolboxPanel";
+            this.toolboxPanel.Size = new System.Drawing.Size(165, 484);
+            this.toolboxPanel.TabIndex = 2;
+            // 
+            // displayBox
+            // 
+            this.displayBox.Controls.Add(this.showSketchyLines);
+            this.displayBox.Controls.Add(this.showMesh);
+            this.displayBox.Controls.Add(this.showBBox);
+            this.displayBox.Location = new System.Drawing.Point(3, 4);
+            this.displayBox.Name = "displayBox";
+            this.displayBox.Size = new System.Drawing.Size(157, 112);
+            this.displayBox.TabIndex = 2;
+            this.displayBox.TabStop = false;
+            this.displayBox.Text = "Display";
+            // 
+            // showMesh
+            // 
+            this.showMesh.AutoSize = true;
+            this.showMesh.Checked = true;
+            this.showMesh.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showMesh.Location = new System.Drawing.Point(6, 42);
+            this.showMesh.Name = "showMesh";
+            this.showMesh.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showMesh.Size = new System.Drawing.Size(51, 17);
+            this.showMesh.TabIndex = 2;
+            this.showMesh.Text = "mesh";
+            this.showMesh.UseVisualStyleBackColor = true;
+            this.showMesh.CheckedChanged += new System.EventHandler(this.showMesh_CheckedChanged);
+            // 
+            // showBBox
+            // 
+            this.showBBox.AutoSize = true;
+            this.showBBox.Checked = true;
+            this.showBBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showBBox.Location = new System.Drawing.Point(6, 19);
+            this.showBBox.Name = "showBBox";
+            this.showBBox.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showBBox.Size = new System.Drawing.Size(90, 17);
+            this.showBBox.TabIndex = 1;
+            this.showBBox.Text = "bounding box";
+            this.showBBox.UseVisualStyleBackColor = true;
+            this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
             // glViewer
             // 
@@ -266,22 +419,29 @@
             this.glViewer.AutoMakeCurrent = true;
             this.glViewer.AutoSwapBuffers = true;
             this.glViewer.BackColor = System.Drawing.Color.Black;
+            this.glViewer.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.glViewer.ColorBits = ((byte)(32));
-            this.glViewer.CurrentUIMode = GraphicsPlatform.GLViewer.UIMode.Viewing;
+            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
             this.glViewer.DepthBits = ((byte)(16));
-            this.glViewer.Location = new System.Drawing.Point(3, 3);
+            this.glViewer.Location = new System.Drawing.Point(174, 3);
             this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(778, 479);
+            this.glViewer.Size = new System.Drawing.Size(607, 484);
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 0;
             // 
-            // statistics
+            // showSketchyLines
             // 
-            this.statistics.AutoSize = true;
-            this.statistics.Location = new System.Drawing.Point(6, 6);
-            this.statistics.Name = "statistics";
-            this.statistics.Size = new System.Drawing.Size(0, 13);
-            this.statistics.TabIndex = 1;
+            this.showSketchyLines.AutoSize = true;
+            this.showSketchyLines.Checked = true;
+            this.showSketchyLines.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showSketchyLines.Location = new System.Drawing.Point(9, 68);
+            this.showSketchyLines.Name = "showSketchyLines";
+            this.showSketchyLines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showSketchyLines.Size = new System.Drawing.Size(87, 17);
+            this.showSketchyLines.TabIndex = 3;
+            this.showSketchyLines.Text = "sketchy lines";
+            this.showSketchyLines.UseVisualStyleBackColor = true;
+            this.showSketchyLines.CheckedChanged += new System.EventHandler(this.showSketchyLines_CheckedChanged);
             // 
             // Interface
             // 
@@ -293,7 +453,7 @@
             this.Controls.Add(this.menu);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Interface";
-            this.Text = "CGPlatform";
+            this.Text = "Sketching";
             this.menu.ResumeLayout(false);
             this.menu.PerformLayout();
             this.viewPanel.Panel1.ResumeLayout(false);
@@ -301,6 +461,9 @@
             this.viewPanel.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).EndInit();
             this.viewPanel.ResumeLayout(false);
+            this.toolboxPanel.ResumeLayout(false);
+            this.displayBox.ResumeLayout(false);
+            this.displayBox.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -320,7 +483,6 @@
         private System.Windows.Forms.ToolStripMenuItem faceSelection;
         private System.Windows.Forms.SplitContainer viewPanel;
         private System.Windows.Forms.TabControl fileNameTabs;
-        private GLViewer glViewer;
         private System.Windows.Forms.ToolStripDropDownButton renderOption;
         private System.Windows.Forms.ToolStripMenuItem vertexToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem wireFrameToolStripMenuItem;
@@ -332,6 +494,21 @@
         private System.Windows.Forms.ToolStripMenuItem displayAxis;
         private System.Windows.Forms.ToolStripMenuItem modelColorToolStripMenuItem;
         private System.Windows.Forms.Label statistics;
+        private System.Windows.Forms.ToolStripMenuItem loadSegmentsToolStripMenuItem;
+        private System.Windows.Forms.Panel toolboxPanel;
+        private GLViewer glViewer;
+        private System.Windows.Forms.CheckBox showBBox;
+        private System.Windows.Forms.GroupBox displayBox;
+        private System.Windows.Forms.CheckBox showMesh;
+        private System.Windows.Forms.ToolStripMenuItem sketchyToolStripMenuItem;
+        private System.Windows.Forms.ToolStripDropDownButton strokeStyle;
+        private System.Windows.Forms.ToolStripMenuItem pencilToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem pen1ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem pen2ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem crayonToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ink1ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ink2ToolStripMenuItem;
+        private System.Windows.Forms.CheckBox showSketchyLines;
 
 	}
 }
