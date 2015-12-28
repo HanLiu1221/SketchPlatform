@@ -14,11 +14,16 @@ namespace SketchPlatform
     public class SegmentClass
     {
         public List<Segment> segments;
+        public enum GuideLineType
+        {
+            Random, SimpleCross
+        }
         public enum StrokeStyle
         {
-            Pencil, Pen1, Pen2, Crayon, ink1, ink2
+            Pencil, Pen1, Pen2, Crayon, Ink1, Ink2
         }
-        public StrokeStyle strokeStyle = StrokeStyle.ink1;
+        public StrokeStyle strokeStyle = StrokeStyle.Ink1;
+        public GuideLineType guideLineStyle = GuideLineType.SimpleCross;
 
         public SegmentClass()
         { }
@@ -95,14 +100,34 @@ namespace SketchPlatform
                     this.strokeStyle = StrokeStyle.Crayon;
                     break;
                 case 4:
-                    this.strokeStyle = StrokeStyle.ink1;
+                    this.strokeStyle = StrokeStyle.Ink1;
                     break;
                 case 5:
                 default:
-                    this.strokeStyle = StrokeStyle.ink2;
+                    this.strokeStyle = StrokeStyle.Ink2;
                     break;
             }
-        }
+        }// setStrokeStyle
+
+        public void ChangeGuidelineStyle(int idx)
+        {
+            foreach (Segment seg in this.segments)
+            {
+                foreach (GuideLine edge in seg.boundingbox.edges)
+                {
+                    switch (idx)
+                    {
+                        case 1:
+                            edge.DefineRandomStrokes();
+                            break;
+                        case 0:
+                        default:
+                            edge.DefineCrossStrokes();
+                            break;
+                    }                    
+                }
+            }
+        } // ChangeGuidelineStyle
 
         public void ChangeStrokeStyle(Matrix4d T, Camera camera)
 		{
@@ -120,7 +145,7 @@ namespace SketchPlatform
 
         public int shadedOrTexture()
         {
-            if (this.strokeStyle == 0 || (int)this.strokeStyle == 3)// || (int)this.strokeStyle == 4)
+            if ((int)this.strokeStyle == 3)// || (int)this.strokeStyle == 4)
             {
                 return 1;
             }

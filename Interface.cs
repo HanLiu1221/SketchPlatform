@@ -213,5 +213,15 @@ namespace SketchPlatform
             //}
         }
 
+
+        private void guidelineType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (this.guidelineType.Text == null || this.guidelineType.Text.Length == 0)
+                return;
+            int idx = this.guidelineType.SelectedIndex;
+            this.glViewer.setGuideLineStyle(idx);
+            this.glViewer.Refresh();
+        }
+
 	}
 }

@@ -506,7 +506,8 @@ namespace SketchPlatform
             this.u = v1;
             this.v = v2;
             this.hostPlane = plane;
-            this.DefineSketchyEdges();
+            //this.DefineRandomStrokes();
+            this.DefineCrossStrokes();
         }
 
         private double angleTransform(int degree)
@@ -519,7 +520,7 @@ namespace SketchPlatform
             return s + (e - s) * rand.NextDouble();
         }
 
-        private void DefineSketchyEdges()
+        public void DefineRandomStrokes()
         {
             this.strokes = new List<Stroke>();
             double gap = 0.2;
@@ -555,7 +556,21 @@ namespace SketchPlatform
                 Stroke line = new Stroke(endpoints[0], endpoints[1]);
                 this.strokes.Add(line);
             }
-        }//DefineSketchyEdges
+        }//DefineRandomStrokes
+
+        public void DefineCrossStrokes()
+        {
+            this.strokes = new List<Stroke>();
+            double gap = 0.2;
+            double len = gap * (v - u).Length();
+            Vector3d lineDir = (v - u).normalize();
+            this.nSketch = 1;
+            Vector3d[] endpoints = new Vector3d[2];
+            endpoints[0] = u - len * lineDir;
+            endpoints[1] = v + len * lineDir;
+            Stroke line = new Stroke(endpoints[0], endpoints[1]);
+            this.strokes.Add(line);
+        }
     }//GuideLine
 
     public class StrokePoint

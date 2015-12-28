@@ -334,10 +334,15 @@ namespace SketchPlatform
             }
         }//setStrokeSize
 
+        public void setGuideLineStyle(int idx)
+        {
+            this.currSegmentClass.ChangeGuidelineStyle(idx);
+            this.calculateSketchMesh();
+        }
+
         public void setStrokeStyle(int idx)
         {
             this.currSegmentClass.setStrokeStyle(idx);
-
             this.calculateSketchMesh();
         }//setStrokeStyle
 

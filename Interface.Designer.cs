@@ -69,8 +69,10 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.glViewer = new SketchPlatform.GLViewer();
             this.loadJSONFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.guidelineLabel = new System.Windows.Forms.Label();
+            this.guidelineType = new System.Windows.Forms.ComboBox();
+            this.glViewer = new SketchPlatform.GLViewer();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -280,49 +282,49 @@
             // pencilToolStripMenuItem
             // 
             this.pencilToolStripMenuItem.Name = "pencilToolStripMenuItem";
-            this.pencilToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.pencilToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.pencilToolStripMenuItem.Text = "pencil";
             this.pencilToolStripMenuItem.Click += new System.EventHandler(this.pencilToolStripMenuItem_Click);
             // 
             // pen1ToolStripMenuItem
             // 
             this.pen1ToolStripMenuItem.Name = "pen1ToolStripMenuItem";
-            this.pen1ToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.pen1ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.pen1ToolStripMenuItem.Text = "pen-1";
             this.pen1ToolStripMenuItem.Click += new System.EventHandler(this.pen1ToolStripMenuItem_Click);
             // 
             // pen2ToolStripMenuItem
             // 
             this.pen2ToolStripMenuItem.Name = "pen2ToolStripMenuItem";
-            this.pen2ToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.pen2ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.pen2ToolStripMenuItem.Text = "pen-2";
             this.pen2ToolStripMenuItem.Click += new System.EventHandler(this.pen2ToolStripMenuItem_Click);
             // 
             // crayonToolStripMenuItem
             // 
             this.crayonToolStripMenuItem.Name = "crayonToolStripMenuItem";
-            this.crayonToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.crayonToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.crayonToolStripMenuItem.Text = "crayon";
             this.crayonToolStripMenuItem.Click += new System.EventHandler(this.crayonToolStripMenuItem_Click);
             // 
             // ink1ToolStripMenuItem
             // 
             this.ink1ToolStripMenuItem.Name = "ink1ToolStripMenuItem";
-            this.ink1ToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.ink1ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.ink1ToolStripMenuItem.Text = "ink-1";
             this.ink1ToolStripMenuItem.Click += new System.EventHandler(this.ink1ToolStripMenuItem_Click);
             // 
             // ink2ToolStripMenuItem
             // 
             this.ink2ToolStripMenuItem.Name = "ink2ToolStripMenuItem";
-            this.ink2ToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.ink2ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.ink2ToolStripMenuItem.Text = "ink-2";
             this.ink2ToolStripMenuItem.Click += new System.EventHandler(this.ink2ToolStripMenuItem_Click);
             // 
             // colorToolStripMenuItem
             // 
             this.colorToolStripMenuItem.Name = "colorToolStripMenuItem";
-            this.colorToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.colorToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.colorToolStripMenuItem.Text = "color";
             this.colorToolStripMenuItem.Click += new System.EventHandler(this.colorToolStripMenuItem_Click);
             // 
@@ -378,6 +380,8 @@
             // 
             // adjustBox
             // 
+            this.adjustBox.Controls.Add(this.guidelineType);
+            this.adjustBox.Controls.Add(this.guidelineLabel);
             this.adjustBox.Controls.Add(this.strokeSizeLabel);
             this.adjustBox.Controls.Add(this.strokeSizeBox);
             this.adjustBox.Location = new System.Drawing.Point(3, 123);
@@ -466,6 +470,35 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
+            // loadJSONFileToolStripMenuItem
+            // 
+            this.loadJSONFileToolStripMenuItem.Name = "loadJSONFileToolStripMenuItem";
+            this.loadJSONFileToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadJSONFileToolStripMenuItem.Text = "Load JSON file";
+            this.loadJSONFileToolStripMenuItem.Click += new System.EventHandler(this.loadJSONFileToolStripMenuItem_Click);
+            // 
+            // guidelineLabel
+            // 
+            this.guidelineLabel.AutoSize = true;
+            this.guidelineLabel.Location = new System.Drawing.Point(3, 55);
+            this.guidelineLabel.Name = "guidelineLabel";
+            this.guidelineLabel.Size = new System.Drawing.Size(52, 13);
+            this.guidelineLabel.TabIndex = 2;
+            this.guidelineLabel.Text = "guide line";
+            // 
+            // guidelineType
+            // 
+            this.guidelineType.FormattingEnabled = true;
+            this.guidelineType.Items.AddRange(new object[] {
+            "cross",
+            "random"});
+            this.guidelineType.Location = new System.Drawing.Point(66, 55);
+            this.guidelineType.Name = "guidelineType";
+            this.guidelineType.Size = new System.Drawing.Size(66, 21);
+            this.guidelineType.TabIndex = 3;
+            this.guidelineType.Text = "cross";
+            this.guidelineType.SelectedIndexChanged += new System.EventHandler(this.guidelineType_SelectedIndexChanged);
+            // 
             // glViewer
             // 
             this.glViewer.AccumBits = ((byte)(0));
@@ -486,13 +519,6 @@
             this.glViewer.Size = new System.Drawing.Size(607, 484);
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 0;
-            // 
-            // loadJSONFileToolStripMenuItem
-            // 
-            this.loadJSONFileToolStripMenuItem.Name = "loadJSONFileToolStripMenuItem";
-            this.loadJSONFileToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.loadJSONFileToolStripMenuItem.Text = "Load JSON file";
-            this.loadJSONFileToolStripMenuItem.Click += new System.EventHandler(this.loadJSONFileToolStripMenuItem_Click);
             // 
             // Interface
             // 
@@ -567,6 +593,8 @@
         private System.Windows.Forms.ToolStripMenuItem colorToolStripMenuItem;
         private System.Windows.Forms.ColorDialog strokeColorDialog;
         private System.Windows.Forms.ToolStripMenuItem loadJSONFileToolStripMenuItem;
+        private System.Windows.Forms.ComboBox guidelineType;
+        private System.Windows.Forms.Label guidelineLabel;
 
 	}
 }
