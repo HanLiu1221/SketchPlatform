@@ -24,7 +24,7 @@ namespace SketchPlatform
         public List<int> faceIndex;
         private int facecount = 0;
         private double size2 = 2.0;
-        private double size3 = 0.008;
+        private double size3 = 0.004;
         public Color stokeColor = Color.DarkGray;
         public int opacity = 0;
         public Plane hostPlane;
@@ -51,6 +51,7 @@ namespace SketchPlatform
         public void setStrokeSize(double s)
         {
             this.size2 = s;
+            this.size3 = s / 500;
         }
 
 
@@ -116,7 +117,7 @@ namespace SketchPlatform
             this.facecount = this.faceIndex.Count / 3;
         }
 
-        public void addCap(int tag)
+        public void addCapfrom2D(int tag)
         {
             // tag = 1: add one head and one tail
             // tag = 2: round cap
@@ -130,6 +131,24 @@ namespace SketchPlatform
             }
             this.addHeadTailFaceIndex(tag);
         }
+
+        public void addCap(int tag)
+        {
+            // tag = 1: add one head and one tail
+            // tag = 2: round cap
+            if (tag == 1)
+            {
+                this.addHeadTail2D();
+                this.addHeadTail3D();
+            }
+            else
+            {
+                this.addRoundCap2D();
+                this.addRoundCap3D();
+            }
+            this.addHeadTailFaceIndex(tag);
+        }
+
         public void addHeadTail2D()
         {            
             Vector2d u = this.meshVertices2d[1];
@@ -248,6 +267,72 @@ namespace SketchPlatform
             }
             this.meshVertices2d.Add(c);
         }// addRoundCap2D
+
+        private void addRoundCap3D()
+        {
+            //head
+            int N = this.ncapoints; // odd number
+            Vector3d u = this.meshVertices3d[1];
+            Vector3d v = this.meshVertices3d[0];
+            Vector3d d = (u - v).normalize();
+            double len = (u - v).Length() / 2;
+            Vector3d n = d.Cross(this.hostPlane.normal).normalize();
+            Vector3d c = (u + v) / 2;
+            Vector3d p = c + n * len;
+            int N2 = N / 2;
+            Vector3d cv = (v - c).normalize();
+            Vector3d vp = (p - v).normalize();
+            double vp_len = (p - v).Length() / (N2 + 1);
+            int loc = 0;
+            for (int i = 0; i < N2; ++i)
+            {
+                Vector3d m = v + vp * (i + 1) * vp_len;
+                Vector3d p2 = (m - c).normalize();
+                p2 = c + p2 * len;
+                this.meshVertices3d.Insert(loc++, p2);
+            }
+            this.meshVertices3d.Insert(loc++, p);
+            Vector3d up = (p - u).normalize();
+            double up_len = (p - u).Length() / (N2 + 1);
+            for (int i = N2 - 1; i >= 0; --i)
+            {
+                Vector3d m = u + up * (i + 1) * up_len;
+                Vector3d p2 = (m - c).normalize();
+                p2 = c + p2 * len;
+                this.meshVertices3d.Insert(loc++, p2);
+            }
+            this.meshVertices3d.Insert(loc++, c);
+            // tail
+            int tailIdx = this.meshVertices3d.Count;
+            u = this.meshVertices3d[tailIdx - 1];
+            v = this.meshVertices3d[tailIdx - 2];
+            d = (u - v).normalize();
+            len = (u - v).Length() / 2;
+            n = this.hostPlane.normal.Cross(d).normalize();
+            c = (u + v) / 2;
+            p = c + n * len;
+            cv = (v - c).normalize();
+            vp = (p - v).normalize();
+            vp_len = (p - v).Length() / (N2 + 1);
+            for (int i = 0; i < N2; ++i)
+            {
+                Vector3d m = v + vp * (i + 1) * vp_len;
+                Vector3d p2 = (m - c).normalize();
+                p2 = c + p2 * len;
+                this.meshVertices3d.Add(p2);
+            }
+            this.meshVertices3d.Add(p);
+            up = (p - u).normalize();
+            up_len = (p - u).Length() / (N2 + 1);
+            for (int i = N2 - 1; i >= 0; --i)
+            {
+                Vector3d m = u + up * (i + 1) * up_len;
+                Vector3d p2 = (m - c).normalize();
+                p2 = c + p2 * len;
+                this.meshVertices3d.Add(p2);
+            }
+            this.meshVertices3d.Add(c);
+        }// addRoundCap3D
 
         private void addHeadTailFaceIndex(int tag)
         {
@@ -381,27 +466,27 @@ namespace SketchPlatform
                             break;
                         }
                 }
-                this.opacity = (byte)(op);
+                this.strokePoints[i].opacity = (byte)(op);
                 this.meshVertices2d.Add(o2 + isize2 * n2);
                 this.meshVertices2d.Add(o2 - isize2 * n2);
-                //this.meshVertices3d.Add(o3 + isize3 * n3);
-                //this.meshVertices3d.Add(o3 - isize3 * n3);
+                this.meshVertices3d.Add(o3 + isize3 * n3);
+                this.meshVertices3d.Add(o3 - isize3 * n3);
             }
             this.buildStrokeMeshFace();
-            //this.addCap(1);
             this.addCap(2);
-            this.meshVertices3d = new List<Vector3d>();
-            //T = T.Transpose();
-            Matrix4d invMat =  T.Inverse();
-            Plane plane = this.hostPlane.clone() as Plane;
-            plane.Transform(T);
-            foreach (Vector2d v2 in this.meshVertices2d)
-            {
-                Vector3d v3 = camera.ProjectPointToPlane(v2, plane.center, plane.normal);
-                Vector4d v4 = (invMat * new Vector4d(v3, 1));
-                v3 = v4.ToVector3D();
-                this.meshVertices3d.Add(v3);
-            }
+            //this.addCapfrom2D(1);
+            //this.addCapfrom2D(2);
+            //this.meshVertices3d = new List<Vector3d>();
+            //Matrix4d invMat =  T.Inverse();
+            //Plane plane = this.hostPlane.clone() as Plane;
+            //plane.Transform(T);
+            //foreach (Vector2d v2 in this.meshVertices2d)
+            //{
+            //    Vector3d v3 = camera.ProjectPointToPlane(v2, plane.center, plane.normal);
+            //    Vector4d v4 = (invMat * new Vector4d(v3, 1));
+            //    v3 = v4.ToVector3D();
+            //    this.meshVertices3d.Add(v3);
+            //}
         }// changeStyle
 
         
@@ -437,7 +522,7 @@ namespace SketchPlatform
         private void DefineSketchyEdges()
         {
             this.strokes = new List<Stroke>();
-            double gap = 0.1;
+            double gap = 0.2;
             double len = gap * (v - u).Length();
             Vector3d lineDir = (v - u).normalize();
             this.nSketch = rand.Next(2, 4);
