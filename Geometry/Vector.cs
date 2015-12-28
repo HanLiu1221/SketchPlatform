@@ -449,7 +449,7 @@ namespace Geometry
 
 		public Vector3d ToVector3D()
 		{
-			return new Vector3d(x, y, z);				
+			return new Vector3d(x, y, z) / w;				
 		}
 
 		public Vector3d ToHomogeneousVector()

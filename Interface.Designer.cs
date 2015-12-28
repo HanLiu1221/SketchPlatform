@@ -49,7 +49,6 @@
             this.faceSelection = new System.Windows.Forms.ToolStripMenuItem();
             this.display = new System.Windows.Forms.ToolStripDropDownButton();
             this.displayAxis = new System.Windows.Forms.ToolStripMenuItem();
-            this.sketchyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.strokeStyle = new System.Windows.Forms.ToolStripDropDownButton();
             this.pencilToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pen1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -57,21 +56,28 @@
             this.crayonToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ink1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ink2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.colorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
+            this.adjustBox = new System.Windows.Forms.GroupBox();
+            this.strokeSizeLabel = new System.Windows.Forms.Label();
+            this.strokeSizeBox = new System.Windows.Forms.ComboBox();
             this.displayBox = new System.Windows.Forms.GroupBox();
+            this.showSketchyLines = new System.Windows.Forms.CheckBox();
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
+            this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
             this.glViewer = new SketchPlatform.GLViewer();
-            this.showSketchyLines = new System.Windows.Forms.CheckBox();
+            this.loadJSONFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
             this.viewPanel.Panel2.SuspendLayout();
             this.viewPanel.SuspendLayout();
             this.toolboxPanel.SuspendLayout();
+            this.adjustBox.SuspendLayout();
             this.displayBox.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -97,7 +103,8 @@
             this.open3D,
             this.import3D,
             this.saveAs3D,
-            this.loadSegmentsToolStripMenuItem});
+            this.loadSegmentsToolStripMenuItem,
+            this.loadJSONFileToolStripMenuItem});
             this.ModelFile.Image = ((System.Drawing.Image)(resources.GetObject("ModelFile.Image")));
             this.ModelFile.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.ModelFile.Name = "ModelFile";
@@ -238,8 +245,7 @@
             // display
             // 
             this.display.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.displayAxis,
-            this.sketchyToolStripMenuItem});
+            this.displayAxis});
             this.display.Image = ((System.Drawing.Image)(resources.GetObject("display.Image")));
             this.display.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.display.Name = "display";
@@ -250,16 +256,9 @@
             // displayAxis
             // 
             this.displayAxis.Name = "displayAxis";
-            this.displayAxis.Size = new System.Drawing.Size(115, 22);
+            this.displayAxis.Size = new System.Drawing.Size(95, 22);
             this.displayAxis.Text = "Axis";
             this.displayAxis.Click += new System.EventHandler(this.displayAxis_Click);
-            // 
-            // sketchyToolStripMenuItem
-            // 
-            this.sketchyToolStripMenuItem.Name = "sketchyToolStripMenuItem";
-            this.sketchyToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
-            this.sketchyToolStripMenuItem.Text = "Sketchy";
-            this.sketchyToolStripMenuItem.Click += new System.EventHandler(this.sketchyToolStripMenuItem_Click);
             // 
             // strokeStyle
             // 
@@ -269,7 +268,8 @@
             this.pen2ToolStripMenuItem,
             this.crayonToolStripMenuItem,
             this.ink1ToolStripMenuItem,
-            this.ink2ToolStripMenuItem});
+            this.ink2ToolStripMenuItem,
+            this.colorToolStripMenuItem});
             this.strokeStyle.Image = ((System.Drawing.Image)(resources.GetObject("strokeStyle.Image")));
             this.strokeStyle.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.strokeStyle.Name = "strokeStyle";
@@ -319,6 +319,13 @@
             this.ink2ToolStripMenuItem.Text = "ink-2";
             this.ink2ToolStripMenuItem.Click += new System.EventHandler(this.ink2ToolStripMenuItem_Click);
             // 
+            // colorToolStripMenuItem
+            // 
+            this.colorToolStripMenuItem.Name = "colorToolStripMenuItem";
+            this.colorToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.colorToolStripMenuItem.Text = "color";
+            this.colorToolStripMenuItem.Click += new System.EventHandler(this.colorToolStripMenuItem_Click);
+            // 
             // viewPanel
             // 
             this.viewPanel.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -362,11 +369,50 @@
             this.toolboxPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
             this.toolboxPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.toolboxPanel.Controls.Add(this.adjustBox);
             this.toolboxPanel.Controls.Add(this.displayBox);
             this.toolboxPanel.Location = new System.Drawing.Point(3, 3);
             this.toolboxPanel.Name = "toolboxPanel";
             this.toolboxPanel.Size = new System.Drawing.Size(165, 484);
             this.toolboxPanel.TabIndex = 2;
+            // 
+            // adjustBox
+            // 
+            this.adjustBox.Controls.Add(this.strokeSizeLabel);
+            this.adjustBox.Controls.Add(this.strokeSizeBox);
+            this.adjustBox.Location = new System.Drawing.Point(3, 123);
+            this.adjustBox.Name = "adjustBox";
+            this.adjustBox.Size = new System.Drawing.Size(156, 100);
+            this.adjustBox.TabIndex = 3;
+            this.adjustBox.TabStop = false;
+            this.adjustBox.Text = "Adjust";
+            // 
+            // strokeSizeLabel
+            // 
+            this.strokeSizeLabel.AutoSize = true;
+            this.strokeSizeLabel.Location = new System.Drawing.Point(6, 28);
+            this.strokeSizeLabel.Name = "strokeSizeLabel";
+            this.strokeSizeLabel.Size = new System.Drawing.Size(60, 13);
+            this.strokeSizeLabel.TabIndex = 1;
+            this.strokeSizeLabel.Text = "stroke size:";
+            // 
+            // strokeSizeBox
+            // 
+            this.strokeSizeBox.AllowDrop = true;
+            this.strokeSizeBox.FormattingEnabled = true;
+            this.strokeSizeBox.Items.AddRange(new object[] {
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"});
+            this.strokeSizeBox.Location = new System.Drawing.Point(66, 24);
+            this.strokeSizeBox.Name = "strokeSizeBox";
+            this.strokeSizeBox.Size = new System.Drawing.Size(48, 21);
+            this.strokeSizeBox.TabIndex = 0;
+            this.strokeSizeBox.Text = "2";
+            this.strokeSizeBox.SelectedIndexChanged += new System.EventHandler(this.strokeSizeBox_SelectedIndexChanged);
+            this.strokeSizeBox.TextChanged += new System.EventHandler(this.strokeSizeBox_TextChanged);
             // 
             // displayBox
             // 
@@ -380,11 +426,23 @@
             this.displayBox.TabStop = false;
             this.displayBox.Text = "Display";
             // 
+            // showSketchyLines
+            // 
+            this.showSketchyLines.AutoSize = true;
+            this.showSketchyLines.Checked = true;
+            this.showSketchyLines.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showSketchyLines.Location = new System.Drawing.Point(6, 65);
+            this.showSketchyLines.Name = "showSketchyLines";
+            this.showSketchyLines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showSketchyLines.Size = new System.Drawing.Size(87, 17);
+            this.showSketchyLines.TabIndex = 3;
+            this.showSketchyLines.Text = "sketchy lines";
+            this.showSketchyLines.UseVisualStyleBackColor = true;
+            this.showSketchyLines.CheckedChanged += new System.EventHandler(this.showSketchyLines_CheckedChanged);
+            // 
             // showMesh
             // 
             this.showMesh.AutoSize = true;
-            this.showMesh.Checked = true;
-            this.showMesh.CheckState = System.Windows.Forms.CheckState.Checked;
             this.showMesh.Location = new System.Drawing.Point(6, 42);
             this.showMesh.Name = "showMesh";
             this.showMesh.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
@@ -429,19 +487,12 @@
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 0;
             // 
-            // showSketchyLines
+            // loadJSONFileToolStripMenuItem
             // 
-            this.showSketchyLines.AutoSize = true;
-            this.showSketchyLines.Checked = true;
-            this.showSketchyLines.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.showSketchyLines.Location = new System.Drawing.Point(9, 68);
-            this.showSketchyLines.Name = "showSketchyLines";
-            this.showSketchyLines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.showSketchyLines.Size = new System.Drawing.Size(87, 17);
-            this.showSketchyLines.TabIndex = 3;
-            this.showSketchyLines.Text = "sketchy lines";
-            this.showSketchyLines.UseVisualStyleBackColor = true;
-            this.showSketchyLines.CheckedChanged += new System.EventHandler(this.showSketchyLines_CheckedChanged);
+            this.loadJSONFileToolStripMenuItem.Name = "loadJSONFileToolStripMenuItem";
+            this.loadJSONFileToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadJSONFileToolStripMenuItem.Text = "Load JSON file";
+            this.loadJSONFileToolStripMenuItem.Click += new System.EventHandler(this.loadJSONFileToolStripMenuItem_Click);
             // 
             // Interface
             // 
@@ -462,6 +513,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).EndInit();
             this.viewPanel.ResumeLayout(false);
             this.toolboxPanel.ResumeLayout(false);
+            this.adjustBox.ResumeLayout(false);
+            this.adjustBox.PerformLayout();
             this.displayBox.ResumeLayout(false);
             this.displayBox.PerformLayout();
             this.ResumeLayout(false);
@@ -500,7 +553,6 @@
         private System.Windows.Forms.CheckBox showBBox;
         private System.Windows.Forms.GroupBox displayBox;
         private System.Windows.Forms.CheckBox showMesh;
-        private System.Windows.Forms.ToolStripMenuItem sketchyToolStripMenuItem;
         private System.Windows.Forms.ToolStripDropDownButton strokeStyle;
         private System.Windows.Forms.ToolStripMenuItem pencilToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem pen1ToolStripMenuItem;
@@ -509,6 +561,12 @@
         private System.Windows.Forms.ToolStripMenuItem ink1ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ink2ToolStripMenuItem;
         private System.Windows.Forms.CheckBox showSketchyLines;
+        private System.Windows.Forms.GroupBox adjustBox;
+        private System.Windows.Forms.ComboBox strokeSizeBox;
+        private System.Windows.Forms.Label strokeSizeLabel;
+        private System.Windows.Forms.ToolStripMenuItem colorToolStripMenuItem;
+        private System.Windows.Forms.ColorDialog strokeColorDialog;
+        private System.Windows.Forms.ToolStripMenuItem loadJSONFileToolStripMenuItem;
 
 	}
 }

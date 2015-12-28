@@ -4,6 +4,10 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using Geometry;
+using System.Net;
+using System.Runtime.Serialization.Json;
+using System.Web.Script.Serialization;
+
 
 namespace SketchPlatform
 {
@@ -14,7 +18,7 @@ namespace SketchPlatform
         {
             Pencil, Pen1, Pen2, Crayon, ink1, ink2
         }
-        public StrokeStyle strokeStyle = 0;
+        public StrokeStyle strokeStyle = StrokeStyle.ink1;
 
         public SegmentClass()
         { }
@@ -98,10 +102,9 @@ namespace SketchPlatform
                     this.strokeStyle = StrokeStyle.ink2;
                     break;
             }
-            this.ChangeStrokeStyle();
         }
 
-        private void ChangeStrokeStyle()
+        public void ChangeStrokeStyle(Matrix4d T, Camera camera)
 		{
             foreach(Segment seg in this.segments)
             {
@@ -109,15 +112,15 @@ namespace SketchPlatform
                 {
                     foreach (Stroke stroke in edge.strokes)
                     {
-                        stroke.changeStyle((int)this.strokeStyle);
+                        stroke.changeStyle((int)this.strokeStyle, T, camera);
                     }
                 }
             }
         }// ChangeStrokeStyle
 
-        public int drawOrTexture()
+        public int shadedOrTexture()
         {
-            if (this.strokeStyle == 0 || (int)this.strokeStyle == 3 || (int)this.strokeStyle == 4)
+            if (this.strokeStyle == 0 || (int)this.strokeStyle == 3)// || (int)this.strokeStyle == 4)
             {
                 return 1;
             }
@@ -125,6 +128,57 @@ namespace SketchPlatform
             {
                 return 0;
             }
-        }
+        }//shadedOrTexture
+
+        public Matrix4d DeserializeJSON(string filename)
+        {
+            StreamReader sr = new StreamReader(filename);
+
+            string str = sr.ReadToEnd();
+            //List<string[]> json = new JavaScriptSerializer().Deserialize<List<string[]>>(str);
+
+            List<Box> boxes = new JavaScriptSerializer().Deserialize<List<Box>>(str);
+            this.segments = new List<Segment>();
+            string path = filename.Substring(0, filename.LastIndexOf('\\') + 1);
+            Matrix4d modelView = null;
+            int idx = 0;
+            for (int i = 0; i < boxes.Count; ++i)
+            {
+                if (boxes[i].modelView != null)
+                {
+                    // read modelview
+                    char[] separator = { ',', ' ', '\n' };
+                    string[] tokens = boxes[i].modelView.Split(separator);
+                    double[] mat = new double[tokens.Length];
+                    for (int j = 0; j < tokens.Length; ++j)
+                    {
+                        mat[j] = double.Parse(tokens[j]);
+                    }
+                    modelView = new Matrix4d(mat);
+                }
+                Vector3d[] bbox = null;
+                Mesh mesh = null;
+                if (boxes[i].box != null)
+                {
+                    string file = path + boxes[i].box;
+                    bbox = this.loadBoudingbox(file);
+                }
+                if (boxes[i].segment != null)
+                {
+                    string file = path + boxes[i].segment;
+                    mesh = new Mesh(file, false);
+                }
+                if (bbox != null || mesh != null)
+                {
+                    Cube c = new Cube(bbox);
+                    Segment seg = new Segment(mesh, c);
+                    seg.idx = idx++;
+                    this.segments.Add(seg);
+                }
+            }
+
+            return modelView;
+            
+        }//DeserializeJSON
     }
 }

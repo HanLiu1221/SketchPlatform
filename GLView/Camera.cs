@@ -41,13 +41,34 @@ namespace SketchPlatform
             return this.objectSpaceTransform;
         }
 
+        public Matrix4d GetBallMat()
+        {
+            return new Matrix4d(this.ballMatrix);
+        }
+
+        public Matrix4d GetModelviewMat()
+        {
+            return new Matrix4d(this.modelView);
+        }
+
+        public Matrix4d GetProjMat()
+        {
+            return new Matrix4d(this.projection);
+        }
+
+        public void SetModelViewMatrix(double[] modelView)
+        {
+            this.modelView = modelView;
+        }
+
         public void Update()
         {
             Gl.glGetDoublev(Gl.GL_MODELVIEW_MATRIX, modelView);
             Gl.glGetDoublev(Gl.GL_PROJECTION_MATRIX, projection);
             Gl.glGetIntegerv(Gl.GL_VIEWPORT, viewport);
 
-            this.modelView = (new Matrix4d(this.ballMatrix) * new Matrix4d(this.modelView)).ToArray();
+            //this.modelView = (new Matrix4d(this.ballMatrix)).ToArray();
+            //this.modelView = (new Matrix4d(this.ballMatrix) * new Matrix4d(this.modelView)).ToArray();
         }
 
         //public Vector3d Project(double objx, double objy, double objz)
@@ -166,6 +187,7 @@ namespace SketchPlatform
             //Calculation for inverting a matrix, compute projection x modelview
             //and store in A[16]
             MultiplyMatrices4by4OpenGL_FLOAT(tmpA, this.modelView, this.ballMatrix);
+            //tmpA = this.modelView;
             MultiplyMatrices4by4OpenGL_FLOAT(A, this.projection, tmpA);
             //Now compute the inverse of matrix A
             if (glhInvertMatrixf2(A, m) == 0)
@@ -175,6 +197,10 @@ namespace SketchPlatform
             data_in[1] = (winy - (double)this.viewport[1]) / (double)this.viewport[3] * 2.0 - 1.0;
             data_in[2] = 2.0 * winz - 1.0;
             data_in[3] = 1.0;
+            //data_in[0] = (winx - (double)this.viewport[0]) / (double)this.viewport[2];
+            //data_in[1] = (winy - (double)this.viewport[1]) / (double)this.viewport[3];
+            //data_in[2] = winz;
+            //data_in[3] = 1.0;
             //Objects coordinates
             MultiplyMatrixByVector4by4OpenGL_FLOAT(data_out, m, data_in);
             if (data_out[3] == 0.0)
@@ -437,7 +463,7 @@ namespace SketchPlatform
         }
         private Vector3d GetObjSpaceTransformedVector(Vector3d vector)
         {
-            return (this.objectSpaceTransform * new Vector4d(vector, 0)).ToVector3D();
+            return (this.objectSpaceTransform * new Vector4d(vector, 1)).ToVector3D();
         }
 
         public Vector3d UnProject(double inX, double inY, double inZ)

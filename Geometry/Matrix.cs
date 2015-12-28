@@ -547,11 +547,13 @@ namespace Geometry
 			}
 		}
 
+
         public Matrix4d(Matrix3d m)
         {
             for (int i = 0; i < 3; i++)
                 for (int j = 0; j < 3; j++)
                     this[i, j] = m[i, j];
+            this[3, 3] = 1.0;
         }
 
 		public double this[int row, int col]

@@ -106,7 +106,7 @@ namespace SketchPlatform
         private void loadSegmentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog dialog = new FolderBrowserDialog();
-            dialog.SelectedPath = "D:\\Projects\\sketchingTutorial\\CGPlatform\\Data\\segments";
+            dialog.SelectedPath = "D:\\Projects\\sketchingTutorial\\SketchPlatform\\Data\\segments";
             //dialog.SelectedPath = "D:\\Projects\\sketchingTutorial\\CGPlatform\\Data";
             //if (dialog.ShowDialog(this) == DialogResult.OK)
             //{
@@ -133,12 +133,6 @@ namespace SketchPlatform
         private void showSketchyLines_CheckedChanged(object sender, EventArgs e)
         {
             this.glViewer.showSketchyLines = this.showSketchyLines.Checked;
-            this.glViewer.Refresh();
-        }
-
-        private void sketchyToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            this.glViewer.calculateSketch2D();
             this.glViewer.Refresh();
         }
 
@@ -178,8 +172,46 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
-        
+        private void strokeSizeBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
+                return;
+            int size = Int32.Parse(this.strokeSizeBox.Text);
+            this.glViewer.setStrokeSize(size);
+            this.glViewer.Refresh();
+        }
 
+        private void strokeSizeBox_TextChanged(object sender, EventArgs e)
+        {
+            if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
+                return;
+            int size = Int32.Parse(this.strokeSizeBox.Text);
+            this.glViewer.setStrokeSize(size);
+            this.glViewer.Refresh();
+        }
+
+        private void colorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (this.strokeColorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                this.glViewer.setStrokeColor(this.strokeColorDialog.Color);
+                this.glViewer.Refresh();
+            }
+        }
+
+        private void loadJSONFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Filter = "3D model (*.obj; *.off; *.ply)|*.obj; *.off; *.ply|All Files(*.*)|*.*";
+            dialog.CheckFileExists = true;
+            dialog.FileName = "D:\\Projects\\SketchingTutorial\\SketchPlatform\\Data\\json\\phone_output\\drawing_sequence.json";
+            //if (dialog.ShowDialog(this) == DialogResult.OK)
+            //{
+                string filename = dialog.FileName;
+                this.glViewer.loadJSONFile(filename);
+                this.glViewer.Refresh();
+            //}
+        }
 
 	}
 }

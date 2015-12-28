@@ -9,3 +9,5 @@ Properties/
 *.DS_Store
 *.2xt
 Data/
+*.b0r
+*.config

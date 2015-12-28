@@ -146,7 +146,7 @@ namespace Geometry
             m[2, 0] = 2 * x * z + 2 * w * y;
             m[2, 1] = 2 * y * z - 2 * w * x;
             m[2, 2] = w * w - x * x - y * y + z * z;
-            m[3, 3] = 1; //w * w + x * x + y * y + z * z
+            m[3, 3] = w * w + x * x + y * y + z * z;
             return m;
         }
 

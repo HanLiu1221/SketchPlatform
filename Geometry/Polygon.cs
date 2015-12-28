@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Geometry;
 
-namespace Geometry
+namespace SketchPlatform
 {
     public class Polygon
     {
@@ -110,6 +111,8 @@ namespace Geometry
             for (int i = 0; i < this.Npoints; ++i )
             {
                 Vector3d v = this.points[i];
+                Vector4d v4 = (T * new Vector4d(v, 1));
+                double t = T[0, 3];
                 this.points[i] = (T * new Vector4d(v, 1)).ToVector3D();
             }
             if (this.Npoints > 0)
@@ -120,14 +123,13 @@ namespace Geometry
             {
                 this.center = (T * new Vector4d(this.center, 1)).ToVector3D();
                 this.normal = (T * new Vector4d(this.normal, 1)).ToVector3D();
+                this.normal.normalize();
             }
         }
 
         public Object clone()
         {
             Plane cloned = new Plane(this.points);
-            cloned.center = new Vector3d(this.center);
-            cloned.normal = new Vector3d(this.normal);
             return cloned;
         }
     }
@@ -199,27 +201,22 @@ namespace Geometry
             this.edges = new GuideLine[12];
             int s = 0;
             Plane plane = new Plane();
+            int[] series = { 0, 3, 0, 5 };
             for (int i = 0; i < 4; ++i)
             {
-                plane = new Plane(this.points[i], this.planes[3].normal);
-                if (i % 2 == 0)
-                {
-                    plane.normal = this.planes[0].normal;
-                }
+                plane = this.planes[series[i]].clone() as Plane; 
                 edges[s++] = new GuideLine(this.points[i], this.points[(i + 1) % 4], plane);
             }
+            series = new int[]{ 5, 3, 3, 5 };
             for (int i = 0; i < 4; ++i)
             {
-                plane = new Plane(this.points[i], this.planes[3].normal);
+                plane = this.planes[series[i]].clone() as Plane; 
                 edges[s++] = new GuideLine(this.points[i], this.points[i + 4], plane);
             }
+            series = new int[] { 1, 3, 1, 5 };
             for (int i = 0; i < 4; ++i)
             {
-                plane = new Plane(this.points[i + 4], this.planes[3].normal);
-                if (i % 2 == 0)
-                {
-                    plane.normal = this.planes[0].normal;
-                }
+                plane = this.planes[series[i]].clone() as Plane; 
                 edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane);
             }
         }
