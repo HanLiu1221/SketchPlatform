@@ -250,9 +250,5 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
-        
-
-        
-
 	}
 }

@@ -7,7 +7,8 @@ using System.Drawing;
 using Tao.OpenGl;
 using Tao.Platform.Windows;
 using Geometry;
-namespace SketchPlatform
+
+namespace Component
 {
     public class Stroke
     {
@@ -25,7 +26,7 @@ namespace SketchPlatform
         private int facecount = 0;
         private double size2 = SegmentClass.strokeSize;
         private double size3 = (double)SegmentClass.strokeSize / 500;
-        public Color stokeColor = Color.FromArgb(99, 99, 99);
+        public Color stokeColor = Color.FromArgb(200, 200, 200);
         public int opacity = 0;
         public Plane hostPlane;
         public double depth = 1.0;
@@ -500,19 +501,42 @@ namespace SketchPlatform
         public List<Stroke> strokes;
         public Plane hostPlane;
         private static readonly Random rand = new Random();
+        public Arrow3D guideArrow;
+        private bool cross = true;
+        public bool showGuide = false;
 
-        public GuideLine(Vector3d v1, Vector3d v2, Plane plane)
+        public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool cross)
         {
             this.u = v1;
             this.v = v2;
             this.hostPlane = plane;
-            //this.DefineRandomStrokes();
-            this.DefineCrossStrokes();
+            this.cross = cross;
+            if (!cross)
+            {
+                this.DefineGuideLineStroke();
+            }
+            else
+            {
+                //this.DefineRandomStrokes();
+                this.DefineCrossStrokes();
+            }
+            if (plane != null)
+            {
+                this.guideArrow = new Arrow3D(v1, v2, plane.normal);
+            }
         }
 
         public void setHostPlane(Plane plane)
         {
             this.hostPlane = plane.clone() as Plane;
+            if (this.strokes != null && this.strokes.Count > 0)
+            {
+                this.guideArrow = new Arrow3D(this.strokes[0].u3, this.strokes[0].v3, plane.normal);
+            }
+            else
+            {
+                this.guideArrow = new Arrow3D(u, v, plane.normal);
+            }
         }
 
         private double angleTransform(int degree)
@@ -527,8 +551,12 @@ namespace SketchPlatform
 
         public void DefineRandomStrokes()
         {
+            if (!this.cross)
+            {
+                this.DefineGuideLineStroke();
+            }
             this.strokes = new List<Stroke>();
-            double gap = 0.2;
+            double gap = 0.1;
             double len = gap * (v - u).Length();
             Vector3d lineDir = (v - u).normalize();
             this.nSketch = rand.Next(2, 4);
@@ -565,6 +593,10 @@ namespace SketchPlatform
 
         public void DefineCrossStrokes()
         {
+            if (!this.cross)
+            {
+                this.DefineGuideLineStroke();
+            }
             this.strokes = new List<Stroke>();
             double gap = 0.2;
             double len = gap * (v - u).Length();
@@ -577,7 +609,92 @@ namespace SketchPlatform
             Stroke line = new Stroke(endpoints[0], endpoints[1]);
             this.strokes.Add(line);
         }
+
+        public void DefineGuideLineStroke()
+        {
+            this.strokes = new List<Stroke>();
+            Stroke line = new Stroke(this.u,this.v);
+            this.strokes.Add(line);
+        }
+
     }//GuideLine
+
+    public class Box
+    {
+        public Vector3d[] points = null;
+        public Plane[] planes = null;
+        public GuideLine[] edges = null;
+        public List<GuideLine> guideLines = null;
+
+        public Box()
+        { }
+
+        public Box(Vector3d[] vs)
+        {
+            this.points = new Vector3d[vs.Length];
+            for (int i = 0; i < vs.Length; ++i)
+            {
+                this.points[i] = new Vector3d(vs[i]);
+            }
+            // faces
+            this.planes = new Plane[6];
+            List<Vector3d> vslist = new List<Vector3d>();
+            for (int i = 0; i < 4; ++i)
+            {
+                vslist.Add(this.points[i]);
+            }
+            this.planes[0] = new Plane(vslist);
+            vslist = new List<Vector3d>();
+            for (int i = 4; i < 8; ++i)
+            {
+                vslist.Add(this.points[i]);
+            }
+            this.planes[1] = new Plane(vslist);
+            int r = 2;
+            for (int i = 0; i < 4; ++i)
+            {
+                vslist = new List<Vector3d>();
+                vslist.Add(this.points[i]);
+                vslist.Add(this.points[(i + 1) % 4]);
+                vslist.Add(this.points[((i + 1) % 4 + 4) % 8]);
+                vslist.Add(this.points[(i + 4) % 8]);
+                this.planes[r++] = new Plane(vslist);
+            }
+            this.edges = new GuideLine[12];
+            int s = 0;
+            Plane plane = new Plane();
+            int[] series = { 0, 3, 0, 5 };
+            for (int i = 0; i < 4; ++i)
+            {
+                plane = this.planes[series[i]].clone() as Plane;
+                edges[s++] = new GuideLine(this.points[i], this.points[(i + 1) % 4], plane, true);
+            }
+            series = new int[] { 5, 3, 3, 5 };
+            for (int i = 0; i < 4; ++i)
+            {
+                plane = this.planes[series[i]].clone() as Plane;
+                edges[s++] = new GuideLine(this.points[i], this.points[i + 4], plane, true);
+            }
+            series = new int[] { 1, 3, 1, 5 };
+            for (int i = 0; i < 4; ++i)
+            {
+                plane = this.planes[series[i]].clone() as Plane;
+                edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane, true);
+            }
+            this.guideLines = new List<GuideLine>();
+        }
+
+        public List<GuideLine> getAllLines()
+        {
+            List<GuideLine> allLines = new List<GuideLine>();
+            foreach (GuideLine edge in this.edges)
+            {
+                allLines.Add(edge);
+            }
+            allLines.AddRange(this.guideLines);
+            return allLines;
+        }
+    }// Box
 
     public class StrokePoint
     {

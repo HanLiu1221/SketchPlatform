@@ -58,13 +58,17 @@
             this.ink1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ink2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.edgeColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.guideLineColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.guideLineBox = new System.Windows.Forms.GroupBox();
+            this.glPrevButton = new System.Windows.Forms.Button();
+            this.glNextButton = new System.Windows.Forms.Button();
             this.nextBoxButton = new System.Windows.Forms.Button();
             this.prevBoxButton = new System.Windows.Forms.Button();
+            this.glLabel = new System.Windows.Forms.Label();
             this.boxesLabel = new System.Windows.Forms.Label();
             this.adjustBox = new System.Windows.Forms.GroupBox();
             this.guidelineType = new System.Windows.Forms.ComboBox();
@@ -78,7 +82,6 @@
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.glViewer = new SketchPlatform.GLViewer();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.guideLineColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -343,6 +346,13 @@
             this.edgeColorToolStripMenuItem.Text = "edge color";
             this.edgeColorToolStripMenuItem.Click += new System.EventHandler(this.edgeColorToolStripMenuItem_Click);
             // 
+            // guideLineColorToolStripMenuItem
+            // 
+            this.guideLineColorToolStripMenuItem.Name = "guideLineColorToolStripMenuItem";
+            this.guideLineColorToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.guideLineColorToolStripMenuItem.Text = "guide line color";
+            this.guideLineColorToolStripMenuItem.Click += new System.EventHandler(this.guideLineColorToolStripMenuItem_Click);
+            // 
             // viewPanel
             // 
             this.viewPanel.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -396,8 +406,11 @@
             // 
             // guideLineBox
             // 
+            this.guideLineBox.Controls.Add(this.glPrevButton);
+            this.guideLineBox.Controls.Add(this.glNextButton);
             this.guideLineBox.Controls.Add(this.nextBoxButton);
             this.guideLineBox.Controls.Add(this.prevBoxButton);
+            this.guideLineBox.Controls.Add(this.glLabel);
             this.guideLineBox.Controls.Add(this.boxesLabel);
             this.guideLineBox.Location = new System.Drawing.Point(3, 223);
             this.guideLineBox.Name = "guideLineBox";
@@ -406,25 +419,53 @@
             this.guideLineBox.TabStop = false;
             this.guideLineBox.Text = "Guides";
             // 
+            // glPrevButton
+            // 
+            this.glPrevButton.Image = ((System.Drawing.Image)(resources.GetObject("glPrevButton.Image")));
+            this.glPrevButton.Location = new System.Drawing.Point(66, 56);
+            this.glPrevButton.Name = "glPrevButton";
+            this.glPrevButton.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.glPrevButton.Size = new System.Drawing.Size(26, 23);
+            this.glPrevButton.TabIndex = 36;
+            this.glPrevButton.UseVisualStyleBackColor = true;
+            // 
+            // glNextButton
+            // 
+            this.glNextButton.Image = ((System.Drawing.Image)(resources.GetObject("glNextButton.Image")));
+            this.glNextButton.Location = new System.Drawing.Point(102, 56);
+            this.glNextButton.Name = "glNextButton";
+            this.glNextButton.Size = new System.Drawing.Size(26, 23);
+            this.glNextButton.TabIndex = 35;
+            this.glNextButton.UseVisualStyleBackColor = true;
+            // 
             // nextBoxButton
             // 
-            this.nextBoxButton.Location = new System.Drawing.Point(81, 25);
+            this.nextBoxButton.Image = ((System.Drawing.Image)(resources.GetObject("nextBoxButton.Image")));
+            this.nextBoxButton.Location = new System.Drawing.Point(102, 25);
             this.nextBoxButton.Name = "nextBoxButton";
-            this.nextBoxButton.Size = new System.Drawing.Size(39, 24);
-            this.nextBoxButton.TabIndex = 2;
-            this.nextBoxButton.Text = "next";
+            this.nextBoxButton.Size = new System.Drawing.Size(26, 23);
+            this.nextBoxButton.TabIndex = 34;
             this.nextBoxButton.UseVisualStyleBackColor = true;
             this.nextBoxButton.Click += new System.EventHandler(this.nextBoxButton_Click);
             // 
             // prevBoxButton
             // 
-            this.prevBoxButton.Location = new System.Drawing.Point(36, 25);
+            this.prevBoxButton.Image = ((System.Drawing.Image)(resources.GetObject("prevBoxButton.Image")));
+            this.prevBoxButton.Location = new System.Drawing.Point(66, 25);
             this.prevBoxButton.Name = "prevBoxButton";
-            this.prevBoxButton.Size = new System.Drawing.Size(39, 24);
-            this.prevBoxButton.TabIndex = 1;
-            this.prevBoxButton.Text = "prev";
+            this.prevBoxButton.Size = new System.Drawing.Size(26, 23);
+            this.prevBoxButton.TabIndex = 33;
             this.prevBoxButton.UseVisualStyleBackColor = true;
             this.prevBoxButton.Click += new System.EventHandler(this.prevBoxButton_Click);
+            // 
+            // glLabel
+            // 
+            this.glLabel.AutoSize = true;
+            this.glLabel.Location = new System.Drawing.Point(3, 61);
+            this.glLabel.Name = "glLabel";
+            this.glLabel.Size = new System.Drawing.Size(55, 13);
+            this.glLabel.TabIndex = 5;
+            this.glLabel.Text = "guide line:";
             // 
             // boxesLabel
             // 
@@ -496,7 +537,6 @@
             this.strokeSizeBox.Size = new System.Drawing.Size(48, 21);
             this.strokeSizeBox.TabIndex = 0;
             this.strokeSizeBox.Text = "2";
-            //this.strokeSizeBox.SelectedIndexChanged += new System.EventHandler(this.strokeSizeBox_SelectedIndexChanged);
             this.strokeSizeBox.TextChanged += new System.EventHandler(this.strokeSizeBox_TextChanged);
             // 
             // displayBox
@@ -587,13 +627,6 @@
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 0;
             // 
-            // guideLineColorToolStripMenuItem
-            // 
-            this.guideLineColorToolStripMenuItem.Name = "guideLineColorToolStripMenuItem";
-            this.guideLineColorToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
-            this.guideLineColorToolStripMenuItem.Text = "guide line color";
-            this.guideLineColorToolStripMenuItem.Click += new System.EventHandler(this.guideLineColorToolStripMenuItem_Click);
-            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -672,11 +705,14 @@
         private System.Windows.Forms.ComboBox guidelineType;
         private System.Windows.Forms.Label guidelineLabel;
         private System.Windows.Forms.GroupBox guideLineBox;
-        private System.Windows.Forms.Button nextBoxButton;
-        private System.Windows.Forms.Button prevBoxButton;
         private System.Windows.Forms.Label boxesLabel;
         private System.Windows.Forms.CheckBox showGuideLines;
         private System.Windows.Forms.ToolStripMenuItem guideLineColorToolStripMenuItem;
+        private System.Windows.Forms.Button prevBoxButton;
+        private System.Windows.Forms.Label glLabel;
+        private System.Windows.Forms.Button nextBoxButton;
+        private System.Windows.Forms.Button glPrevButton;
+        private System.Windows.Forms.Button glNextButton;
 
 	}
 }

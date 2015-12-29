@@ -9,7 +9,7 @@ using System.Runtime.Serialization.Json;
 using System.Web.Script.Serialization;
 
 
-namespace SketchPlatform
+namespace Component
 {
     public class SegmentClass
     {
@@ -44,7 +44,7 @@ namespace SketchPlatform
             {
                 Mesh mesh = new Mesh(meshfiles[i], false);
                 Vector3d[] bbox = this.loadBoudingbox(bboxfiles[i]);
-                Cube c = new Cube(bbox);
+                Box c = new Box(bbox);
                 Segment seg = new Segment(mesh, c);
                 seg.idx = i;
                 this.segments.Add(seg);
@@ -115,16 +115,16 @@ namespace SketchPlatform
             foreach (Segment seg in this.segments)
             {
                 List<GuideLine> allLines = seg.boundingbox.getAllLines();
-                foreach (GuideLine edge in allLines)
+                foreach (GuideLine line in allLines)
                 {
                     switch (idx)
                     {
                         case 1:
-                            edge.DefineRandomStrokes();
+                            line.DefineRandomStrokes();
                             break;
                         case 0:
                         default:
-                            edge.DefineCrossStrokes();
+                            line.DefineCrossStrokes();
                             break;
                     }                    
                 }
@@ -165,7 +165,7 @@ namespace SketchPlatform
             string str = sr.ReadToEnd();
             //List<string[]> json = new JavaScriptSerializer().Deserialize<List<string[]>>(str);
 
-            List<Box> boxes = new JavaScriptSerializer().Deserialize<List<Box>>(str);
+            List<BoxJson> boxes = new JavaScriptSerializer().Deserialize<List<BoxJson>>(str);
             this.segments = new List<Segment>();
             string path = filename.Substring(0, filename.LastIndexOf('\\') + 1);
             Matrix4d modelView = null;
@@ -201,7 +201,7 @@ namespace SketchPlatform
                     continue;
                 }
 
-                Cube c = new Cube(bbox);
+                Box c = new Box(bbox);
                 Segment seg = new Segment(mesh, c);
                 seg.idx = idx++;
                 this.segments.Add(seg);
@@ -209,7 +209,7 @@ namespace SketchPlatform
                 {
                     Vector3d maxcoord = Vector3d.MinCoord();
                     Vector3d mincoord = Vector3d.MaxCoord();
-                    foreach (Guide guide in boxes[i].guides)
+                    foreach (GuideJson guide in boxes[i].guides)
                     {
                         Vector3d pfrom = null, pto = null;
                         if (guide.from != null)
@@ -230,7 +230,7 @@ namespace SketchPlatform
                         maxcoord = Vector3d.Max(maxcoord, pto);
                         mincoord = Vector3d.Min(mincoord, pfrom);
                         mincoord = Vector3d.Min(mincoord, pto);
-                        GuideLine line = new GuideLine(pfrom, pto, null);
+                        GuideLine line = new GuideLine(pfrom, pto, null, false);
                         seg.boundingbox.guideLines.Add(line);
                     }
                     Vector3d v1 = seg.boundingbox.guideLines[0].v - seg.boundingbox.guideLines[0].u;

@@ -3,28 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SketchPlatform
+namespace Component
 {
     public class JsonFile
     {
-        public List<Box> boxes { get; set; }
+        public List<BoxJson> boxes { get; set; }
     }
 
-    public class Box
+    public class BoxJson
     {
         public string modelView { get; set; }
         public string box { get; set; }
         public string segment { get; set; }
-        public List<Guide> guides;
+        public List<GuideJson> guides;
     }
 
-    public class Guide
+    public class GuideJson
     {
-        public Point from;
-        public Point to;
+        public PointJson from;
+        public PointJson to;
     }
 
-    public class Point
+    public class PointJson
     {
         public string x { get; set; }
         public string y { get; set; }

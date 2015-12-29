@@ -4,7 +4,7 @@ using Tao.Platform.Windows;
 
 using Geometry;
 
-namespace SketchPlatform
+namespace Component
 {
     public class Camera
     {

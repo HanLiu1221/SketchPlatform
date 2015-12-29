@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
 using Geometry;
 
-namespace SketchPlatform
+namespace Geometry
 {
     public class Polygon
     {
@@ -158,81 +159,64 @@ namespace SketchPlatform
         }
     }//Line3d
 
-    public class Cube
+    public class Triangle
+    {
+        public Vector3d u;
+        public Vector3d v;
+        public Vector3d w;
+
+        public Triangle(Vector3d p1, Vector3d p2, Vector3d p3)
+        {
+            this.u = new Vector3d(p1);
+            this.v = new Vector3d(p2);
+            this.w = new Vector3d(p3);
+        }
+    }
+
+    public class Arrow3D
+    {
+        public Vector3d u;
+        public Vector3d v;
+        public Vector3d[] points; // curved arrow
+        public Triangle cap;
+        public Arrow3D(Vector3d p1, Vector3d p2, Vector3d normal)
+        {
+            this.u = new Vector3d(p1);
+            this.v = new Vector3d(p2);
+            // triangle
+            double d = (p2 - p1).Length() / 20;
+            Vector3d lineDir = (p2-p1).normalize();
+            Vector3d c = p2 - lineDir * d;
+            Vector3d dir = normal.Cross(lineDir).normalize();
+            double d2 = d * 0.6;
+            Vector3d v1 = c + dir * d2;
+            Vector3d v2 = c - dir * d2;
+            this.cap = new Triangle(v1, p2, v2);
+        }
+    }
+
+    public class Ellipse3D
     {
         public Vector3d[] points = null;
-        public Plane[] planes = null;
-        public GuideLine[] edges = null;
-        public List<GuideLine> guideLines = null;
+        public int npoints = 20;
 
-        public Cube()
-        { }
-
-        public Cube(Vector3d[] vs)
+        public Ellipse3D(Vector3d[] pts)
         {
-            this.points = new Vector3d[vs.Length];
-            for (int i = 0; i < vs.Length; ++i)
-            {
-                this.points[i] = new Vector3d(vs[i]);
-            }
-            // faces
-            this.planes = new Plane[6];
-            List<Vector3d> vslist = new List<Vector3d>();
-            for (int i = 0; i < 4; ++i)
-            {
-                vslist.Add(this.points[i]);
-            }
-            this.planes[0] = new Plane(vslist);
-            vslist = new List<Vector3d>();
-            for (int i = 4; i < 8; ++i)
-            {
-                vslist.Add(this.points[i]);
-            }
-            this.planes[1] = new Plane(vslist);
-            int r = 2;
-            for (int i = 0; i < 4; ++i)
-            {
-                vslist = new List<Vector3d>();
-                vslist.Add(this.points[i]);
-                vslist.Add(this.points[(i + 1) % 4]);
-                vslist.Add(this.points[((i + 1) % 4 + 4) % 8]);
-                vslist.Add(this.points[(i + 4) % 8]);
-                this.planes[r++] = new Plane(vslist);
-            }
-            this.edges = new GuideLine[12];
-            int s = 0;
-            Plane plane = new Plane();
-            int[] series = { 0, 3, 0, 5 };
-            for (int i = 0; i < 4; ++i)
-            {
-                plane = this.planes[series[i]].clone() as Plane;
-                edges[s++] = new GuideLine(this.points[i], this.points[(i + 1) % 4], plane);
-            }
-            series = new int[]{ 5, 3, 3, 5 };
-            for (int i = 0; i < 4; ++i)
-            {
-                plane = this.planes[series[i]].clone() as Plane; 
-                edges[s++] = new GuideLine(this.points[i], this.points[i + 4], plane);
-            }
-            series = new int[] { 1, 3, 1, 5 };
-            for (int i = 0; i < 4; ++i)
-            {
-                plane = this.planes[series[i]].clone() as Plane; 
-                edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane);
-            }
-            this.guideLines = new List<GuideLine>();
+            this.points = pts;
         }
 
-        public List<GuideLine> getAllLines()
+        public Ellipse3D(Vector3d c, Vector3d u, Vector3d v, double a, double b)
         {
-            List<GuideLine> allLines = new List<GuideLine>();
-            foreach (GuideLine edge in this.edges)
+            points = new Vector3d[this.npoints];
+            double alpha = Math.PI * 2 / this.npoints;
+            for (int i = 0; i < this.npoints; ++i)
             {
-                allLines.Add(edge);
+                double angle = alpha * i;
+                Vector3d p = c + a * Math.Cos(angle) * u + b * Math.Sin(angle) * v;
+                points[i] = p;
             }
-            allLines.AddRange(this.guideLines);
-            return allLines;
         }
-    }// Cube
+
+    }// Ellipse3D
     
 }
