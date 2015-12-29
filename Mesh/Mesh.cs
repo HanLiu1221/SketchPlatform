@@ -52,7 +52,7 @@ namespace Geometry
 		private double[] vertexPos = null;
 		private int[] faceVertexIndex = null;
 		private HalfEdge[] halfEdges = null;
-        private HalfEdge[] edges = null;
+        private HalfEdge[] guideLines = null;
 		private double[] vertexNormal = null;
 		private double[] faceNormal = null;
         private byte[] vertexColor = null;
@@ -109,7 +109,7 @@ namespace Geometry
         {
             get
             {
-                return edges;
+                return guideLines;
             }
         }
 
@@ -276,7 +276,7 @@ namespace Geometry
             this.faceVertexIndex = faceArray.ToArray();
             this.halfEdges = halfEdgeArray.ToArray();
             this.vertexColor = vertexColorArray.ToArray();
-            this.edges = edgeArray.ToArray();
+            this.guideLines = edgeArray.ToArray();
             this.edgeIter = this.halfEdges[0];
             if (normalize)
             {
@@ -366,7 +366,7 @@ namespace Geometry
 			this.vertexPos = vertexArray.ToArray();
 			this.faceVertexIndex = faceArray.ToArray();
 			this.halfEdges = halfEdgeArray.ToArray();
-            this.edges = edgeArray.ToArray();
+            this.guideLines = edgeArray.ToArray();
             this.edgeIter = this.halfEdges[0];
             if (normalize)
             {

@@ -23,9 +23,9 @@ namespace SketchPlatform
         public List<Vector2d> meshVertices2d;
         public List<int> faceIndex;
         private int facecount = 0;
-        private double size2 = 2.0;
-        private double size3 = 0.004;
-        public Color stokeColor = Color.DarkGray;
+        private double size2 = SegmentClass.strokeSize;
+        private double size3 = (double)SegmentClass.strokeSize / 500;
+        public Color stokeColor = Color.FromArgb(99, 99, 99);
         public int opacity = 0;
         public Plane hostPlane;
         public double depth = 1.0;
@@ -510,6 +510,11 @@ namespace SketchPlatform
             this.DefineCrossStrokes();
         }
 
+        public void setHostPlane(Plane plane)
+        {
+            this.hostPlane = plane.clone() as Plane;
+        }
+
         private double angleTransform(int degree)
         {
             return Math.PI * (double)degree / 180.0;
@@ -566,8 +571,9 @@ namespace SketchPlatform
             Vector3d lineDir = (v - u).normalize();
             this.nSketch = 1;
             Vector3d[] endpoints = new Vector3d[2];
-            endpoints[0] = u - len * lineDir;
-            endpoints[1] = v + len * lineDir;
+            double dis = this.getRandomDoubleInRange(rand, 0, len);
+            endpoints[0] = u - dis * lineDir;
+            endpoints[1] = v + dis * lineDir;
             Stroke line = new Stroke(endpoints[0], endpoints[1]);
             this.strokes.Add(line);
         }

@@ -35,6 +35,7 @@
             this.import3D = new System.Windows.Forms.ToolStripMenuItem();
             this.saveAs3D = new System.Windows.Forms.ToolStripMenuItem();
             this.loadSegmentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadJSONFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tools = new System.Windows.Forms.ToolStripDropDownButton();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -56,29 +57,35 @@
             this.crayonToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ink1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ink2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.colorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.edgeColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
+            this.guideLineBox = new System.Windows.Forms.GroupBox();
+            this.nextBoxButton = new System.Windows.Forms.Button();
+            this.prevBoxButton = new System.Windows.Forms.Button();
+            this.boxesLabel = new System.Windows.Forms.Label();
             this.adjustBox = new System.Windows.Forms.GroupBox();
+            this.guidelineType = new System.Windows.Forms.ComboBox();
+            this.guidelineLabel = new System.Windows.Forms.Label();
             this.strokeSizeLabel = new System.Windows.Forms.Label();
             this.strokeSizeBox = new System.Windows.Forms.ComboBox();
             this.displayBox = new System.Windows.Forms.GroupBox();
-            this.showSketchyLines = new System.Windows.Forms.CheckBox();
+            this.showGuideLines = new System.Windows.Forms.CheckBox();
+            this.showSketchyEdges = new System.Windows.Forms.CheckBox();
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
-            this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.loadJSONFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.guidelineLabel = new System.Windows.Forms.Label();
-            this.guidelineType = new System.Windows.Forms.ComboBox();
             this.glViewer = new SketchPlatform.GLViewer();
+            this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
+            this.guideLineColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
             this.viewPanel.Panel2.SuspendLayout();
             this.viewPanel.SuspendLayout();
             this.toolboxPanel.SuspendLayout();
+            this.guideLineBox.SuspendLayout();
             this.adjustBox.SuspendLayout();
             this.displayBox.SuspendLayout();
             this.SuspendLayout();
@@ -139,6 +146,13 @@
             this.loadSegmentsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.loadSegmentsToolStripMenuItem.Text = "Load Segments";
             this.loadSegmentsToolStripMenuItem.Click += new System.EventHandler(this.loadSegmentsToolStripMenuItem_Click);
+            // 
+            // loadJSONFileToolStripMenuItem
+            // 
+            this.loadJSONFileToolStripMenuItem.Name = "loadJSONFileToolStripMenuItem";
+            this.loadJSONFileToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadJSONFileToolStripMenuItem.Text = "Load JSON file";
+            this.loadJSONFileToolStripMenuItem.Click += new System.EventHandler(this.loadJSONFileToolStripMenuItem_Click);
             // 
             // tools
             // 
@@ -271,7 +285,8 @@
             this.crayonToolStripMenuItem,
             this.ink1ToolStripMenuItem,
             this.ink2ToolStripMenuItem,
-            this.colorToolStripMenuItem});
+            this.edgeColorToolStripMenuItem,
+            this.guideLineColorToolStripMenuItem});
             this.strokeStyle.Image = ((System.Drawing.Image)(resources.GetObject("strokeStyle.Image")));
             this.strokeStyle.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.strokeStyle.Name = "strokeStyle";
@@ -282,51 +297,51 @@
             // pencilToolStripMenuItem
             // 
             this.pencilToolStripMenuItem.Name = "pencilToolStripMenuItem";
-            this.pencilToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.pencilToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
             this.pencilToolStripMenuItem.Text = "pencil";
             this.pencilToolStripMenuItem.Click += new System.EventHandler(this.pencilToolStripMenuItem_Click);
             // 
             // pen1ToolStripMenuItem
             // 
             this.pen1ToolStripMenuItem.Name = "pen1ToolStripMenuItem";
-            this.pen1ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.pen1ToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
             this.pen1ToolStripMenuItem.Text = "pen-1";
             this.pen1ToolStripMenuItem.Click += new System.EventHandler(this.pen1ToolStripMenuItem_Click);
             // 
             // pen2ToolStripMenuItem
             // 
             this.pen2ToolStripMenuItem.Name = "pen2ToolStripMenuItem";
-            this.pen2ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.pen2ToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
             this.pen2ToolStripMenuItem.Text = "pen-2";
             this.pen2ToolStripMenuItem.Click += new System.EventHandler(this.pen2ToolStripMenuItem_Click);
             // 
             // crayonToolStripMenuItem
             // 
             this.crayonToolStripMenuItem.Name = "crayonToolStripMenuItem";
-            this.crayonToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.crayonToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
             this.crayonToolStripMenuItem.Text = "crayon";
             this.crayonToolStripMenuItem.Click += new System.EventHandler(this.crayonToolStripMenuItem_Click);
             // 
             // ink1ToolStripMenuItem
             // 
             this.ink1ToolStripMenuItem.Name = "ink1ToolStripMenuItem";
-            this.ink1ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.ink1ToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
             this.ink1ToolStripMenuItem.Text = "ink-1";
             this.ink1ToolStripMenuItem.Click += new System.EventHandler(this.ink1ToolStripMenuItem_Click);
             // 
             // ink2ToolStripMenuItem
             // 
             this.ink2ToolStripMenuItem.Name = "ink2ToolStripMenuItem";
-            this.ink2ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.ink2ToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
             this.ink2ToolStripMenuItem.Text = "ink-2";
             this.ink2ToolStripMenuItem.Click += new System.EventHandler(this.ink2ToolStripMenuItem_Click);
             // 
-            // colorToolStripMenuItem
+            // edgeColorToolStripMenuItem
             // 
-            this.colorToolStripMenuItem.Name = "colorToolStripMenuItem";
-            this.colorToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.colorToolStripMenuItem.Text = "color";
-            this.colorToolStripMenuItem.Click += new System.EventHandler(this.colorToolStripMenuItem_Click);
+            this.edgeColorToolStripMenuItem.Name = "edgeColorToolStripMenuItem";
+            this.edgeColorToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.edgeColorToolStripMenuItem.Text = "edge color";
+            this.edgeColorToolStripMenuItem.Click += new System.EventHandler(this.edgeColorToolStripMenuItem_Click);
             // 
             // viewPanel
             // 
@@ -371,12 +386,54 @@
             this.toolboxPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
             this.toolboxPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.toolboxPanel.Controls.Add(this.guideLineBox);
             this.toolboxPanel.Controls.Add(this.adjustBox);
             this.toolboxPanel.Controls.Add(this.displayBox);
             this.toolboxPanel.Location = new System.Drawing.Point(3, 3);
             this.toolboxPanel.Name = "toolboxPanel";
             this.toolboxPanel.Size = new System.Drawing.Size(165, 484);
             this.toolboxPanel.TabIndex = 2;
+            // 
+            // guideLineBox
+            // 
+            this.guideLineBox.Controls.Add(this.nextBoxButton);
+            this.guideLineBox.Controls.Add(this.prevBoxButton);
+            this.guideLineBox.Controls.Add(this.boxesLabel);
+            this.guideLineBox.Location = new System.Drawing.Point(3, 223);
+            this.guideLineBox.Name = "guideLineBox";
+            this.guideLineBox.Size = new System.Drawing.Size(156, 91);
+            this.guideLineBox.TabIndex = 4;
+            this.guideLineBox.TabStop = false;
+            this.guideLineBox.Text = "Guides";
+            // 
+            // nextBoxButton
+            // 
+            this.nextBoxButton.Location = new System.Drawing.Point(81, 25);
+            this.nextBoxButton.Name = "nextBoxButton";
+            this.nextBoxButton.Size = new System.Drawing.Size(39, 24);
+            this.nextBoxButton.TabIndex = 2;
+            this.nextBoxButton.Text = "next";
+            this.nextBoxButton.UseVisualStyleBackColor = true;
+            this.nextBoxButton.Click += new System.EventHandler(this.nextBoxButton_Click);
+            // 
+            // prevBoxButton
+            // 
+            this.prevBoxButton.Location = new System.Drawing.Point(36, 25);
+            this.prevBoxButton.Name = "prevBoxButton";
+            this.prevBoxButton.Size = new System.Drawing.Size(39, 24);
+            this.prevBoxButton.TabIndex = 1;
+            this.prevBoxButton.Text = "prev";
+            this.prevBoxButton.UseVisualStyleBackColor = true;
+            this.prevBoxButton.Click += new System.EventHandler(this.prevBoxButton_Click);
+            // 
+            // boxesLabel
+            // 
+            this.boxesLabel.AutoSize = true;
+            this.boxesLabel.Location = new System.Drawing.Point(3, 30);
+            this.boxesLabel.Name = "boxesLabel";
+            this.boxesLabel.Size = new System.Drawing.Size(27, 13);
+            this.boxesLabel.TabIndex = 0;
+            this.boxesLabel.Text = "box:";
             // 
             // adjustBox
             // 
@@ -386,19 +443,43 @@
             this.adjustBox.Controls.Add(this.strokeSizeBox);
             this.adjustBox.Location = new System.Drawing.Point(3, 123);
             this.adjustBox.Name = "adjustBox";
-            this.adjustBox.Size = new System.Drawing.Size(156, 100);
+            this.adjustBox.Size = new System.Drawing.Size(156, 91);
             this.adjustBox.TabIndex = 3;
             this.adjustBox.TabStop = false;
             this.adjustBox.Text = "Adjust";
             // 
+            // guidelineType
+            // 
+            this.guidelineType.FormattingEnabled = true;
+            this.guidelineType.Items.AddRange(new object[] {
+            "cross",
+            "random"});
+            this.guidelineType.Location = new System.Drawing.Point(66, 55);
+            this.guidelineType.Name = "guidelineType";
+            this.guidelineType.Size = new System.Drawing.Size(66, 21);
+            this.guidelineType.TabIndex = 3;
+            this.guidelineType.Text = "cross";
+            this.guidelineType.SelectedIndexChanged += new System.EventHandler(this.guidelineType_SelectedIndexChanged);
+            // 
+            // guidelineLabel
+            // 
+            this.guidelineLabel.AutoSize = true;
+            this.guidelineLabel.Location = new System.Drawing.Point(3, 55);
+            this.guidelineLabel.Name = "guidelineLabel";
+            this.guidelineLabel.Size = new System.Drawing.Size(52, 13);
+            this.guidelineLabel.TabIndex = 2;
+            this.guidelineLabel.Text = "guide line";
+            this.guidelineLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // strokeSizeLabel
             // 
             this.strokeSizeLabel.AutoSize = true;
-            this.strokeSizeLabel.Location = new System.Drawing.Point(6, 28);
+            this.strokeSizeLabel.Location = new System.Drawing.Point(3, 27);
             this.strokeSizeLabel.Name = "strokeSizeLabel";
             this.strokeSizeLabel.Size = new System.Drawing.Size(60, 13);
             this.strokeSizeLabel.TabIndex = 1;
             this.strokeSizeLabel.Text = "stroke size:";
+            this.strokeSizeLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // strokeSizeBox
             // 
@@ -415,12 +496,13 @@
             this.strokeSizeBox.Size = new System.Drawing.Size(48, 21);
             this.strokeSizeBox.TabIndex = 0;
             this.strokeSizeBox.Text = "2";
-            this.strokeSizeBox.SelectedIndexChanged += new System.EventHandler(this.strokeSizeBox_SelectedIndexChanged);
+            //this.strokeSizeBox.SelectedIndexChanged += new System.EventHandler(this.strokeSizeBox_SelectedIndexChanged);
             this.strokeSizeBox.TextChanged += new System.EventHandler(this.strokeSizeBox_TextChanged);
             // 
             // displayBox
             // 
-            this.displayBox.Controls.Add(this.showSketchyLines);
+            this.displayBox.Controls.Add(this.showGuideLines);
+            this.displayBox.Controls.Add(this.showSketchyEdges);
             this.displayBox.Controls.Add(this.showMesh);
             this.displayBox.Controls.Add(this.showBBox);
             this.displayBox.Location = new System.Drawing.Point(3, 4);
@@ -430,19 +512,33 @@
             this.displayBox.TabStop = false;
             this.displayBox.Text = "Display";
             // 
-            // showSketchyLines
+            // showGuideLines
             // 
-            this.showSketchyLines.AutoSize = true;
-            this.showSketchyLines.Checked = true;
-            this.showSketchyLines.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.showSketchyLines.Location = new System.Drawing.Point(6, 65);
-            this.showSketchyLines.Name = "showSketchyLines";
-            this.showSketchyLines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.showSketchyLines.Size = new System.Drawing.Size(87, 17);
-            this.showSketchyLines.TabIndex = 3;
-            this.showSketchyLines.Text = "sketchy lines";
-            this.showSketchyLines.UseVisualStyleBackColor = true;
-            this.showSketchyLines.CheckedChanged += new System.EventHandler(this.showSketchyLines_CheckedChanged);
+            this.showGuideLines.AutoSize = true;
+            this.showGuideLines.Checked = true;
+            this.showGuideLines.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showGuideLines.Location = new System.Drawing.Point(6, 88);
+            this.showGuideLines.Name = "showGuideLines";
+            this.showGuideLines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showGuideLines.Size = new System.Drawing.Size(76, 17);
+            this.showGuideLines.TabIndex = 4;
+            this.showGuideLines.Text = "guide lines";
+            this.showGuideLines.UseVisualStyleBackColor = true;
+            this.showGuideLines.CheckedChanged += new System.EventHandler(this.showGuideLines_CheckedChanged);
+            // 
+            // showSketchyEdges
+            // 
+            this.showSketchyEdges.AutoSize = true;
+            this.showSketchyEdges.Checked = true;
+            this.showSketchyEdges.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showSketchyEdges.Location = new System.Drawing.Point(6, 65);
+            this.showSketchyEdges.Name = "showSketchyEdges";
+            this.showSketchyEdges.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showSketchyEdges.Size = new System.Drawing.Size(95, 17);
+            this.showSketchyEdges.TabIndex = 3;
+            this.showSketchyEdges.Text = "sketchy edges";
+            this.showSketchyEdges.UseVisualStyleBackColor = true;
+            this.showSketchyEdges.CheckedChanged += new System.EventHandler(this.showSketchyEdges_CheckedChanged);
             // 
             // showMesh
             // 
@@ -470,35 +566,6 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
-            // loadJSONFileToolStripMenuItem
-            // 
-            this.loadJSONFileToolStripMenuItem.Name = "loadJSONFileToolStripMenuItem";
-            this.loadJSONFileToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.loadJSONFileToolStripMenuItem.Text = "Load JSON file";
-            this.loadJSONFileToolStripMenuItem.Click += new System.EventHandler(this.loadJSONFileToolStripMenuItem_Click);
-            // 
-            // guidelineLabel
-            // 
-            this.guidelineLabel.AutoSize = true;
-            this.guidelineLabel.Location = new System.Drawing.Point(3, 55);
-            this.guidelineLabel.Name = "guidelineLabel";
-            this.guidelineLabel.Size = new System.Drawing.Size(52, 13);
-            this.guidelineLabel.TabIndex = 2;
-            this.guidelineLabel.Text = "guide line";
-            // 
-            // guidelineType
-            // 
-            this.guidelineType.FormattingEnabled = true;
-            this.guidelineType.Items.AddRange(new object[] {
-            "cross",
-            "random"});
-            this.guidelineType.Location = new System.Drawing.Point(66, 55);
-            this.guidelineType.Name = "guidelineType";
-            this.guidelineType.Size = new System.Drawing.Size(66, 21);
-            this.guidelineType.TabIndex = 3;
-            this.guidelineType.Text = "cross";
-            this.guidelineType.SelectedIndexChanged += new System.EventHandler(this.guidelineType_SelectedIndexChanged);
-            // 
             // glViewer
             // 
             this.glViewer.AccumBits = ((byte)(0));
@@ -520,6 +587,13 @@
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 0;
             // 
+            // guideLineColorToolStripMenuItem
+            // 
+            this.guideLineColorToolStripMenuItem.Name = "guideLineColorToolStripMenuItem";
+            this.guideLineColorToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.guideLineColorToolStripMenuItem.Text = "guide line color";
+            this.guideLineColorToolStripMenuItem.Click += new System.EventHandler(this.guideLineColorToolStripMenuItem_Click);
+            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -539,6 +613,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).EndInit();
             this.viewPanel.ResumeLayout(false);
             this.toolboxPanel.ResumeLayout(false);
+            this.guideLineBox.ResumeLayout(false);
+            this.guideLineBox.PerformLayout();
             this.adjustBox.ResumeLayout(false);
             this.adjustBox.PerformLayout();
             this.displayBox.ResumeLayout(false);
@@ -586,15 +662,21 @@
         private System.Windows.Forms.ToolStripMenuItem crayonToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ink1ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ink2ToolStripMenuItem;
-        private System.Windows.Forms.CheckBox showSketchyLines;
+        private System.Windows.Forms.CheckBox showSketchyEdges;
         private System.Windows.Forms.GroupBox adjustBox;
         private System.Windows.Forms.ComboBox strokeSizeBox;
         private System.Windows.Forms.Label strokeSizeLabel;
-        private System.Windows.Forms.ToolStripMenuItem colorToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem edgeColorToolStripMenuItem;
         private System.Windows.Forms.ColorDialog strokeColorDialog;
         private System.Windows.Forms.ToolStripMenuItem loadJSONFileToolStripMenuItem;
         private System.Windows.Forms.ComboBox guidelineType;
         private System.Windows.Forms.Label guidelineLabel;
+        private System.Windows.Forms.GroupBox guideLineBox;
+        private System.Windows.Forms.Button nextBoxButton;
+        private System.Windows.Forms.Button prevBoxButton;
+        private System.Windows.Forms.Label boxesLabel;
+        private System.Windows.Forms.CheckBox showGuideLines;
+        private System.Windows.Forms.ToolStripMenuItem guideLineColorToolStripMenuItem;
 
 	}
 }

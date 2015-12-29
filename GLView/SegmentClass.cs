@@ -22,8 +22,9 @@ namespace SketchPlatform
         {
             Pencil, Pen1, Pen2, Crayon, Ink1, Ink2
         }
-        public StrokeStyle strokeStyle = StrokeStyle.Ink1;
+        public static StrokeStyle strokeStyle = StrokeStyle.Ink1;
         public GuideLineType guideLineStyle = GuideLineType.SimpleCross;
+        public static int strokeSize = 2;
 
         public SegmentClass()
         { }
@@ -88,23 +89,23 @@ namespace SketchPlatform
             switch (idx)
             {
                 case 0:
-                    this.strokeStyle = StrokeStyle.Pencil;
+                    SegmentClass.strokeStyle = StrokeStyle.Pencil;
                     break;
                 case 1:
-                    this.strokeStyle = StrokeStyle.Pen1;
+                    SegmentClass.strokeStyle = StrokeStyle.Pen1;
                     break;
                 case 2:
-                    this.strokeStyle = StrokeStyle.Pen2;
+                    SegmentClass.strokeStyle = StrokeStyle.Pen2;
                     break;
                 case 3:
-                    this.strokeStyle = StrokeStyle.Crayon;
+                    SegmentClass.strokeStyle = StrokeStyle.Crayon;
                     break;
                 case 4:
-                    this.strokeStyle = StrokeStyle.Ink1;
+                    SegmentClass.strokeStyle = StrokeStyle.Ink1;
                     break;
                 case 5:
                 default:
-                    this.strokeStyle = StrokeStyle.Ink2;
+                    SegmentClass.strokeStyle = StrokeStyle.Ink2;
                     break;
             }
         }// setStrokeStyle
@@ -113,7 +114,8 @@ namespace SketchPlatform
         {
             foreach (Segment seg in this.segments)
             {
-                foreach (GuideLine edge in seg.boundingbox.edges)
+                List<GuideLine> allLines = seg.boundingbox.getAllLines();
+                foreach (GuideLine edge in allLines)
                 {
                     switch (idx)
                     {
@@ -133,25 +135,26 @@ namespace SketchPlatform
 		{
             foreach(Segment seg in this.segments)
             {
-                foreach(GuideLine edge in seg.boundingbox.edges)
+                List<GuideLine> allLines = seg.boundingbox.getAllLines();
+                foreach (GuideLine edge in allLines)
                 {
                     foreach (Stroke stroke in edge.strokes)
                     {
-                        stroke.changeStyle((int)this.strokeStyle, T, camera);
+                        stroke.changeStyle((int)SegmentClass.strokeStyle, T, camera);
                     }
                 }
             }
         }// ChangeStrokeStyle
 
-        public int shadedOrTexture()
+        public bool shadedOrTexture()
         {
-            if ((int)this.strokeStyle == 3)// || (int)this.strokeStyle == 4)
+            if ((int)SegmentClass.strokeStyle == 3)// || (int)this.strokeStyle == 4)
             {
-                return 1;
+                return false;
             }
             else
             {
-                return 0;
+                return true;
             }
         }//shadedOrTexture
 
@@ -193,17 +196,64 @@ namespace SketchPlatform
                     string file = path + boxes[i].segment;
                     mesh = new Mesh(file, false);
                 }
-                if (bbox != null || mesh != null)
+                if (bbox == null && mesh == null)
                 {
-                    Cube c = new Cube(bbox);
-                    Segment seg = new Segment(mesh, c);
-                    seg.idx = idx++;
-                    this.segments.Add(seg);
+                    continue;
+                }
+
+                Cube c = new Cube(bbox);
+                Segment seg = new Segment(mesh, c);
+                seg.idx = idx++;
+                this.segments.Add(seg);
+                if (boxes[i].guides != null)
+                {
+                    Vector3d maxcoord = Vector3d.MinCoord();
+                    Vector3d mincoord = Vector3d.MaxCoord();
+                    foreach (Guide guide in boxes[i].guides)
+                    {
+                        Vector3d pfrom = null, pto = null;
+                        if (guide.from != null)
+                        {
+                            pfrom = new Vector3d(
+                                double.Parse(guide.from.x),
+                                double.Parse(guide.from.y),
+                                double.Parse(guide.from.z));
+                        }
+                        if (guide.to != null)
+                        {
+                            pto = new Vector3d(
+                                double.Parse(guide.to.x),
+                                double.Parse(guide.to.y),
+                                double.Parse(guide.to.z));
+                        }
+                        maxcoord = Vector3d.Max(maxcoord, pfrom);
+                        maxcoord = Vector3d.Max(maxcoord, pto);
+                        mincoord = Vector3d.Min(mincoord, pfrom);
+                        mincoord = Vector3d.Min(mincoord, pto);
+                        GuideLine line = new GuideLine(pfrom, pto, null);
+                        seg.boundingbox.guideLines.Add(line);
+                    }
+                    Vector3d v1 = seg.boundingbox.guideLines[0].v - seg.boundingbox.guideLines[0].u;
+                    Vector3d v2 = seg.boundingbox.guideLines[1].v - seg.boundingbox.guideLines[1].u;
+                    Vector3d normal = v1.Cross(v2).normalize();
+                    Vector3d ends = (maxcoord - mincoord).normalize();
+                    double len = (maxcoord - mincoord).Length() / 2;
+                    Vector3d dir = normal.Cross(ends);
+                    Vector3d center = (maxcoord + mincoord) / 2;
+                    Vector3d[] points = new Vector3d[4];
+                    points[0] = mincoord;
+                    points[1] = center - len * dir;
+                    points[2] = maxcoord;
+                    points[3] = center + len * dir;
+                    Plane plane = new Plane(points);
+                    foreach (GuideLine line in seg.boundingbox.guideLines)
+                    {
+                        line.setHostPlane(plane);
+                    }
                 }
             }
-
-            return modelView;
-            
+            return modelView;            
         }//DeserializeJSON
+        
     }
 }

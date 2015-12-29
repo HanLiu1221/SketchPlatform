@@ -155,12 +155,12 @@ namespace SketchPlatform
 
         public void selectMeshEdges(Quad2d q)
         {
-            HalfEdge[] edges = this.mesh.Edges;
+            HalfEdge[] guideLines = this.mesh.Edges;
             double[] vertexPos = this.mesh.VertexPos;
-            for (int i = 0; i < edges.Length; ++i)
+            for (int i = 0; i < guideLines.Length; ++i)
             {
-                int fromIdx = edges[i].FromIndex;
-                int toIdx = edges[i].ToIndex;
+                int fromIdx = guideLines[i].FromIndex;
+                int toIdx = guideLines[i].ToIndex;
                 Vector3d vf = new Vector3d(vertexPos[fromIdx * 3], 
                     vertexPos[fromIdx * 3 + 1],
                     vertexPos[fromIdx * 3 + 2]);

@@ -163,6 +163,7 @@ namespace SketchPlatform
         public Vector3d[] points = null;
         public Plane[] planes = null;
         public GuideLine[] edges = null;
+        public List<GuideLine> guideLines = null;
 
         public Cube()
         { }
@@ -204,7 +205,7 @@ namespace SketchPlatform
             int[] series = { 0, 3, 0, 5 };
             for (int i = 0; i < 4; ++i)
             {
-                plane = this.planes[series[i]].clone() as Plane; 
+                plane = this.planes[series[i]].clone() as Plane;
                 edges[s++] = new GuideLine(this.points[i], this.points[(i + 1) % 4], plane);
             }
             series = new int[]{ 5, 3, 3, 5 };
@@ -219,6 +220,18 @@ namespace SketchPlatform
                 plane = this.planes[series[i]].clone() as Plane; 
                 edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane);
             }
+            this.guideLines = new List<GuideLine>();
+        }
+
+        public List<GuideLine> getAllLines()
+        {
+            List<GuideLine> allLines = new List<GuideLine>();
+            foreach (GuideLine edge in this.edges)
+            {
+                allLines.Add(edge);
+            }
+            allLines.AddRange(this.guideLines);
+            return allLines;
         }
     }// Cube
     

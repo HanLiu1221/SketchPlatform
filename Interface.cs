@@ -37,7 +37,7 @@ namespace SketchPlatform
                 this.glViewer.setTabIndex(this.fileNameTabs.TabCount);
                 int[] meshStats = this.glViewer.getMeshStatistics();
                 this.statistics.Text = "# number of vertex: " + meshStats[0] + "\n"
-                    + "# number of edges: " + meshStats[1] + "\n"
+                    + "# number of guideLines: " + meshStats[1] + "\n"
                     + "# number of faces: " + meshStats[2] + "\n";
             }
             this.glViewer.Refresh();
@@ -130,9 +130,15 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
-        private void showSketchyLines_CheckedChanged(object sender, EventArgs e)
+        private void showSketchyEdges_CheckedChanged(object sender, EventArgs e)
         {
-            this.glViewer.showSketchyLines = this.showSketchyLines.Checked;
+            this.glViewer.showSketchyEdges = this.showSketchyEdges.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void showGuideLines_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showGuideLines = this.showGuideLines.Checked;
             this.glViewer.Refresh();
         }
 
@@ -172,14 +178,14 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
-        private void strokeSizeBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
-                return;
-            int size = Int32.Parse(this.strokeSizeBox.Text);
-            this.glViewer.setStrokeSize(size);
-            this.glViewer.Refresh();
-        }
+        //private void strokeSizeBox_SelectedIndexChanged(object sender, EventArgs e)
+        //{
+        //    if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
+        //        return;
+        //    int size = Int32.Parse(this.strokeSizeBox.Text);
+        //    this.glViewer.setStrokeSize(size);
+        //    this.glViewer.Refresh();
+        //}
 
         private void strokeSizeBox_TextChanged(object sender, EventArgs e)
         {
@@ -190,11 +196,20 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
-        private void colorToolStripMenuItem_Click(object sender, EventArgs e)
+        private void edgeColorToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (this.strokeColorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                this.glViewer.setStrokeColor(this.strokeColorDialog.Color);
+                this.glViewer.setSektchyEdgesColor(this.strokeColorDialog.Color);
+                this.glViewer.Refresh();
+            }
+        }
+
+        private void guideLineColorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (this.strokeColorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                this.glViewer.setGuideLineColor(this.strokeColorDialog.Color);
                 this.glViewer.Refresh();
             }
         }
@@ -222,6 +237,22 @@ namespace SketchPlatform
             this.glViewer.setGuideLineStyle(idx);
             this.glViewer.Refresh();
         }
+
+        private void prevBoxButton_Click(object sender, EventArgs e)
+        {
+            this.glViewer.nextBox();
+            this.glViewer.Refresh();
+        }
+
+        private void nextBoxButton_Click(object sender, EventArgs e)
+        {
+            this.glViewer.prevBox();
+            this.glViewer.Refresh();
+        }
+
+        
+
+        
 
 	}
 }

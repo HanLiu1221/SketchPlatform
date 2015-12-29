@@ -110,7 +110,14 @@ namespace SketchPlatform
 
         public bool showBoundingbox = true;
         public bool showMesh = false;
-        public bool showSketchyLines = true;
+        public bool showSketchyEdges = true;
+        public bool showGuideLines = true;
+
+        private float[] material = { 0.62f, 0.74f, 0.85f, 1.0f };
+        private float[] ambient = { 0.2f, 0.2f, 0.2f, 1.0f };
+        private float[] diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
+        private float[] specular = { 1.0f, 1.0f, 1.0f, 1.0f };
+        private float[] position = { 1.0f, 1.0f, 1.0f, 0.0f };
 
         /******************** Variables ********************/
         private UIMode currUIMode = UIMode.Viewing;
@@ -145,6 +152,8 @@ namespace SketchPlatform
         private Shader shader;
         public static uint pencilTextureId, crayonTextureId, inkTextureId, waterColorTextureId, charcoalTextureId,
             brushTextureId;
+        public int currBoxIdx = -1;
+        private bool drawShadedOrTexturedStroke = true;
 
         //########## static vars ##########//
         public static Color[] ColorSet;
@@ -282,18 +291,19 @@ namespace SketchPlatform
             this.calculateSketchMesh();
             segStats = new int[2];
             segStats[0] = sc.segments.Count;
-        }//loadSegments
+        }// loadSegments
 
         public void loadJSONFile(string jsonFile)
         {
             SegmentClass sc = new SegmentClass();
-            sc.DeserializeJSON(jsonFile);
+            Matrix4d m = sc.DeserializeJSON(jsonFile);
             this.segmentClasses.Add(sc);
             this.currSegmentClass = sc;
             this.calculateSketchMesh();
             segStats = new int[2];
             segStats[0] = sc.segments.Count;
-        }
+            this.setGuideLineColor(Color.FromArgb(222, 45, 38));
+        }// loadJSONFile
 
         public int[] getMeshStatistics()
         {
@@ -307,9 +317,11 @@ namespace SketchPlatform
 
         public void setStrokeSize(int size)
         {
+            SegmentClass.strokeSize = size;
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                foreach (GuideLine edge in seg.boundingbox.edges)
+                List<GuideLine> allLines = seg.boundingbox.getAllLines();
+                foreach (GuideLine edge in allLines)
                 {
                     foreach (Stroke stroke in edge.strokes)
                     {
@@ -320,7 +332,21 @@ namespace SketchPlatform
             this.calculateSketchMesh();
         }//setStrokeSize
 
-        public void setStrokeColor(Color c)
+        public void setGuideLineColor(Color c)
+        {
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                foreach (GuideLine edge in seg.boundingbox.guideLines)
+                {
+                    foreach (Stroke stroke in edge.strokes)
+                    {
+                        stroke.stokeColor = c;
+                    }
+                }
+            }
+        }
+
+        public void setSektchyEdgesColor(Color c)
         {
             foreach (Segment seg in this.currSegmentClass.segments)
             {
@@ -344,7 +370,19 @@ namespace SketchPlatform
         {
             this.currSegmentClass.setStrokeStyle(idx);
             this.calculateSketchMesh();
+            this.drawShadedOrTexturedStroke = this.currSegmentClass.shadedOrTexture();
         }//setStrokeStyle
+
+        public void nextBox()
+        {
+            this.currBoxIdx = (this.currBoxIdx + 1) % this.currSegmentClass.segments.Count;
+        }
+
+        public void prevBox()
+        {
+            this.currBoxIdx = (this.currBoxIdx - 1 + this.currSegmentClass.segments.Count)
+                % this.currSegmentClass.segments.Count;
+        }
 
         private void projectStrokePointsTo2d(Stroke stroke)
         {
@@ -362,7 +400,8 @@ namespace SketchPlatform
             this.UpdateCamera();
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                foreach (GuideLine edge in seg.boundingbox.edges)
+                List<GuideLine> allLines = seg.boundingbox.getAllLines();
+                foreach (GuideLine edge in allLines)
                 {
                     foreach (Stroke stroke in edge.strokes)
                     {
@@ -610,7 +649,10 @@ namespace SketchPlatform
                 case UIMode.FaceSelection:
                     {
                         this.isDrawQuad = false;
-                        this.currMeshClass.selectMouseUp();
+                        if (this.currMeshClass != null)
+                        {
+                            this.currMeshClass.selectMouseUp();
+                        }
                         this.Refresh();
                         break;
                     }
@@ -688,6 +730,24 @@ namespace SketchPlatform
             //Glu.gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         }
 
+        private void Draw2D()
+        {
+            int w = this.Width, h = this.Height;
+
+            Gl.glViewport(0, 0, w, h);
+            Gl.glMatrixMode(Gl.GL_PROJECTION);
+            Gl.glLoadIdentity();
+            Glu.gluOrtho2D(0, w, 0, h);
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            Gl.glLoadIdentity();
+            Gl.glPushMatrix();
+
+            //this.drawSketchyLines2D();            
+
+            Gl.glPopMatrix();
+            Gl.glPopMatrix();
+        }
+
         private void Draw3D()
         {
             this.setViewMatrix();
@@ -726,9 +786,17 @@ namespace SketchPlatform
                 this.currMeshClass.drawSelectedEdges();
                 this.currMeshClass.drawSelectedFaces();
             }
-
+            
             this.drawSegments();
-            this.drawSketchyLines3D();
+            if (this.showSketchyEdges)
+            {
+                this.drawSketchyEdges3D();
+            }
+            if (this.showGuideLines)
+            {
+                this.drawGuideLines3D();
+            }
+            this.DrawHighlight3D();
 
             Gl.glDisable(Gl.GL_POLYGON_OFFSET_FILL);
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
@@ -740,25 +808,7 @@ namespace SketchPlatform
             }
 
             this.SwapBuffers();
-        }// Draw3D
-
-        private void Draw2D()
-        {
-            int w = this.Width, h = this.Height;
-
-            Gl.glViewport(0, 0, w, h);
-            Gl.glMatrixMode(Gl.GL_PROJECTION);
-            Gl.glLoadIdentity();
-            Glu.gluOrtho2D(0, w, 0, h);
-            Gl.glMatrixMode(Gl.GL_MODELVIEW);
-            Gl.glLoadIdentity();
-            Gl.glPushMatrix();
-
-            this.drawSketchyLines2D();            
-
-            Gl.glPopMatrix();
-            Gl.glPopMatrix();
-        }
+        }// Draw3D        
 
         private void drawSegments()
         {
@@ -788,40 +838,71 @@ namespace SketchPlatform
             }
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                foreach(GuideLine edge in seg.boundingbox.edges)
+                foreach(GuideLine edge in seg.boundingbox.guideLines)
                 {
                     foreach (Stroke stroke in edge.strokes)
                     {
                         //this.drawLines2D(stroke.u2, stroke.v2, Color.Red);
-                        //this.drawStrokeMesh2d(stroke);
+                        this.drawStrokeMesh2d(stroke);
                     }
                 }
             }
         }// drawSketchyLines2D
 
-        private void drawSketchyLines3D()
+        private void drawSketchyEdges3D()
         {
-            if (this.currSegmentClass == null || !this.showSketchyLines)
+            if (this.currSegmentClass == null || !this.showSketchyEdges)
             {
                 return;
             }
-            int drawmethod = this.currSegmentClass.shadedOrTexture();
-
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                foreach (GuideLine edge in seg.boundingbox.edges)
+                for(int i = 0; i < seg.boundingbox.edges.Length;++i)
                 {
-                    this.drawGuideLine(edge, Color.Gray);
+                    GuideLine edge = seg.boundingbox.edges[i];
+                    this.drawGuideLineEndpoints(edge, Color.Gray);
                     foreach (Stroke stroke in edge.strokes)
                     {
                         if (stroke.meshVertices3d == null || stroke.meshVertices3d.Count == 0)
                         {
-                            this.drawLines3D(stroke.u3, stroke.v3, Color.Gray);
+                            this.drawLines3D(stroke.u3, stroke.v3, Color.Gray, 2.0f);
                         }
-                        if (drawmethod == 0)
+                        if (this.drawShadedOrTexturedStroke)
                         {
-                            this.drawTriMeshShaded3D(stroke, false);
+                            this.drawTriMeshShaded3D(stroke, false, false);
                             //this.drawStrokeMesh3d(stroke);
+                        }
+                        else
+                        {
+                            this.drawTriMeshTextured3D(stroke, false);
+                        }
+                    }
+                }
+            }
+        }// drawSketchyEdges3D
+
+        private void drawGuideLines3D()
+        {
+            if (this.currSegmentClass == null || !this.showGuideLines)
+            {
+                return;
+            }
+            
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                foreach(GuideLine edge in seg.boundingbox.guideLines)
+                {
+                    this.drawGuideLineEndpoints(edge, Color.Red);
+                    //this.drawLines3D(edge.u, edge.v, Color.Red, 2.0f);
+                    foreach (Stroke stroke in edge.strokes)
+                    {
+                        if (stroke.meshVertices3d == null || stroke.meshVertices3d.Count == 0)
+                        {
+                            this.drawLines3D(stroke.u3, stroke.v3, Color.Pink, 2.0f);
+                        }
+                        if (this.drawShadedOrTexturedStroke)
+                        {
+                            this.drawTriMeshShaded3D(stroke, false, false);
                         }
                         else
                         {
@@ -832,10 +913,40 @@ namespace SketchPlatform
             }
         }// drawSketchyLines2D
 
-        private void drawGuideLine(GuideLine gline, Color c)
+        private void DrawHighlight3D()
+        {
+            if (this.currBoxIdx == -1) return;
+            Segment seg = this.currSegmentClass.segments[this.currBoxIdx];
+            this.drawBoundingbox(seg.boundingbox, Color.Salmon);
+
+            List<GuideLine> allLines = seg.boundingbox.getAllLines();
+            foreach (GuideLine edge in allLines)
+            {
+                this.drawGuideLineEndpoints(edge, Color.Red);
+                foreach (Stroke stroke in edge.strokes)
+                {
+                    if (stroke.meshVertices3d == null || stroke.meshVertices3d.Count == 0)
+                    {
+                        this.drawLines3D(stroke.u3, stroke.v3, Color.Pink, 2.0f);
+                    }
+                    if (this.drawShadedOrTexturedStroke)
+                    {
+                        this.drawTriMeshShaded3D(stroke, true, false);
+                        //this.drawStrokeMesh3d(stroke);
+                    }
+                    else
+                    {
+                        this.drawTriMeshTextured3D(stroke, false);
+                    }
+                }
+            }
+            
+        }// DrawHighlight3D
+
+        private void drawGuideLineEndpoints(GuideLine gline, Color c)
         {
             Gl.glColor3ub(c.R, c.G, c.B);
-            Gl.glPointSize(10.0f);
+            Gl.glPointSize(6.0f);
             Gl.glBegin(Gl.GL_POINTS);
             Gl.glVertex3dv(gline.u.ToArray());
             Gl.glVertex3dv(gline.v.ToArray());
@@ -970,13 +1081,15 @@ namespace SketchPlatform
             Gl.glEnd();
         }
 
-        private void drawLines3D(Vector3d v1, Vector3d v2, Color c)
+        private void drawLines3D(Vector3d v1, Vector3d v2, Color c, float linewidth)
         {
+            Gl.glLineWidth(linewidth);
             Gl.glBegin(Gl.GL_LINES);
             Gl.glColor3ub(c.R, c.G, c.B);
             Gl.glVertex3dv(v1.ToArray());
             Gl.glVertex3dv(v2.ToArray());
             Gl.glEnd();
+            Gl.glLineWidth(1.0f);
         }
 
         private void drawAxes()
@@ -1182,9 +1295,15 @@ namespace SketchPlatform
 
         // draw
 
-        public void drawTriMeshShaded3D(Stroke stroke, bool useOcclusion)
+        public void drawTriMeshShaded3D(Stroke stroke, bool highlight, bool useOcclusion)
         {
             Gl.glPushAttrib(Gl.GL_COLOR_BUFFER_BIT);
+
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, position);
+            //Gl.glEnable(Gl.GL_LIGHT0);
+            //Gl.glEnable(Gl.GL_LIGHTING);
+            //Gl.glEnable(Gl.GL_NORMALIZE);
+
 
             int iMultiSample = 0;
             int iNumSamples = 0;
@@ -1235,11 +1354,20 @@ namespace SketchPlatform
                 }
                 else
                     opa = pt.opacity;
-
-                Gl.glColor4ub(stroke.stokeColor.R, stroke.stokeColor.G, stroke.stokeColor.B, (byte)opa);
+                if (!highlight)
+                {
+                    Gl.glColor4ub(stroke.stokeColor.R, stroke.stokeColor.G, stroke.stokeColor.B, (byte)opa);
+                }
+                else
+                {
+                    Gl.glColor4ub(240, 59, 32, (byte)opa);
+                }
                 Gl.glBegin(Gl.GL_TRIANGLES);
+                //Gl.glNormal3dv(stroke.hostPlane.normal.ToArray());
                 Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
+                //Gl.glNormal3dv(stroke.hostPlane.normal.ToArray());
                 Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
+                //Gl.glNormal3dv(stroke.hostPlane.normal.ToArray());
                 Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
                 Gl.glEnd();
             }          
@@ -1257,15 +1385,18 @@ namespace SketchPlatform
             {
                 Gl.glDisable(Gl.GL_MULTISAMPLE);
             }
-            Gl.glPopAttrib();
 
-            Gl.glEnd();
+            //Gl.glDisable(Gl.GL_NORMALIZE);
+            //Gl.glDisable(Gl.GL_LIGHTING);
+            //Gl.glDisable(Gl.GL_LIGHT0);
+
+            Gl.glPopAttrib();
         }
 
         public void drawTriMeshTextured3D(Stroke stroke, bool useOcclusion)
         {
             uint tex_id = GLViewer.pencilTextureId;
-            switch ((int)this.currSegmentClass.strokeStyle)
+            switch ((int)SegmentClass.strokeStyle)
             {
                 case 3:
                     tex_id = GLViewer.crayonTextureId;
