@@ -129,6 +129,22 @@ namespace Geometry
             }
         }
 
+        public Vector3d MaxCoord
+        {
+            get
+            {
+                return this.maxCoord;
+            }
+        }
+
+        public Vector3d MinCoord
+        {
+            get
+            {
+                return this.minCoord;
+            }
+        }
+
 		public Mesh()
 		{ }
 
@@ -494,6 +510,19 @@ namespace Geometry
                     this.vertexPos[j + k] -= c[k];
                 }
             }
+        }
+
+        public void normalize(Vector3d center, double scale)
+        {
+            for (int i = 0, j = 0; i < this.VertexCount; ++i, j += 3)
+            {
+                for (int k = 0; k < 3; ++k)
+                {
+                    this.vertexPos[j + k] /= scale;
+                    this.vertexPos[j + k] -= center[k];
+                }
+            }
+            this.calculateFaceVertexNormal();
         }
 	}//Mesh
 

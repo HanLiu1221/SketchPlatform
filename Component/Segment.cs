@@ -14,6 +14,8 @@ namespace Component
         public Mesh mesh = null;
         public Box boundingbox = null;
         public Color color = Color.Black;
+        public bool active = true;
+
         public Segment(Mesh m, Box c)
         {
             this.mesh = m;
