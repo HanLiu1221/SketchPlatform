@@ -36,10 +36,13 @@
             this.saveAs3D = new System.Windows.Forms.ToolStripMenuItem();
             this.loadSegmentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadJSONFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.outputSeqToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tools = new System.Windows.Forms.ToolStripDropDownButton();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.modelColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.reloadViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.autoSequenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renderOption = new System.Windows.Forms.ToolStripDropDownButton();
             this.vertexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.wireFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -64,13 +67,15 @@
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.guideLineBox = new System.Windows.Forms.GroupBox();
-            this.glPrevButton = new System.Windows.Forms.Button();
-            this.glNextButton = new System.Windows.Forms.Button();
+            this.sequencePrevButton = new System.Windows.Forms.Button();
+            this.sequenceNextButton = new System.Windows.Forms.Button();
             this.nextBoxButton = new System.Windows.Forms.Button();
             this.prevBoxButton = new System.Windows.Forms.Button();
             this.glLabel = new System.Windows.Forms.Label();
             this.boxesLabel = new System.Windows.Forms.Label();
             this.adjustBox = new System.Windows.Forms.GroupBox();
+            this.depthType = new System.Windows.Forms.ComboBox();
+            this.depthLabel = new System.Windows.Forms.Label();
             this.guidelineType = new System.Windows.Forms.ComboBox();
             this.guidelineLabel = new System.Windows.Forms.Label();
             this.strokeSizeLabel = new System.Windows.Forms.Label();
@@ -80,8 +85,10 @@
             this.showSketchyEdges = new System.Windows.Forms.CheckBox();
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
-            this.glViewer = new SketchPlatform.GLViewer();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
+            this.vlLabel = new System.Windows.Forms.Label();
+            this.vanishingLineType = new System.Windows.Forms.ComboBox();
+            this.glViewer = new SketchPlatform.GLViewer();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -116,7 +123,8 @@
             this.import3D,
             this.saveAs3D,
             this.loadSegmentsToolStripMenuItem,
-            this.loadJSONFileToolStripMenuItem});
+            this.loadJSONFileToolStripMenuItem,
+            this.outputSeqToolStripMenuItem});
             this.ModelFile.Image = ((System.Drawing.Image)(resources.GetObject("ModelFile.Image")));
             this.ModelFile.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.ModelFile.Name = "ModelFile";
@@ -157,12 +165,21 @@
             this.loadJSONFileToolStripMenuItem.Text = "Load JSON file";
             this.loadJSONFileToolStripMenuItem.Click += new System.EventHandler(this.loadJSONFileToolStripMenuItem_Click);
             // 
+            // outputSeqToolStripMenuItem
+            // 
+            this.outputSeqToolStripMenuItem.Name = "outputSeqToolStripMenuItem";
+            this.outputSeqToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.outputSeqToolStripMenuItem.Text = "Output Box seq";
+            this.outputSeqToolStripMenuItem.Click += new System.EventHandler(this.outputSeqToolStripMenuItem_Click);
+            // 
             // tools
             // 
             this.tools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.viewToolStripMenuItem,
             this.resetViewToolStripMenuItem,
-            this.modelColorToolStripMenuItem});
+            this.modelColorToolStripMenuItem,
+            this.reloadViewToolStripMenuItem,
+            this.autoSequenceToolStripMenuItem});
             this.tools.Image = ((System.Drawing.Image)(resources.GetObject("tools.Image")));
             this.tools.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tools.Name = "tools";
@@ -173,23 +190,37 @@
             // viewToolStripMenuItem
             // 
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            this.viewToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.viewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.viewToolStripMenuItem.Text = "View";
             this.viewToolStripMenuItem.Click += new System.EventHandler(this.viewToolStripMenuItem_Click);
             // 
             // resetViewToolStripMenuItem
             // 
             this.resetViewToolStripMenuItem.Name = "resetViewToolStripMenuItem";
-            this.resetViewToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.resetViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.resetViewToolStripMenuItem.Text = "Reset View";
             this.resetViewToolStripMenuItem.Click += new System.EventHandler(this.resetViewToolStripMenuItem_Click);
             // 
             // modelColorToolStripMenuItem
             // 
             this.modelColorToolStripMenuItem.Name = "modelColorToolStripMenuItem";
-            this.modelColorToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.modelColorToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.modelColorToolStripMenuItem.Text = "Model Color";
             this.modelColorToolStripMenuItem.Click += new System.EventHandler(this.modelColorToolStripMenuItem_Click);
+            // 
+            // reloadViewToolStripMenuItem
+            // 
+            this.reloadViewToolStripMenuItem.Name = "reloadViewToolStripMenuItem";
+            this.reloadViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.reloadViewToolStripMenuItem.Text = "Reload View";
+            this.reloadViewToolStripMenuItem.Click += new System.EventHandler(this.reloadViewToolStripMenuItem_Click);
+            // 
+            // autoSequenceToolStripMenuItem
+            // 
+            this.autoSequenceToolStripMenuItem.Name = "autoSequenceToolStripMenuItem";
+            this.autoSequenceToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.autoSequenceToolStripMenuItem.Text = "Auto sequence";
+            this.autoSequenceToolStripMenuItem.Click += new System.EventHandler(this.autoSequenceToolStripMenuItem_Click);
             // 
             // renderOption
             // 
@@ -406,37 +437,39 @@
             // 
             // guideLineBox
             // 
-            this.guideLineBox.Controls.Add(this.glPrevButton);
-            this.guideLineBox.Controls.Add(this.glNextButton);
+            this.guideLineBox.Controls.Add(this.sequencePrevButton);
+            this.guideLineBox.Controls.Add(this.sequenceNextButton);
             this.guideLineBox.Controls.Add(this.nextBoxButton);
             this.guideLineBox.Controls.Add(this.prevBoxButton);
             this.guideLineBox.Controls.Add(this.glLabel);
             this.guideLineBox.Controls.Add(this.boxesLabel);
-            this.guideLineBox.Location = new System.Drawing.Point(3, 223);
+            this.guideLineBox.Location = new System.Drawing.Point(3, 281);
             this.guideLineBox.Name = "guideLineBox";
             this.guideLineBox.Size = new System.Drawing.Size(156, 91);
             this.guideLineBox.TabIndex = 4;
             this.guideLineBox.TabStop = false;
             this.guideLineBox.Text = "Guides";
             // 
-            // glPrevButton
+            // sequencePrevButton
             // 
-            this.glPrevButton.Image = ((System.Drawing.Image)(resources.GetObject("glPrevButton.Image")));
-            this.glPrevButton.Location = new System.Drawing.Point(66, 56);
-            this.glPrevButton.Name = "glPrevButton";
-            this.glPrevButton.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.glPrevButton.Size = new System.Drawing.Size(26, 23);
-            this.glPrevButton.TabIndex = 36;
-            this.glPrevButton.UseVisualStyleBackColor = true;
+            this.sequencePrevButton.Image = ((System.Drawing.Image)(resources.GetObject("sequencePrevButton.Image")));
+            this.sequencePrevButton.Location = new System.Drawing.Point(66, 56);
+            this.sequencePrevButton.Name = "sequencePrevButton";
+            this.sequencePrevButton.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.sequencePrevButton.Size = new System.Drawing.Size(26, 23);
+            this.sequencePrevButton.TabIndex = 36;
+            this.sequencePrevButton.UseVisualStyleBackColor = true;
+            this.sequencePrevButton.Click += new System.EventHandler(this.sequencePrevButton_Click);
             // 
-            // glNextButton
+            // sequenceNextButton
             // 
-            this.glNextButton.Image = ((System.Drawing.Image)(resources.GetObject("glNextButton.Image")));
-            this.glNextButton.Location = new System.Drawing.Point(102, 56);
-            this.glNextButton.Name = "glNextButton";
-            this.glNextButton.Size = new System.Drawing.Size(26, 23);
-            this.glNextButton.TabIndex = 35;
-            this.glNextButton.UseVisualStyleBackColor = true;
+            this.sequenceNextButton.Image = ((System.Drawing.Image)(resources.GetObject("sequenceNextButton.Image")));
+            this.sequenceNextButton.Location = new System.Drawing.Point(102, 56);
+            this.sequenceNextButton.Name = "sequenceNextButton";
+            this.sequenceNextButton.Size = new System.Drawing.Size(26, 23);
+            this.sequenceNextButton.TabIndex = 35;
+            this.sequenceNextButton.UseVisualStyleBackColor = true;
+            this.sequenceNextButton.Click += new System.EventHandler(this.sequenceNextButton_Click);
             // 
             // nextBoxButton
             // 
@@ -463,9 +496,9 @@
             this.glLabel.AutoSize = true;
             this.glLabel.Location = new System.Drawing.Point(3, 61);
             this.glLabel.Name = "glLabel";
-            this.glLabel.Size = new System.Drawing.Size(55, 13);
+            this.glLabel.Size = new System.Drawing.Size(36, 13);
             this.glLabel.TabIndex = 5;
-            this.glLabel.Text = "guide line:";
+            this.glLabel.Text = "guide:";
             // 
             // boxesLabel
             // 
@@ -478,16 +511,45 @@
             // 
             // adjustBox
             // 
+            this.adjustBox.Controls.Add(this.vanishingLineType);
+            this.adjustBox.Controls.Add(this.vlLabel);
+            this.adjustBox.Controls.Add(this.depthType);
+            this.adjustBox.Controls.Add(this.depthLabel);
             this.adjustBox.Controls.Add(this.guidelineType);
             this.adjustBox.Controls.Add(this.guidelineLabel);
             this.adjustBox.Controls.Add(this.strokeSizeLabel);
             this.adjustBox.Controls.Add(this.strokeSizeBox);
-            this.adjustBox.Location = new System.Drawing.Point(3, 123);
+            this.adjustBox.Location = new System.Drawing.Point(3, 138);
             this.adjustBox.Name = "adjustBox";
-            this.adjustBox.Size = new System.Drawing.Size(156, 91);
+            this.adjustBox.Size = new System.Drawing.Size(156, 137);
             this.adjustBox.TabIndex = 3;
             this.adjustBox.TabStop = false;
             this.adjustBox.Text = "Adjust";
+            // 
+            // depthType
+            // 
+            this.depthType.FormattingEnabled = true;
+            this.depthType.Items.AddRange(new object[] {
+            "none",
+            "opacity",
+            "hideBydistance",
+            "hideByDepth"});
+            this.depthType.Location = new System.Drawing.Point(66, 85);
+            this.depthType.Name = "depthType";
+            this.depthType.Size = new System.Drawing.Size(62, 21);
+            this.depthType.TabIndex = 5;
+            this.depthType.Text = "none";
+            this.depthType.SelectedIndexChanged += new System.EventHandler(this.depthType_SelectedIndexChanged);
+            // 
+            // depthLabel
+            // 
+            this.depthLabel.AutoSize = true;
+            this.depthLabel.Location = new System.Drawing.Point(3, 88);
+            this.depthLabel.Name = "depthLabel";
+            this.depthLabel.Size = new System.Drawing.Size(37, 13);
+            this.depthLabel.TabIndex = 4;
+            this.depthLabel.Text = "depth:";
+            this.depthLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // guidelineType
             // 
@@ -505,11 +567,11 @@
             // guidelineLabel
             // 
             this.guidelineLabel.AutoSize = true;
-            this.guidelineLabel.Location = new System.Drawing.Point(3, 55);
+            this.guidelineLabel.Location = new System.Drawing.Point(3, 58);
             this.guidelineLabel.Name = "guidelineLabel";
-            this.guidelineLabel.Size = new System.Drawing.Size(52, 13);
+            this.guidelineLabel.Size = new System.Drawing.Size(55, 13);
             this.guidelineLabel.TabIndex = 2;
-            this.guidelineLabel.Text = "guide line";
+            this.guidelineLabel.Text = "guide line:";
             this.guidelineLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // strokeSizeLabel
@@ -527,6 +589,7 @@
             this.strokeSizeBox.AllowDrop = true;
             this.strokeSizeBox.FormattingEnabled = true;
             this.strokeSizeBox.Items.AddRange(new object[] {
+            "1",
             "2",
             "4",
             "6",
@@ -536,7 +599,7 @@
             this.strokeSizeBox.Name = "strokeSizeBox";
             this.strokeSizeBox.Size = new System.Drawing.Size(48, 21);
             this.strokeSizeBox.TabIndex = 0;
-            this.strokeSizeBox.Text = "2";
+            this.strokeSizeBox.Text = "1";
             this.strokeSizeBox.TextChanged += new System.EventHandler(this.strokeSizeBox_TextChanged);
             // 
             // displayBox
@@ -547,7 +610,7 @@
             this.displayBox.Controls.Add(this.showBBox);
             this.displayBox.Location = new System.Drawing.Point(3, 4);
             this.displayBox.Name = "displayBox";
-            this.displayBox.Size = new System.Drawing.Size(157, 112);
+            this.displayBox.Size = new System.Drawing.Size(157, 114);
             this.displayBox.TabIndex = 2;
             this.displayBox.TabStop = false;
             this.displayBox.Text = "Display";
@@ -555,8 +618,6 @@
             // showGuideLines
             // 
             this.showGuideLines.AutoSize = true;
-            this.showGuideLines.Checked = true;
-            this.showGuideLines.CheckState = System.Windows.Forms.CheckState.Checked;
             this.showGuideLines.Location = new System.Drawing.Point(6, 88);
             this.showGuideLines.Name = "showGuideLines";
             this.showGuideLines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
@@ -595,8 +656,6 @@
             // showBBox
             // 
             this.showBBox.AutoSize = true;
-            this.showBBox.Checked = true;
-            this.showBBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.showBBox.Location = new System.Drawing.Point(6, 19);
             this.showBBox.Name = "showBBox";
             this.showBBox.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
@@ -605,6 +664,30 @@
             this.showBBox.Text = "bounding box";
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
+            // 
+            // vlLabel
+            // 
+            this.vlLabel.AutoSize = true;
+            this.vlLabel.Location = new System.Drawing.Point(3, 112);
+            this.vlLabel.Name = "vlLabel";
+            this.vlLabel.Size = new System.Drawing.Size(74, 13);
+            this.vlLabel.TabIndex = 6;
+            this.vlLabel.Text = "vanishing line:";
+            this.vlLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // vanishingLineType
+            // 
+            this.vanishingLineType.FormattingEnabled = true;
+            this.vanishingLineType.Items.AddRange(new object[] {
+            "none",
+            "line",
+            "dashed"});
+            this.vanishingLineType.Location = new System.Drawing.Point(83, 109);
+            this.vanishingLineType.Name = "vanishingLineType";
+            this.vanishingLineType.Size = new System.Drawing.Size(62, 21);
+            this.vanishingLineType.TabIndex = 7;
+            this.vanishingLineType.Text = "none";
+            this.vanishingLineType.SelectedIndexChanged += new System.EventHandler(this.vanishingLineType_SelectedIndexChanged);
             // 
             // glViewer
             // 
@@ -711,8 +794,15 @@
         private System.Windows.Forms.Button prevBoxButton;
         private System.Windows.Forms.Label glLabel;
         private System.Windows.Forms.Button nextBoxButton;
-        private System.Windows.Forms.Button glPrevButton;
-        private System.Windows.Forms.Button glNextButton;
+        private System.Windows.Forms.Button sequencePrevButton;
+        private System.Windows.Forms.Button sequenceNextButton;
+        private System.Windows.Forms.ToolStripMenuItem reloadViewToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem outputSeqToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem autoSequenceToolStripMenuItem;
+        private System.Windows.Forms.ComboBox depthType;
+        private System.Windows.Forms.Label depthLabel;
+        private System.Windows.Forms.ComboBox vanishingLineType;
+        private System.Windows.Forms.Label vlLabel;
 
 	}
 }

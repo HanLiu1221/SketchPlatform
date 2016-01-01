@@ -24,9 +24,9 @@ namespace Component
         public List<Vector2d> meshVertices2d;
         public List<int> faceIndex;
         private int facecount = 0;
-        private double size2 = SegmentClass.strokeSize;
-        private double size3 = (double)SegmentClass.strokeSize / 500;
-        public Color stokeColor = Color.FromArgb(200, 200, 200);
+        private double size2 = SegmentClass.StrokeSize;
+        private double size3 = (double)SegmentClass.StrokeSize / 500;
+        public Color strokeColor = SegmentClass.StrokeColor;
         public int opacity = 0;
         public Plane hostPlane;
         public double depth = 1.0;
@@ -389,7 +389,7 @@ namespace Component
             this.faceIndex.Add(k);
         }
 
-        public void changeStyle(int type, Matrix4d T, Camera camera)
+        public void changeStyle(int type)
         {
             this.meshVertices2d = new List<Vector2d>();
             this.meshVertices3d = new List<Vector3d>();
@@ -497,13 +497,17 @@ namespace Component
     {
         public Vector3d u;
         public Vector3d v;
+        public Vector2d u2;
+        public Vector2d v2;
         private int nSketch = 0;
         public List<Stroke> strokes;
         public Plane hostPlane;
         private static readonly Random rand = new Random();
         public Arrow3D guideArrow;
         private bool cross = true;
-        public bool showGuide = false;
+        public bool active = true;
+        public Color color = SegmentClass.StrokeColor;
+        public bool isGuide = false;
 
         public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool cross)
         {
@@ -554,12 +558,13 @@ namespace Component
             if (!this.cross)
             {
                 this.DefineGuideLineStroke();
+                return;
             }
             this.strokes = new List<Stroke>();
-            double gap = 0.1;
+            double gap = 0.05;
             double len = gap * (v - u).Length();
             Vector3d lineDir = (v - u).normalize();
-            this.nSketch = rand.Next(2, 4);
+            this.nSketch = rand.Next(1, 5);
             for (int i = 0; i < this.nSketch; ++i)
             {
                 Vector3d[] endpoints = new Vector3d[2];
@@ -596,6 +601,7 @@ namespace Component
             if (!this.cross)
             {
                 this.DefineGuideLineStroke();
+                return;
             }
             this.strokes = new List<Stroke>();
             double gap = 0.2;
@@ -622,9 +628,11 @@ namespace Component
     public class Box
     {
         public Vector3d[] points = null;
+        public Vector2d[] points2 = null;
         public Plane[] planes = null;
         public GuideLine[] edges = null;
         public List<GuideLine> guideLines = null;
+        public List<Ellipse3D> ellipses = null;
 
         public Box()
         { }
@@ -682,6 +690,7 @@ namespace Component
                 edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane, true);
             }
             this.guideLines = new List<GuideLine>();
+            this.ellipses = new List<Ellipse3D>();
         }
 
         public List<GuideLine> getAllLines()
@@ -693,6 +702,29 @@ namespace Component
             }
             allLines.AddRange(this.guideLines);
             return allLines;
+        }
+
+        public void normalize(Vector3d center, double scale)
+        {
+            for (int i = 0;i < points.Length;++i)
+            {
+                points[i] /= scale;
+                points[i] -= center;
+            }
+            foreach (GuideLine line in this.edges)
+            {
+                line.u /= scale;
+                line.v /= scale;
+                line.u -= center;
+                line.v -= center;
+                foreach (Stroke s in line.strokes)
+                {
+                    s.u3 /= scale;
+                    s.u3 -= center;
+                    s.v3 /= scale;
+                    s.v3 -= center;
+                }
+            }
         }
     }// Box
 

@@ -75,6 +75,7 @@ namespace SketchPlatform
         {
             this.displayAxis.Checked = !this.displayAxis.Checked;
             this.glViewer.displayAxes();
+            this.glViewer.Refresh();
         }
 
         private void modelColorToolStripMenuItem_Click(object sender, EventArgs e)
@@ -183,7 +184,7 @@ namespace SketchPlatform
         //    if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
         //        return;
         //    int size = Int32.Parse(this.strokeSizeBox.Text);
-        //    this.glViewer.setStrokeSize(size);
+        //    this.glViewer.setStrokeStylePerSeg(size);
         //    this.glViewer.Refresh();
         //}
 
@@ -192,7 +193,7 @@ namespace SketchPlatform
             if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
                 return;
             int size = Int32.Parse(this.strokeSizeBox.Text);
-            this.glViewer.setStrokeSize(size);
+            this.glViewer.setStrokeStylePerSeg(size);
             this.glViewer.Refresh();
         }
 
@@ -217,15 +218,16 @@ namespace SketchPlatform
         private void loadJSONFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "3D model (*.obj; *.off; *.ply)|*.obj; *.off; *.ply|All Files(*.*)|*.*";
+            dialog.Filter = "JSOn file (*.json)|*.json;|All Files(*.*)|*.*";
             dialog.CheckFileExists = true;
             dialog.FileName = "D:\\Projects\\SketchingTutorial\\SketchPlatform\\Data\\json\\phone_output\\drawing_sequence.json";
-            //if (dialog.ShowDialog(this) == DialogResult.OK)
-            //{
+            //dialog.FileName = "D:\\Projects\\SketchingTutorial\\SketchPlatform\\Data\\json\\mixer_output\\drawing_sequence.json";
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
                 string filename = dialog.FileName;
                 this.glViewer.loadJSONFile(filename);
                 this.glViewer.Refresh();
-            //}
+            }
         }
 
 
@@ -240,13 +242,78 @@ namespace SketchPlatform
 
         private void prevBoxButton_Click(object sender, EventArgs e)
         {
-            this.glViewer.nextBox();
+            this.glViewer.prevBox();
             this.glViewer.Refresh();
         }
 
         private void nextBoxButton_Click(object sender, EventArgs e)
         {
-            this.glViewer.prevBox();
+            this.glViewer.nextBox();
+            this.glViewer.Refresh();
+        }
+
+        private void sequencePrevButton_Click(object sender, EventArgs e)
+        {
+            this.glViewer.prevSequence();
+            this.glViewer.Refresh();
+        }
+
+        private void sequenceNextButton_Click(object sender, EventArgs e)
+        {
+            this.glViewer.nextSequence();
+            this.glViewer.Refresh();
+        }
+
+        private void reloadViewToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.reloadView();
+            this.glViewer.Refresh();
+        }
+
+        private void outputSeqToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.outputBoxSequence();
+        }
+
+        private void autoSequenceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.AutoSequence();
+        }
+
+        private void depthType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (this.depthType.SelectedIndex == 0)
+            {
+                this.glViewer.showOcclusion = false;
+                this.glViewer.enableDepthTest = false;
+            }
+            else if (this.depthType.SelectedIndex == 3)
+            {
+                //this.glViewer.enableDepthTest = true;
+                this.glViewer.showOcclusion = true;
+                this.glViewer.setDepthType(this.depthType.SelectedIndex);
+            }
+            else 
+            {
+                this.glViewer.enableDepthTest = false;
+                this.glViewer.showOcclusion = true;
+                this.glViewer.setDepthType(this.depthType.SelectedIndex);
+            }
+            this.glViewer.Refresh();
+        }
+
+
+        private void vanishingLineType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (this.vanishingLineType.SelectedIndex > 0)
+            {
+                this.glViewer.showVanishingLines = true;
+                this.glViewer.setVanishingLineDrawType(this.vanishingLineType.SelectedIndex);
+            }
+            else
+            {
+                this.glViewer.showVanishingLines = false;
+            }
             this.glViewer.Refresh();
         }
 

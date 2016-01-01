@@ -68,7 +68,7 @@ namespace Component
             Gl.glGetIntegerv(Gl.GL_VIEWPORT, viewport);
 
             //this.modelView = (new Matrix4d(this.ballMatrix)).ToArray();
-            //this.modelView = (new Matrix4d(this.ballMatrix) * new Matrix4d(this.modelView)).ToArray();
+            this.modelView = (new Matrix4d(this.ballMatrix) * new Matrix4d(this.modelView)).ToArray();
         }
 
         //public Vector3d Project(double objx, double objy, double objz)

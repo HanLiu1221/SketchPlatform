@@ -31,6 +31,76 @@ namespace Geometry
             return odd;
         }
 
+        public static bool PointInPoly(Vector2d p, Vector2d[] points)
+        {
+            bool c = false;
+            int n = points.Length;
+            for (int i = 0, j = n - 1; i < n; j = i++)
+            {
+                if (((points[i].y > p.y) != (points[j].y > p.y)) &&
+                    (p.x < (points[j].x - points[i].x) * (p.y - points[i].y) / (points[j].y - points[i].y) + points[i].x))
+                    c = !c;
+            }
+            return c;
+        }
+
+        public static bool LinePlaneIntersection(Line3d line, Plane plane, out Vector3d v)
+        {
+            Vector3d dir = (line.v - line.u).normalize();
+            v = new Vector3d();
+            if (dir.Dot(plane.normal) < thresh)
+            {
+                return false; // parallel
+            }
+            Vector3d v0 = plane.center;
+            Vector3d n = plane.normal;
+            Vector3d w = line.u - v0;
+            double s = n.Dot(w) / (n.Dot(dir));
+            s = -s;
+            v = line.u + s * dir;
+            return true;
+        }
+
+        public static Vector3d LineIntersectionPoint(Line3d l1, Line3d l2)
+        {
+            double x1 = l1.u.x, y1 = l1.u.y, z1 = l1.u.z;
+            double x2 = l2.u.x, y2 = l2.u.y, z3 = l2.u.z;
+            Vector3d d1 = (l1.v - l1.u).normalize();
+            Vector3d d2 = (l2.v - l2.u).normalize();
+            double dx = x2 - x1, dy = y2 - y1;
+            double a1 = d1.x, a2 = d1.y, b1 = d2.x, b2 = d2.y;
+            double t2 = (dx * a2 - dy * a1) / (a1 * b2 - b1 * a2);
+            double t1 = t1 = (dx + b2 * t2) / a1;
+
+            Vector3d l1_0 = l1.u + d1 * t1;
+            Vector3d l2_0 = l2.u + d2 * t2;
+
+            return l1_0;
+        }
+
+        public static Vector2d LineIntersectionPoint2d(Line2d l1, Line2d l2)
+        {
+            double x1 = l1.u.x, y1 = l1.u.y;
+            double x2 = l2.u.x, y2 = l2.u.y;
+            Vector2d d1 = (l1.v - l1.u).normalize();
+            Vector2d d2 = (l2.v - l2.u).normalize();
+            double dx = x2 - x1, dy = y2 - y1;
+            double a1 = d1.x, a2 = d1.y, b1 = d2.x, b2 = d2.y;
+            double t2 = (dx * a2 - dy * a1) / (a1 * b2 - b1 * a2);
+            double t1 = 0;
+            if (a1 != 0)
+            {
+                t1 = (dx + b1 * t2) / a1;
+            }
+            else
+            {
+                t1 = (dy + b2 * t2) / a2;
+            }
+            Vector2d vec1 = l1.u + d1 * t1;
+            Vector2d vec2 = l2.u + d2 * t2;
+            return vec1;
+        }
+
     }// Polygon
 
     public class Quad2d : Polygon
@@ -60,9 +130,11 @@ namespace Geometry
     public class Plane
     {
         public Vector3d[] points = null;
+        public Vector2d[] points2 = null;
         public Vector3d normal;
         public Vector3d center;
         private int Npoints = 0;
+        public double depth = 0;
 
         public Plane() { }
 
@@ -179,16 +251,17 @@ namespace Geometry
         public Vector3d v;
         public Vector3d[] points; // curved arrow
         public Triangle cap;
+        private double dcap = 0.05;
         public Arrow3D(Vector3d p1, Vector3d p2, Vector3d normal)
         {
             this.u = new Vector3d(p1);
             this.v = new Vector3d(p2);
             // triangle
-            double d = (p2 - p1).Length() / 20;
+            double d = this.dcap; // (p2 - p1).Length() / 8;
             Vector3d lineDir = (p2-p1).normalize();
             Vector3d c = p2 - lineDir * d;
             Vector3d dir = normal.Cross(lineDir).normalize();
-            double d2 = d * 0.6;
+            double d2 = d * 0.8;
             Vector3d v1 = c + dir * d2;
             Vector3d v2 = c - dir * d2;
             this.cap = new Triangle(v1, p2, v2);
