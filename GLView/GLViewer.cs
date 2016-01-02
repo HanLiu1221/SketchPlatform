@@ -1132,46 +1132,74 @@ namespace SketchPlatform
                 sum += visibleTriangleVertices[i];
             }
             Gl.glDeleteQueries(n, queryIDs);
-            this.SwapBuffers();
+            //this.SwapBuffers();
             // smooth samples
-            idx = 0;
-            foreach (Segment seg in this.currSegmentClass.segments)
+            int nloop = 6;
+            int iloop = 0;
+            int thr = 2;
+            while (iloop < nloop)
             {
-                this.drawBoundingbox(seg.boundingbox, Color.White);
-                foreach (GuideLine edge in seg.boundingbox.edges)
+                idx = 0;
+                foreach (Segment seg in this.currSegmentClass.segments)
                 {
-                    foreach (Stroke stroke in edge.strokes)
+                    foreach (GuideLine edge in seg.boundingbox.edges)
                     {
-                        for (int i = 0; i < stroke.FaceCount; ++i)
+                        foreach (Stroke stroke in edge.strokes)
                         {
-                            int neig = 0;
-                            if (i + 1 < stroke.FaceCount && this.visibleTriangleVertices[idx + 1] > 0)
+                            for (int i = 0; i < stroke.FaceCount; ++i)
                             {
-                                int j = i + 2;
-                                for (; j < stroke.FaceCount && j - i < 5 && this.visibleTriangleVertices[j] > 0; ++j) ;
-                                if (j - i > 3)
+                                if (this.visibleTriangleVertices[idx] > 0)
+                                {
+                                    ++idx;
+                                    continue;
+                                }
+                                int neig = 0;
+                                if (i + 1 < stroke.FaceCount && this.visibleTriangleVertices[idx + 1] > 0)
                                 {
                                     ++neig;
                                 }
-                            }
-                            if (i - 1 >= 0 && this.visibleTriangleVertices[idx - 1] > 0)
-                            {
-                                int j = i - 2;
-                                for (; j >= 0 && j > i - 5 && this.visibleTriangleVertices[j] > 0; --j) ;
-                                if (i - j > 3)
+                                if (i - 1 >= 0 && this.visibleTriangleVertices[idx - 1] > 0)
                                 {
                                     ++neig;
                                 }
+                                if (neig == 2 && this.visibleTriangleVertices[idx] == 0)
+                                {
+                                    this.visibleTriangleVertices[idx] = neig;
+                                    ++idx;
+                                    continue;
+                                }
+                                // if in any direction there is no more samples, cut it
+                                int n_end = 0;
+                                for (int j = i + 1, k = 1; j < stroke.FaceCount && n_end < thr; ++j, ++k)
+                                {
+                                    if (this.visibleTriangleVertices[idx + k] > 0)
+                                    {
+                                        ++n_end;
+                                    }
+                                }
+                                if (n_end >= thr)
+                                {
+                                    //end = thr < i ? thr : i;
+                                    n_end = 0;
+                                    for (int j = i - 1, k = 1; j >= 0 && n_end < thr; --j, ++k)
+                                    {
+                                        if (this.visibleTriangleVertices[idx - k] > 0)
+                                        {
+                                            ++n_end;
+                                        }
+                                    }
+                                }
+                                if (n_end >= thr && this.visibleTriangleVertices[idx] == 0)
+                                {
+                                    this.visibleTriangleVertices[idx] = Math.Min(1, n_end);
+                                }
+                                ++idx;
                             }
-                            if (neig > 0 && this.visibleTriangleVertices[idx] == 0)
-                            {
-                                this.visibleTriangleVertices[idx] = neig;
-                            }
-                            ++idx;
                         }
                     }
                 }
-            }
+                ++iloop;
+            }// loop
         }// goThroughVisibilityTest
 
         private void calculateStrokePointDepth()
@@ -1646,6 +1674,7 @@ namespace SketchPlatform
                         break;
                     }
             }
+            this.Refresh();
         }// OnMouseUp
 
         protected override void OnKeyDown(KeyEventArgs e)
