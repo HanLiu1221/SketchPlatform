@@ -282,23 +282,7 @@ namespace SketchPlatform
 
         private void depthType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (this.depthType.SelectedIndex == 0)
-            {
-                this.glViewer.showOcclusion = false;
-                this.glViewer.enableDepthTest = false;
-            }
-            else if (this.depthType.SelectedIndex == 3)
-            {
-                //this.glViewer.enableDepthTest = true;
-                this.glViewer.showOcclusion = true;
-                this.glViewer.setDepthType(this.depthType.SelectedIndex);
-            }
-            else 
-            {
-                this.glViewer.enableDepthTest = false;
-                this.glViewer.showOcclusion = true;
-                this.glViewer.setDepthType(this.depthType.SelectedIndex);
-            }
+            this.glViewer.setDepthType(this.depthType.SelectedIndex);
             this.glViewer.Refresh();
         }
 

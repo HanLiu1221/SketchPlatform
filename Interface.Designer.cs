@@ -74,6 +74,8 @@
             this.glLabel = new System.Windows.Forms.Label();
             this.boxesLabel = new System.Windows.Forms.Label();
             this.adjustBox = new System.Windows.Forms.GroupBox();
+            this.vanishingLineType = new System.Windows.Forms.ComboBox();
+            this.vlLabel = new System.Windows.Forms.Label();
             this.depthType = new System.Windows.Forms.ComboBox();
             this.depthLabel = new System.Windows.Forms.Label();
             this.guidelineType = new System.Windows.Forms.ComboBox();
@@ -86,8 +88,6 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.vlLabel = new System.Windows.Forms.Label();
-            this.vanishingLineType = new System.Windows.Forms.ComboBox();
             this.glViewer = new SketchPlatform.GLViewer();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
@@ -526,19 +526,44 @@
             this.adjustBox.TabStop = false;
             this.adjustBox.Text = "Adjust";
             // 
+            // vanishingLineType
+            // 
+            this.vanishingLineType.FormattingEnabled = true;
+            this.vanishingLineType.Items.AddRange(new object[] {
+            "none",
+            "line",
+            "dashed"});
+            this.vanishingLineType.Location = new System.Drawing.Point(83, 109);
+            this.vanishingLineType.Name = "vanishingLineType";
+            this.vanishingLineType.Size = new System.Drawing.Size(62, 21);
+            this.vanishingLineType.TabIndex = 7;
+            this.vanishingLineType.Text = "none";
+            this.vanishingLineType.SelectedIndexChanged += new System.EventHandler(this.vanishingLineType_SelectedIndexChanged);
+            // 
+            // vlLabel
+            // 
+            this.vlLabel.AutoSize = true;
+            this.vlLabel.Location = new System.Drawing.Point(3, 112);
+            this.vlLabel.Name = "vlLabel";
+            this.vlLabel.Size = new System.Drawing.Size(74, 13);
+            this.vlLabel.TabIndex = 6;
+            this.vlLabel.Text = "vanishing line:";
+            this.vlLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // depthType
             // 
             this.depthType.FormattingEnabled = true;
             this.depthType.Items.AddRange(new object[] {
-            "none",
             "opacity",
-            "hideBydistance",
-            "hideByDepth"});
+            "hidden",
+            "OpenGL_DetphTest",
+            "none",
+            "ray trace"});
             this.depthType.Location = new System.Drawing.Point(66, 85);
             this.depthType.Name = "depthType";
             this.depthType.Size = new System.Drawing.Size(62, 21);
             this.depthType.TabIndex = 5;
-            this.depthType.Text = "none";
+            this.depthType.Text = "opacity";
             this.depthType.SelectedIndexChanged += new System.EventHandler(this.depthType_SelectedIndexChanged);
             // 
             // depthLabel
@@ -664,30 +689,6 @@
             this.showBBox.Text = "bounding box";
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
-            // 
-            // vlLabel
-            // 
-            this.vlLabel.AutoSize = true;
-            this.vlLabel.Location = new System.Drawing.Point(3, 112);
-            this.vlLabel.Name = "vlLabel";
-            this.vlLabel.Size = new System.Drawing.Size(74, 13);
-            this.vlLabel.TabIndex = 6;
-            this.vlLabel.Text = "vanishing line:";
-            this.vlLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // vanishingLineType
-            // 
-            this.vanishingLineType.FormattingEnabled = true;
-            this.vanishingLineType.Items.AddRange(new object[] {
-            "none",
-            "line",
-            "dashed"});
-            this.vanishingLineType.Location = new System.Drawing.Point(83, 109);
-            this.vanishingLineType.Name = "vanishingLineType";
-            this.vanishingLineType.Size = new System.Drawing.Size(62, 21);
-            this.vanishingLineType.TabIndex = 7;
-            this.vanishingLineType.Text = "none";
-            this.vanishingLineType.SelectedIndexChanged += new System.EventHandler(this.vanishingLineType_SelectedIndexChanged);
             // 
             // glViewer
             // 
