@@ -697,6 +697,7 @@ namespace SketchPlatform
                 this.clearBoxes();
             }
             this.activateGuideSequence();
+            
         }
 
         public void prevSequence()
@@ -746,6 +747,10 @@ namespace SketchPlatform
             }
             this.currBoxIdx = -1;
             this.sequenceIdx = -1;
+            if (this.depthType == Depthtype.hidden)
+            {
+                this.updateDepthVal();
+            }
         }
 
         private void resetHighlightVars()
@@ -768,6 +773,11 @@ namespace SketchPlatform
             // active box
             this.activateBox(activeSeg);
             // active guide lines
+            if (this.depthType == Depthtype.hidden)
+            {
+                this.updateDepthVal();
+            }
+
             this.showAnimatedGuideLines(activeSeg, guideLinesIndex);
             this.readyForGuideArrow = true;
             // actuve next box (guided)
@@ -1033,9 +1043,10 @@ namespace SketchPlatform
         }// calculateStrokePointDepthByCameraPos
 
         int[] visibleTriangleVertices;
-        private void goThroughVisibilityTest()
+        #region
+        private void goThroughVisibilityTest_working()
         {
-            this.clearScene();            
+            this.clearScene();
             int n = 0;
             foreach (Segment seg in this.currSegmentClass.segments)
             {
@@ -1054,13 +1065,6 @@ namespace SketchPlatform
                 queryIDs[i] = i;
             }
             Gl.glEnable(Gl.GL_DEPTH_TEST);
-            //Gl.glShadeModel(Gl.GL_FLAT);
-            //Gl.glDisable(Gl.GL_LIGHTING);
-            //Gl.glDisable(Gl.GL_COLOR_MATERIAL);
-            //Gl.glDisable(Gl.GL_NORMALIZE);
-            //Gl.glDepthMask(Gl.GL_FALSE);
-            //Gl.glColorMask(0, 0, 0, 255); 
-
             int idx = 0;
             this.setViewMatrix();
             foreach (Segment seg in this.currSegmentClass.segments)
@@ -1069,10 +1073,9 @@ namespace SketchPlatform
             }
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                //this.drawBoundingbox(seg.boundingbox, Color.White);
                 foreach (GuideLine edge in seg.boundingbox.edges)
                 {
-                    foreach(Stroke stroke in edge.strokes)
+                    foreach (Stroke stroke in edge.strokes)
                     {
                         for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
                         {
@@ -1087,15 +1090,10 @@ namespace SketchPlatform
                             Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
                             Gl.glEnd();
                             Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
-                        }                               
+                        }
                     }
                 }
-                //this.drawBoundingbox(seg.boundingbox, Color.White);
             }
-            //Gl.glShadeModel(Gl.GL_SMOOTH);
-            //Gl.glEnable(Gl.GL_LIGHTING);
-            //Gl.glEnable(Gl.GL_COLOR_MATERIAL);
-            //Gl.glEnable(Gl.GL_NORMALIZE);
             Gl.glDisable(Gl.GL_DEPTH_TEST);
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
@@ -1125,10 +1123,6 @@ namespace SketchPlatform
                 {
                     sum += 0;
                 }
-                //if (Gl.glIsQuery(queryIDs[i]) == Gl.GL_FALSE)
-                //{
-                //    sum += 0;
-                //}
                 sum += visibleTriangleVertices[i];
             }
             Gl.glDeleteQueries(n, queryIDs);
@@ -1201,7 +1195,219 @@ namespace SketchPlatform
                 ++iloop;
             }// loop
         }// goThroughVisibilityTest
+        #endregion
 
+        private void goThroughVisibilityTest()
+        {
+            this.clearScene();
+            // draw the whole sceen from "Draw3D()" to get the visibility info depth value
+            int n = 0;
+            // drawSketchyEdges3D() or drawSketchyEdges3D_hiddenLine()
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active) continue;
+                foreach (GuideLine edge in seg.boundingbox.edges)
+                {
+                    int nstrokes = edge.strokes.Count;
+                    if (this.inGuideMode)
+                    {
+                        nstrokes = nstrokes > 2 ? 2 : nstrokes;
+                    }
+                    for (int i = 0; i < nstrokes; ++i)
+                    {
+                        Stroke stroke = edge.strokes[i];
+                        n += stroke.FaceCount;
+                    }
+                }
+            }
+            //// DrawHighlight3D
+            //// drawActiveBox(Segment seg)
+            //if (this.inGuideMode)
+            //{
+            //    Segment currSeg = this.currSegmentClass.segments[this.currBoxIdx];
+            //    foreach (GuideLine edge in currSeg.boundingbox.edges)
+            //    {
+            //        foreach (Stroke stroke in edge.strokes)
+            //        {
+            //            n += stroke.FaceCount;
+            //        }
+            //    }
+            //}
+            // draw and get visibility
+            int[] queryIDs = new int[n];
+            //Gl.glGenQueries(n, queryIDs);
+            for (int i = 0; i < n; ++i)
+            {
+                queryIDs[i] = i;
+            }
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+            int idx = 0;
+            this.setViewMatrix();
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active) continue;
+                this.drawBoundingbox(seg.boundingbox, Color.White);
+            }
+            //if (this.inGuideMode)
+            //{
+            //    Segment currSeg = this.currSegmentClass.segments[this.currBoxIdx];
+            //    this.drawBoundingbox(currSeg.boundingbox, Color.White);
+            //}
+            List<Stroke> activeStrokes = new List<Stroke>();
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active) continue;
+                foreach (GuideLine edge in seg.boundingbox.edges)
+                {
+                    int nstrokes = edge.strokes.Count;
+                    if (this.inGuideMode)
+                    {
+                        nstrokes = nstrokes > 2 ? 2 : nstrokes;
+                    }
+                    for (int k = 0; k < nstrokes; ++k)
+                    {
+                        Stroke stroke = edge.strokes[k];
+
+                        for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+                        {
+                            int vidx1 = stroke.faceIndex[j];
+                            int vidx2 = stroke.faceIndex[j + 1];
+                            int vidx3 = stroke.faceIndex[j + 2];
+                            Gl.glBeginQuery(Gl.GL_SAMPLES_PASSED, queryIDs[idx++]);
+                            Gl.glColor3ub(0, 0, 0);
+                            Gl.glBegin(Gl.GL_POLYGON);
+                            Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
+                            Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
+                            Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
+                            Gl.glEnd();
+                            Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
+                        }
+                        activeStrokes.Add(stroke);
+                    }
+                }
+            }
+            //if (this.inGuideMode)
+            //{
+            //    Segment currSeg = this.currSegmentClass.segments[this.currBoxIdx];
+            //    foreach (GuideLine edge in currSeg.boundingbox.edges)
+            //    {
+            //        foreach (Stroke stroke in edge.strokes)
+            //        {
+            //            for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+            //            {
+            //                int vidx1 = stroke.faceIndex[j];
+            //                int vidx2 = stroke.faceIndex[j + 1];
+            //                int vidx3 = stroke.faceIndex[j + 2];
+            //                Gl.glBeginQuery(Gl.GL_SAMPLES_PASSED, queryIDs[idx++]);
+            //                Gl.glColor3ub(0, 0, 0);
+            //                Gl.glBegin(Gl.GL_POLYGON);
+            //                Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
+            //                Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
+            //                Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
+            //                Gl.glEnd();
+            //                Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
+            //            }
+            //            activeStrokes.Add(stroke);
+            //        }
+            //    }
+            //}
+
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            Gl.glPopMatrix();
+            //this.SwapBuffers();
+
+            // get # passed samples
+            visibleTriangleVertices = new int[n];
+            int sum = 0;
+            for (int i = 0; i < n; ++i)
+            {
+                int queryReady = Gl.GL_FALSE;
+                int count = 1000;
+                while (queryReady != Gl.GL_TRUE && count-- > 0)
+                {
+                    Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
+                }
+                if (queryReady == Gl.GL_FALSE)
+                {
+                    sum += 0;
+                    count = 1000;
+                    while (queryReady != Gl.GL_TRUE && count-- > 0)
+                    {
+                        Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
+                    }
+                }
+                Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT, out visibleTriangleVertices[i]);
+                if (this.visibleTriangleVertices[i] > 2)
+                {
+                    sum += 0;
+                }
+                sum += visibleTriangleVertices[i];
+            }
+            Gl.glDeleteQueries(n, queryIDs);
+            //this.SwapBuffers();
+            // smooth samples
+            int nloop = 6;
+            int iloop = 0;
+            int thr = 2;
+            while (iloop < nloop)
+            {
+                idx = 0;
+                foreach (Stroke stroke in activeStrokes)
+                {
+                    for (int i = 0; i < stroke.FaceCount; ++i)
+                    {
+                        if (this.visibleTriangleVertices[idx] > 0)
+                        {
+                            ++idx;
+                            continue;
+                        }
+                        int neig = 0;
+                        if (i + 1 < stroke.FaceCount && this.visibleTriangleVertices[idx + 1] > 0)
+                        {
+                            ++neig;
+                        }
+                        if (i - 1 >= 0 && this.visibleTriangleVertices[idx - 1] > 0)
+                        {
+                            ++neig;
+                        }
+                        if (neig == 2 && this.visibleTriangleVertices[idx] == 0)
+                        {
+                            this.visibleTriangleVertices[idx] = neig;
+                            ++idx;
+                            continue;
+                        }
+                        // if in any direction there is no more samples, cut it
+                        int n_end = 0;
+                        for (int j = i + 1, k = 1; j < stroke.FaceCount && n_end < thr; ++j, ++k)
+                        {
+                            if (this.visibleTriangleVertices[idx + k] > 0)
+                            {
+                                ++n_end;
+                            }
+                        }
+                        if (n_end >= thr)
+                        {
+                            //end = thr < i ? thr : i;
+                            n_end = 0;
+                            for (int j = i - 1, k = 1; j >= 0 && n_end < thr; --j, ++k)
+                            {
+                                if (this.visibleTriangleVertices[idx - k] > 0)
+                                {
+                                    ++n_end;
+                                }
+                            }
+                        }
+                        if (n_end >= thr && this.visibleTriangleVertices[idx] == 0)
+                        {
+                            this.visibleTriangleVertices[idx] = Math.Min(1, n_end);
+                        }
+                        ++idx;
+                    }
+                }
+                ++iloop;
+            }// loop
+        }// goThroughVisibilityTest
         private void calculateStrokePointDepth()
         {
             this.updateCamera();
@@ -1833,43 +2039,9 @@ namespace SketchPlatform
             }
         }
 
-        
+        private int visibilityIdx = 0;
         private void Draw3D()
         {
-            //if (this.depthType == Depthtype.hidden)
-            //{
-                //// test
-
-                //Gl.glEnable(Gl.GL_DEPTH_TEST);
-                //this.setViewMatrix();
-                //foreach (Segment seg in this.currSegmentClass.segments)
-                //{
-                //    this.drawBoundingbox(seg.boundingbox, Color.White);
-                //    foreach (GuideLine edge in seg.boundingbox.edges)
-                //    {
-                //        foreach (Stroke stroke in edge.strokes)
-                //        {
-                //            for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
-                //            {
-                //                int vidx1 = stroke.faceIndex[j];
-                //                int vidx2 = stroke.faceIndex[j + 1];
-                //                int vidx3 = stroke.faceIndex[j + 2];
-                //                Gl.glColor3ub(0, 0, 0);
-                //                Gl.glBegin(Gl.GL_TRIANGLES);
-                //                Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
-                //                Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
-                //                Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
-                //                Gl.glEnd();
-                //            }
-                //        }
-                //    }
-                //}
-
-                //Gl.glDisable(Gl.GL_DEPTH_TEST);
-                //Gl.glPopMatrix();
-                //this.SwapBuffers();
-                //return;
-            //}
             this.setViewMatrix();
 
             /***** Draw *****/
@@ -1879,6 +2051,10 @@ namespace SketchPlatform
             {
                 this.drawAxes();
             }
+
+            // for visibility rendering, the order is computed from
+            // goThroughVisibilityTest()
+            this.visibilityIdx = 0;
 
             Gl.glEnable(Gl.GL_POLYGON_OFFSET_FILL);
 
@@ -1909,15 +2085,15 @@ namespace SketchPlatform
             this.drawSegments();
             if (this.showSketchyEdges)
             {
-                if (this.depthType == Depthtype.hidden)
-                {
-                    this.drawSketchyEdges3D_hiddenLine();
-                }
-                else
-                {
-                    this.drawSketchyEdges3D();
-                }
-                
+                this.drawSketchyEdges3D();
+                //if (this.depthType == Depthtype.hidden)
+                //{
+                //    this.drawSketchyEdges3D_hiddenLine();
+                //}
+                //else
+                //{
+                //    this.drawSketchyEdges3D();
+                //}                
             }
             if (this.showGuideLines)
             {
@@ -2003,11 +2179,7 @@ namespace SketchPlatform
             int idx = 0;
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                //this.drawBoundingboxWithoutBlend(seg.boundingbox, Color.White);
-                //if (this.enableDepthTest)
-                //{
-                //    this.drawBoundingbox(seg.boundingbox, Color.White);
-                //}
+                if (!seg.active) continue;
                 foreach (GuideLine edge in seg.boundingbox.edges)
                 {
                     foreach(Stroke stroke in edge.strokes)
@@ -2016,7 +2188,7 @@ namespace SketchPlatform
                         {
                             if (this.drawShadedOrTexturedStroke)
                             {
-                                this.drawTriMeshShaded3D_hiddenLine(stroke, false, idx);
+                                this.drawTriMeshShaded3D_hiddenLine(stroke, false);
                             }
                             else
                             {
@@ -2062,7 +2234,14 @@ namespace SketchPlatform
                         }
                         if (this.drawShadedOrTexturedStroke)
                         {
-                            this.drawTriMeshShaded3D(stroke, false, this.showOcclusion);
+                            if (this.depthType == Depthtype.hidden)
+                            {
+                                this.drawTriMeshShaded3D_hiddenLine(stroke, false);
+                            }
+                            else
+                            {
+                                this.drawTriMeshShaded3D(stroke, false, this.showOcclusion);
+                            }
                         }
                         else
                         {
@@ -2179,9 +2358,9 @@ namespace SketchPlatform
         private void drawActiveBox(Segment seg)
         {
             if (!this.inGuideMode) return;
-            if (this.showOcclusion)
+            if (this.enableDepthTest)
             {
-                //this.drawBoundingbox(seg.boundingbox, Color.White);
+                this.drawBoundingbox(seg.boundingbox, Color.White);
             }
             // draw bounding edges
             foreach (GuideLine edge in seg.boundingbox.edges)
@@ -2195,6 +2374,14 @@ namespace SketchPlatform
                     }
                     if (this.drawShadedOrTexturedStroke)
                     {
+                        //if (this.depthType == Depthtype.hidden)
+                        //{
+                        //    this.drawTriMeshShaded3D_hiddenLine(stroke, false);
+                        //}
+                        //else
+                        //{
+                        //    this.drawTriMeshShaded3D(stroke, false, this.showOcclusion);
+                        //}
                         this.drawTriMeshShaded3D(stroke, false, this.showOcclusion);
                     }
                     else
@@ -2821,7 +3008,7 @@ namespace SketchPlatform
 
         // draw
 
-        public void drawTriMeshShaded3D_hiddenLine(Stroke stroke, bool highlight, int idx)
+        public void drawTriMeshShaded3D_hiddenLine(Stroke stroke, bool highlight)
         {
             //Gl.glPushAttrib(Gl.GL_COLOR_BUFFER_BIT);
 
@@ -2852,7 +3039,7 @@ namespace SketchPlatform
 
             for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
             {
-                if (visibleTriangleVertices[idx++] == 0) continue;
+                if (visibleTriangleVertices[this.visibilityIdx++] == 0) continue;
                 int vidx1 = stroke.faceIndex[j];
                 int vidx2 = stroke.faceIndex[j + 1];
                 int vidx3 = stroke.faceIndex[j + 2];
