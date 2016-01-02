@@ -508,6 +508,7 @@ namespace Component
         public bool active = true;
         public Color color = SegmentClass.StrokeColor;
         public bool isGuide = false;
+        public Line3d[][] vanLines;
 
         public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool cross)
         {
@@ -623,6 +624,28 @@ namespace Component
             this.strokes.Add(line);
         }
 
+        public void buildVanishingLines(Vector3d v, int vidx)
+        {
+            double ext = 0.1;
+            if (this.vanLines == null)
+            {
+                this.vanLines = new Line3d[2][];
+            }
+            this.vanLines[vidx] = new Line3d[2];
+            Vector3d[] points = new Vector3d[2] { this.u, this.v };
+            for (int i = 0; i < points.Length; ++i)
+            {
+                Vector3d vi = points[i];
+                Vector3d d = (vi - v).normalize();
+                ext = getRandomDoubleInRange(rand, 0, 0.2);
+                Vector3d v1 = vi + ext * d;
+                ext = getRandomDoubleInRange(rand, 0, 0.2);
+                Vector3d v2 = v - ext * d;
+                Line3d line = new Line3d(v1, v2);
+                this.vanLines[vidx][i] = line;
+            }
+        }
+
     }//GuideLine
 
     public class Box
@@ -633,6 +656,8 @@ namespace Component
         public GuideLine[] edges = null;
         public List<GuideLine> guideLines = null;
         public List<Ellipse3D> ellipses = null;
+        public Line3d[][] vanLines;
+        private static readonly Random rand = new Random();
 
         public Box()
         { }
@@ -724,6 +749,32 @@ namespace Component
                     s.v3 /= scale;
                     s.v3 -= center;
                 }
+            }
+        }
+
+        private double getRandomDoubleInRange(Random rand, double s, double e)
+        {
+            return s + (e - s) * rand.NextDouble();
+        }
+
+        public void buildVanishingLines(Vector3d v, int vidx)
+        {
+            double ext = 0.1;
+            if (this.vanLines == null)
+            {
+                this.vanLines = new Line3d[2][];
+            }
+            this.vanLines[vidx] = new Line3d[this.points.Length];
+            for (int i = 0; i < this.points.Length; ++i)
+            {
+                Vector3d vi = this.points[i];
+                Vector3d d = (vi - v).normalize();
+                ext = getRandomDoubleInRange(rand, 0, 0.2);
+                Vector3d v1 = vi + ext * d;
+                ext = getRandomDoubleInRange(rand, 0, 0.2);
+                Vector3d v2 = v - ext * d;
+                Line3d line = new Line3d(v1, v2);
+                this.vanLines[vidx][i] = line;
             }
         }
     }// Box

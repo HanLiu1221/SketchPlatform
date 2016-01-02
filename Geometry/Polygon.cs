@@ -44,36 +44,36 @@ namespace Geometry
             return c;
         }
 
-        public static bool LinePlaneIntersection(Line3d line, Plane plane, out Vector3d v)
+        public static bool LinePlaneIntersection(Line3d line, Vector3d planeCenter, Vector3d planeNormal, out Vector3d v)
         {
-            Vector3d dir = (line.v - line.u).normalize();
+            Vector3d dir = (line.v3 - line.u3).normalize();
             v = new Vector3d();
-            if (dir.Dot(plane.normal) < thresh)
+            if (Math.Abs(dir.Dot(planeNormal)) < thresh)
             {
                 return false; // parallel
             }
-            Vector3d v0 = plane.center;
-            Vector3d n = plane.normal;
-            Vector3d w = line.u - v0;
+            Vector3d v0 = planeCenter;
+            Vector3d n = planeNormal;
+            Vector3d w = line.u3 - v0;
             double s = n.Dot(w) / (n.Dot(dir));
             s = -s;
-            v = line.u + s * dir;
+            v = line.u3 + s * dir;
             return true;
         }
 
         public static Vector3d LineIntersectionPoint(Line3d l1, Line3d l2)
         {
-            double x1 = l1.u.x, y1 = l1.u.y, z1 = l1.u.z;
-            double x2 = l2.u.x, y2 = l2.u.y, z3 = l2.u.z;
-            Vector3d d1 = (l1.v - l1.u).normalize();
-            Vector3d d2 = (l2.v - l2.u).normalize();
+            double x1 = l1.u3.x, y1 = l1.u3.y, z1 = l1.u3.z;
+            double x2 = l2.u3.x, y2 = l2.u3.y, z3 = l2.u3.z;
+            Vector3d d1 = (l1.v3 - l1.u3).normalize();
+            Vector3d d2 = (l2.v3 - l2.u3).normalize();
             double dx = x2 - x1, dy = y2 - y1;
             double a1 = d1.x, a2 = d1.y, b1 = d2.x, b2 = d2.y;
             double t2 = (dx * a2 - dy * a1) / (a1 * b2 - b1 * a2);
             double t1 = t1 = (dx + b2 * t2) / a1;
 
-            Vector3d l1_0 = l1.u + d1 * t1;
-            Vector3d l2_0 = l2.u + d2 * t2;
+            Vector3d l1_0 = l1.u3 + d1 * t1;
+            Vector3d l2_0 = l2.u3 + d2 * t2;
 
             return l1_0;
         }
@@ -101,6 +101,11 @@ namespace Geometry
             return vec1;
         }
 
+        public static double PointDistToPlane(Vector3d pos, Vector3d center, Vector3d normal)
+        {
+            double d = (pos - center).Dot(normal) / normal.Length();
+            return Math.Abs(d);
+        }
     }// Polygon
 
     public class Quad2d : Polygon
@@ -221,13 +226,15 @@ namespace Geometry
 
     public class Line3d
     {
-        public Vector3d u;
-        public Vector3d v;
+        public Vector3d u3;
+        public Vector3d v3;
+        public Vector2d u2;
+        public Vector2d v2;
 
         public Line3d(Vector3d v1, Vector3d v2)
         {
-            this.u = v1;
-            this.v = v2;
+            this.u3 = v1;
+            this.v3 = v2;
         }
     }//Line3d
 

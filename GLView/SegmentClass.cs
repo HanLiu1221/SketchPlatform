@@ -26,7 +26,8 @@ namespace Component
         public static GuideLineType GuideLineStyle = GuideLineType.SimpleCross;
         public static int StrokeSize = 2;
         public static Color StrokeColor = Color.FromArgb(54, 69, 79);
-        public static Color hiddenColor = Color.DarkGray;
+        public static Color VanLineColor = Color.Gray;
+        public static Color HiddenColor = Color.LightGray;
         private string[] sequences;
 
         public SegmentClass()
