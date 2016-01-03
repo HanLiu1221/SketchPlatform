@@ -301,5 +301,45 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
+        private void saveViewToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.Filter = "MAT file (*.mat)|*.mat;|All Files(*.*)|*.*";
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                string filename = dialog.FileName;
+                this.glViewer.writeModelViewMatrix(filename);
+            }
+        }
+
+        private void loadViewToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Filter = "MAT file (*.mat)|*.mat;|All Files(*.*)|*.*";
+            dialog.CheckFileExists = true;
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                string filename = dialog.FileName;
+                this.glViewer.readModelModelViewMatrix(filename);
+                this.glViewer.Refresh();
+            }
+        }
+
+        private void saveAs3D_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.Filter = "3D model (*.obj; *.off; *.ply)|*.obj; *.off; *.ply|All Files(*.*)|*.*";
+            dialog.CheckFileExists = true;
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                string filename = dialog.FileName;
+            }
+        }
+
+        private void redoSequence_Click(object sender, EventArgs e)
+        {
+            this.glViewer.redoSequence();
+            this.glViewer.Refresh();
+        }
 	}
 }

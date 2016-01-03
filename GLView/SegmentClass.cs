@@ -302,6 +302,8 @@ namespace Component
                 return modelView;
             }
             List<SequenceJson> boxes = jsonFile.sequence;
+            // repeat boxes
+            List<string> boxNames = new List<string>();
             for (int i = 0; i < boxes.Count; ++i)
             {
                 Vector3d[] bbox = null;
@@ -320,11 +322,28 @@ namespace Component
                 {
                     continue;
                 }
-
-                Box box = new Box(bbox);
-                Segment seg = new Segment(mesh, box);
+                int boxIndex = boxNames.IndexOf(boxes[i].box);
+                Box box;
+                Segment seg;
+                //if (boxIndex == -1)
+                //{
+                //    boxNames.Add(boxes[i].box);
+                //    box = new Box(bbox);
+                //    seg = new Segment(mesh, box);
+                //    seg.idx = idx++;
+                //    this.segments.Add(seg);
+                //}
+                //else
+                //{
+                //    seg = this.segments[boxIndex];
+                //    box = seg.boundingbox;
+                //}                
+                boxNames.Add(boxes[i].box);
+                box = new Box(bbox);
+                seg = new Segment(mesh, box);
                 seg.idx = idx++;
                 this.segments.Add(seg);
+                
                 // guides
                 if (boxes[i].guides != null)
                 {
@@ -395,6 +414,21 @@ namespace Component
                 {
                     render_sequence.Add(cur);
                 }
+
+                // face to draw
+                if (boxes[i].face_to_draw != null)
+                {
+                    int nps = boxes[i].face_to_draw.Count;
+                    Vector3d[] points = new Vector3d[nps];
+                    for (int k = 0; k < nps; ++k)
+                    {
+                        points[k] = new Vector3d(double.Parse(boxes[i].face_to_draw[k].x),
+                            double.Parse(boxes[i].face_to_draw[k].y),
+                            double.Parse(boxes[i].face_to_draw[k].z));
+                    }
+                    box.faceToDraw = new Plane(points);
+                    render_sequence.Add("box " + i.ToString() + " face");
+                }
             }
             this.sequences = render_sequence.ToArray();
             center = this.NormalizeSegments();
@@ -426,7 +460,7 @@ namespace Component
             return center;
         }// NormalizeSegments
 
-        public void parseASequence(int idx, out int segIdx, out List<int> guideLines, out int nextBox, out int lineToDraw)
+        public void parseASequence(int idx, out int segIdx, out List<int> guideLines, out int nextBox, out int lineToDraw, out bool drawFace)
         {
             string seq = this.sequences[idx];
             char[] separator = { '\n', ' ', ':', ';'};
@@ -436,6 +470,7 @@ namespace Component
             guideLines = new List<int>();
             lineToDraw = -1;
             nextBox = -1;
+            drawFace = false;
             while (++i < tokens.Length)
             {
                 if (tokens[i] == "box")
@@ -458,6 +493,10 @@ namespace Component
                 if (i < tokens.Length && tokens[i] == "line")
                 {
                     lineToDraw = Int32.Parse(tokens[++i]);
+                }
+                if(i < tokens.Length && tokens[i] == "face")
+                {
+                    drawFace = true;
                 }
             }
             segIdx = boxIdx;

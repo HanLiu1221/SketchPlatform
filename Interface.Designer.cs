@@ -43,6 +43,8 @@
             this.modelColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reloadViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.autoSequenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renderOption = new System.Windows.Forms.ToolStripDropDownButton();
             this.vertexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.wireFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -67,6 +69,7 @@
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.guideLineBox = new System.Windows.Forms.GroupBox();
+            this.redoSequence = new System.Windows.Forms.Button();
             this.sequencePrevButton = new System.Windows.Forms.Button();
             this.sequenceNextButton = new System.Windows.Forms.Button();
             this.nextBoxButton = new System.Windows.Forms.Button();
@@ -87,8 +90,8 @@
             this.showSketchyEdges = new System.Windows.Forms.CheckBox();
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
-            this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
             this.glViewer = new SketchPlatform.GLViewer();
+            this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -150,6 +153,7 @@
             this.saveAs3D.Name = "saveAs3D";
             this.saveAs3D.Size = new System.Drawing.Size(155, 22);
             this.saveAs3D.Text = "Save As 3D file";
+            this.saveAs3D.Click += new System.EventHandler(this.saveAs3D_Click);
             // 
             // loadSegmentsToolStripMenuItem
             // 
@@ -179,7 +183,9 @@
             this.resetViewToolStripMenuItem,
             this.modelColorToolStripMenuItem,
             this.reloadViewToolStripMenuItem,
-            this.autoSequenceToolStripMenuItem});
+            this.autoSequenceToolStripMenuItem,
+            this.saveViewToolStripMenuItem,
+            this.loadViewToolStripMenuItem});
             this.tools.Image = ((System.Drawing.Image)(resources.GetObject("tools.Image")));
             this.tools.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tools.Name = "tools";
@@ -221,6 +227,20 @@
             this.autoSequenceToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.autoSequenceToolStripMenuItem.Text = "Auto sequence";
             this.autoSequenceToolStripMenuItem.Click += new System.EventHandler(this.autoSequenceToolStripMenuItem_Click);
+            // 
+            // saveViewToolStripMenuItem
+            // 
+            this.saveViewToolStripMenuItem.Name = "saveViewToolStripMenuItem";
+            this.saveViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.saveViewToolStripMenuItem.Text = "Save view";
+            this.saveViewToolStripMenuItem.Click += new System.EventHandler(this.saveViewToolStripMenuItem_Click);
+            // 
+            // loadViewToolStripMenuItem
+            // 
+            this.loadViewToolStripMenuItem.Name = "loadViewToolStripMenuItem";
+            this.loadViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.loadViewToolStripMenuItem.Text = "Load view";
+            this.loadViewToolStripMenuItem.Click += new System.EventHandler(this.loadViewToolStripMenuItem_Click);
             // 
             // renderOption
             // 
@@ -437,6 +457,7 @@
             // 
             // guideLineBox
             // 
+            this.guideLineBox.Controls.Add(this.redoSequence);
             this.guideLineBox.Controls.Add(this.sequencePrevButton);
             this.guideLineBox.Controls.Add(this.sequenceNextButton);
             this.guideLineBox.Controls.Add(this.nextBoxButton);
@@ -450,10 +471,20 @@
             this.guideLineBox.TabStop = false;
             this.guideLineBox.Text = "Guides";
             // 
+            // redoSequence
+            // 
+            this.redoSequence.Image = ((System.Drawing.Image)(resources.GetObject("redoSequence.Image")));
+            this.redoSequence.Location = new System.Drawing.Point(124, 56);
+            this.redoSequence.Name = "redoSequence";
+            this.redoSequence.Size = new System.Drawing.Size(26, 23);
+            this.redoSequence.TabIndex = 37;
+            this.redoSequence.UseVisualStyleBackColor = true;
+            this.redoSequence.Click += new System.EventHandler(this.redoSequence_Click);
+            // 
             // sequencePrevButton
             // 
             this.sequencePrevButton.Image = ((System.Drawing.Image)(resources.GetObject("sequencePrevButton.Image")));
-            this.sequencePrevButton.Location = new System.Drawing.Point(66, 56);
+            this.sequencePrevButton.Location = new System.Drawing.Point(51, 56);
             this.sequencePrevButton.Name = "sequencePrevButton";
             this.sequencePrevButton.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.sequencePrevButton.Size = new System.Drawing.Size(26, 23);
@@ -464,7 +495,7 @@
             // sequenceNextButton
             // 
             this.sequenceNextButton.Image = ((System.Drawing.Image)(resources.GetObject("sequenceNextButton.Image")));
-            this.sequenceNextButton.Location = new System.Drawing.Point(102, 56);
+            this.sequenceNextButton.Location = new System.Drawing.Point(87, 56);
             this.sequenceNextButton.Name = "sequenceNextButton";
             this.sequenceNextButton.Size = new System.Drawing.Size(26, 23);
             this.sequenceNextButton.TabIndex = 35;
@@ -474,7 +505,7 @@
             // nextBoxButton
             // 
             this.nextBoxButton.Image = ((System.Drawing.Image)(resources.GetObject("nextBoxButton.Image")));
-            this.nextBoxButton.Location = new System.Drawing.Point(102, 25);
+            this.nextBoxButton.Location = new System.Drawing.Point(87, 25);
             this.nextBoxButton.Name = "nextBoxButton";
             this.nextBoxButton.Size = new System.Drawing.Size(26, 23);
             this.nextBoxButton.TabIndex = 34;
@@ -484,7 +515,7 @@
             // prevBoxButton
             // 
             this.prevBoxButton.Image = ((System.Drawing.Image)(resources.GetObject("prevBoxButton.Image")));
-            this.prevBoxButton.Location = new System.Drawing.Point(66, 25);
+            this.prevBoxButton.Location = new System.Drawing.Point(51, 25);
             this.prevBoxButton.Name = "prevBoxButton";
             this.prevBoxButton.Size = new System.Drawing.Size(26, 23);
             this.prevBoxButton.TabIndex = 33;
@@ -804,6 +835,9 @@
         private System.Windows.Forms.Label depthLabel;
         private System.Windows.Forms.ComboBox vanishingLineType;
         private System.Windows.Forms.Label vlLabel;
+        private System.Windows.Forms.ToolStripMenuItem saveViewToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem loadViewToolStripMenuItem;
+        private System.Windows.Forms.Button redoSequence;
 
 	}
 }

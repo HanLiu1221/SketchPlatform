@@ -43,6 +43,7 @@ namespace Component
         public string segment { get; set; }
         public List<GuideSequenceJson> guide_sequence;
         public List<GuideJson> guides;
+        public List<PointJson> face_to_draw;
     }
 
     public class GuideSequenceJson
@@ -63,6 +64,5 @@ namespace Component
         public string z { get; set; }
     }
 
-    
 
 }

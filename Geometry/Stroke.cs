@@ -658,6 +658,7 @@ namespace Component
         public List<Ellipse3D> ellipses = null;
         public Line3d[][] vanLines;
         private static readonly Random rand = new Random();
+        public Plane faceToDraw;
 
         public Box()
         { }
