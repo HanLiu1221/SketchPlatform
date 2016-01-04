@@ -646,6 +646,28 @@ namespace Component
             }
         }
 
+        public void buildVanishingLines2d(Vector2d v, int vidx)
+        {
+            double ext = 0.1;
+            if (this.vanLines == null)
+            {
+                this.vanLines = new Line3d[2][];
+            }
+            this.vanLines[vidx] = new Line3d[2];
+            Vector2d[] points = new Vector2d[2] { this.u2, this.v2 };
+            for (int i = 0; i < points.Length; ++i)
+            {
+                Vector2d vi = points[i];
+                Vector2d d = (vi - v).normalize();
+                ext = getRandomDoubleInRange(rand, 0, 20);
+                Vector2d v1 = vi + ext * d;
+                ext = getRandomDoubleInRange(rand, 0, 20);
+                Vector2d v2 = v - ext * d;
+                Line3d line = new Line3d(v1, v2);
+                this.vanLines[vidx][i] = line;
+            }
+        }
+
     }//GuideLine
 
     public class Box
@@ -654,11 +676,14 @@ namespace Component
         public Vector2d[] points2 = null;
         public Plane[] planes = null;
         public GuideLine[] edges = null;
-        public List<GuideLine> guideLines = null;
+        public List<List<GuideLine>> guideLines = null;
         public List<Ellipse3D> ellipses = null;
         public Line3d[][] vanLines;
         private static readonly Random rand = new Random();
-        public Plane faceToDraw;
+        public List<Plane> facesToDraw;
+        public List<Plane> facesToHighlight;
+        public int activeFaceIndex = -1;
+        public int highlightFaceIndex = -1;
 
         public Box()
         { }
@@ -715,7 +740,9 @@ namespace Component
                 plane = this.planes[series[i]].clone() as Plane;
                 edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane, true);
             }
-            this.guideLines = new List<GuideLine>();
+            this.guideLines = new List<List<GuideLine>>();
+            this.facesToDraw = new List<Plane>();
+            this.facesToHighlight = new List<Plane>();
             this.ellipses = new List<Ellipse3D>();
         }
 
@@ -726,7 +753,10 @@ namespace Component
             {
                 allLines.Add(edge);
             }
-            allLines.AddRange(this.guideLines);
+            for (int g = 0; g < this.guideLines.Count; ++g)
+            {
+                allLines.AddRange(this.guideLines[g]);
+            }
             return allLines;
         }
 
@@ -778,6 +808,102 @@ namespace Component
                 this.vanLines[vidx][i] = line;
             }
         }
+
+        public void buildVanishingLines2d(Vector2d v, int vidx)
+        {
+            double ext = 0.1;
+            if (this.vanLines == null)
+            {
+                this.vanLines = new Line3d[2][];
+            }
+            this.vanLines[vidx] = new Line3d[this.points.Length];
+            for (int i = 0; i < this.points.Length; ++i)
+            {
+                Vector2d vi = this.points2[i];
+                Vector2d d = (vi - v).normalize();
+                ext = getRandomDoubleInRange(rand, 0, 20);
+                Vector2d v1 = vi + ext * d;
+                ext = getRandomDoubleInRange(rand, 0, 20);
+                Vector2d v2 = v - ext * d;
+                Line3d line = new Line3d(v1, v2);
+                this.vanLines[vidx][i] = line;
+            }
+        }
+
+        public Plane[] GetYPairFaces()
+        {
+            return new Plane[2] {
+				this.planes[0], this.planes[2]
+			};
+        }
+        public Plane[] GetXPairFaces()
+        {
+            return new Plane[2] {
+				this.planes[3], this.planes[5]
+			};
+        }
+        public Plane[] GetZPairFaces()
+        {
+            return new Plane[2] {
+				this.planes[1], this.planes[4]
+			};
+        }
+
+        //public Vector2d GetVanishingPoints()
+        //{
+        //    // compute vanishing points vx, vy, vz for the cuboid
+        //    Plane[] xfaces = this.GetXPairFaces();
+        //    Plane[] yfaces = this.GetYPairFaces();
+        //    Plane[] zfaces = this.GetZPairFaces();
+        //    Vector3d[] dirs = new Vector3d[3] {
+        //        (xfaces[1].center - xfaces[0].center).normalize(),
+        //        (yfaces[1].center - yfaces[0].center).normalize(),
+        //        (zfaces[1].center - zfaces[0].center).normalize()
+        //    };
+        //    List<Vector2d>[] xyz_lines = new List<Vector2d>[3] {
+        //        new List<Vector2d>(),
+        //        new List<Vector2d>(),
+        //        new List<Vector2d>()
+        //    };
+        //    foreach (Plane planar in this.planes)
+        //    {
+        //        for (int i = 0; i < 4; ++i)
+        //        {
+        //            Vector3d u3 = planar.points[i], v3 = planar.points[(i + 1) % 4];
+        //            Vector2d u2 = planar.points2[i], v2 = planar.points2[(i + 1) % 4];
+        //            Vector3d uv = (v3 - u3).normalize();
+        //            for (int j = 0; j < 3; ++j)
+        //            {
+        //                if (Math.Abs(uv.Dot(dirs[j])) > 0.5)
+        //                {
+        //                    xyz_lines[j].Add(u2);
+        //                    xyz_lines[j].Add(v2);
+        //                    break;
+        //                }
+        //            }
+        //        }
+        //    }
+        //    Vector2d[] vp = new Vector2d[3];
+        //    for (int i = 0; i < 3; ++i)
+        //    {
+        //        List<Vector2d> lines = xyz_lines[i];
+        //        int N = lines.Count / 2;	// N lines
+        //        Vector2d mean = new Vector2d();
+        //        for (int j = 0, k = 0; j < N; ++j, k += 2)
+        //        {
+        //            Vector2d u = lines[k], v = lines[k + 1];
+        //            Vector2d p = lines[(k + 2) % lines.Count], q = lines[(k + 3) % lines.Count];
+        //            Vector2d o = Utils.GetIntersectPoint(u, v, p, q);
+        //            mean += o;
+        //        }
+        //        this.vp[i] = mean / N;
+        //    }
+        //    // 
+        //    //Console.WriteLine("cuboid vp: vx(" + this.vp[0].x + ", " + this.vp[0].y + "), vy(" +
+        //    //    this.vp[1].x + ", " + this.vp[1].y + "), vz(" +
+        //    //    this.vp[2].x + ", " + this.vp[2].y + ")"
+        //    //    ); 
+        //}
     }// Box
 
     public class StrokePoint

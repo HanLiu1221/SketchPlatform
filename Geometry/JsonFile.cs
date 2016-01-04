@@ -44,6 +44,7 @@ namespace Component
         public List<GuideSequenceJson> guide_sequence;
         public List<GuideJson> guides;
         public List<PointJson> face_to_draw;
+        public List<PointJson> face_to_highlight;
     }
 
     public class GuideSequenceJson

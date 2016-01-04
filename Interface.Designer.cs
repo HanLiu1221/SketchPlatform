@@ -66,9 +66,11 @@
             this.guideLineColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
+            this.glViewer = new SketchPlatform.GLViewer();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.guideLineBox = new System.Windows.Forms.GroupBox();
+            this.lockView = new System.Windows.Forms.CheckBox();
             this.redoSequence = new System.Windows.Forms.Button();
             this.sequencePrevButton = new System.Windows.Forms.Button();
             this.sequenceNextButton = new System.Windows.Forms.Button();
@@ -90,7 +92,6 @@
             this.showSketchyEdges = new System.Windows.Forms.CheckBox();
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
-            this.glViewer = new SketchPlatform.GLViewer();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
@@ -417,9 +418,9 @@
             // 
             // viewPanel.Panel2
             // 
+            this.viewPanel.Panel2.Controls.Add(this.glViewer);
             this.viewPanel.Panel2.Controls.Add(this.statistics);
             this.viewPanel.Panel2.Controls.Add(this.toolboxPanel);
-            this.viewPanel.Panel2.Controls.Add(this.glViewer);
             this.viewPanel.Size = new System.Drawing.Size(784, 523);
             this.viewPanel.SplitterDistance = 29;
             this.viewPanel.TabIndex = 1;
@@ -433,6 +434,26 @@
             this.fileNameTabs.SelectedIndex = 0;
             this.fileNameTabs.Size = new System.Drawing.Size(778, 35);
             this.fileNameTabs.TabIndex = 0;
+            // 
+            // glViewer
+            // 
+            this.glViewer.AccumBits = ((byte)(0));
+            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.glViewer.AutoCheckErrors = false;
+            this.glViewer.AutoFinish = false;
+            this.glViewer.AutoMakeCurrent = true;
+            this.glViewer.AutoSwapBuffers = true;
+            this.glViewer.BackColor = System.Drawing.Color.Black;
+            this.glViewer.ColorBits = ((byte)(32));
+            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
+            this.glViewer.DepthBits = ((byte)(16));
+            this.glViewer.Location = new System.Drawing.Point(170, 3);
+            this.glViewer.Name = "glViewer";
+            this.glViewer.Size = new System.Drawing.Size(611, 484);
+            this.glViewer.StencilBits = ((byte)(0));
+            this.glViewer.TabIndex = 3;
             // 
             // statistics
             // 
@@ -457,6 +478,7 @@
             // 
             // guideLineBox
             // 
+            this.guideLineBox.Controls.Add(this.lockView);
             this.guideLineBox.Controls.Add(this.redoSequence);
             this.guideLineBox.Controls.Add(this.sequencePrevButton);
             this.guideLineBox.Controls.Add(this.sequenceNextButton);
@@ -466,10 +488,22 @@
             this.guideLineBox.Controls.Add(this.boxesLabel);
             this.guideLineBox.Location = new System.Drawing.Point(3, 281);
             this.guideLineBox.Name = "guideLineBox";
-            this.guideLineBox.Size = new System.Drawing.Size(156, 91);
+            this.guideLineBox.Size = new System.Drawing.Size(156, 113);
             this.guideLineBox.TabIndex = 4;
             this.guideLineBox.TabStop = false;
             this.guideLineBox.Text = "Guides";
+            // 
+            // lockView
+            // 
+            this.lockView.AutoSize = true;
+            this.lockView.Location = new System.Drawing.Point(5, 90);
+            this.lockView.Name = "lockView";
+            this.lockView.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.lockView.Size = new System.Drawing.Size(71, 17);
+            this.lockView.TabIndex = 38;
+            this.lockView.Text = "lock view";
+            this.lockView.UseVisualStyleBackColor = true;
+            this.lockView.CheckedChanged += new System.EventHandler(this.lockView_CheckedChanged);
             // 
             // redoSequence
             // 
@@ -561,14 +595,14 @@
             // 
             this.vanishingLineType.FormattingEnabled = true;
             this.vanishingLineType.Items.AddRange(new object[] {
-            "none",
             "line",
-            "dashed"});
+            "dashed",
+            "none"});
             this.vanishingLineType.Location = new System.Drawing.Point(83, 109);
             this.vanishingLineType.Name = "vanishingLineType";
             this.vanishingLineType.Size = new System.Drawing.Size(62, 21);
             this.vanishingLineType.TabIndex = 7;
-            this.vanishingLineType.Text = "none";
+            this.vanishingLineType.Text = "line";
             this.vanishingLineType.SelectedIndexChanged += new System.EventHandler(this.vanishingLineType_SelectedIndexChanged);
             // 
             // vlLabel
@@ -721,27 +755,6 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
-            // glViewer
-            // 
-            this.glViewer.AccumBits = ((byte)(0));
-            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.glViewer.AutoCheckErrors = false;
-            this.glViewer.AutoFinish = false;
-            this.glViewer.AutoMakeCurrent = true;
-            this.glViewer.AutoSwapBuffers = true;
-            this.glViewer.BackColor = System.Drawing.Color.Black;
-            this.glViewer.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.glViewer.ColorBits = ((byte)(32));
-            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
-            this.glViewer.DepthBits = ((byte)(16));
-            this.glViewer.Location = new System.Drawing.Point(174, 3);
-            this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(607, 484);
-            this.glViewer.StencilBits = ((byte)(0));
-            this.glViewer.TabIndex = 0;
-            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -799,7 +812,6 @@
         private System.Windows.Forms.Label statistics;
         private System.Windows.Forms.ToolStripMenuItem loadSegmentsToolStripMenuItem;
         private System.Windows.Forms.Panel toolboxPanel;
-        private GLViewer glViewer;
         private System.Windows.Forms.CheckBox showBBox;
         private System.Windows.Forms.GroupBox displayBox;
         private System.Windows.Forms.CheckBox showMesh;
@@ -838,6 +850,8 @@
         private System.Windows.Forms.ToolStripMenuItem saveViewToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem loadViewToolStripMenuItem;
         private System.Windows.Forms.Button redoSequence;
+        private System.Windows.Forms.CheckBox lockView;
+        private GLViewer glViewer;
 
 	}
 }

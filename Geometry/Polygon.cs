@@ -236,6 +236,12 @@ namespace Geometry
             this.u3 = v1;
             this.v3 = v2;
         }
+
+        public Line3d(Vector2d v1, Vector2d v2)
+        {
+            this.u2 = v1;
+            this.v2 = v2;
+        }
     }//Line3d
 
     public class Triangle

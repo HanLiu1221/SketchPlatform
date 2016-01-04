@@ -28,6 +28,7 @@ namespace Component
         public static Color StrokeColor = Color.FromArgb(54, 69, 79);
         public static Color VanLineColor = Color.LightGray;
         public static Color HiddenColor = Color.LightGray;
+        public static Color HighlightColor = Color.FromArgb(227, 74, 51);
         private string[] sequences;
 
         public SegmentClass()
@@ -301,55 +302,52 @@ namespace Component
             {
                 return modelView;
             }
-            List<SequenceJson> boxes = jsonFile.sequence;
-            // repeat boxes
+            List<SequenceJson> boxSequences = jsonFile.sequence;
+            // repeat boxSequences
             List<string> boxNames = new List<string>();
-            for (int i = 0; i < boxes.Count; ++i)
+            for (int i = 0; i < boxSequences.Count; ++i)
             {
                 Vector3d[] bbox = null;
                 Mesh mesh = null;
-                if (boxes[i].box != null)
+                if (boxSequences[i].box != null)
                 {
-                    string file = path + boxes[i].box;
+                    string file = path + boxSequences[i].box;
                     bbox = this.loadBoudingbox(file);
                 }
-                if (boxes[i].segment != null)
+                if (boxSequences[i].segment != null)
                 {
-                    string file = path + boxes[i].segment;
+                    string file = path + boxSequences[i].segment;
                     mesh = new Mesh(file, false);
                 }
                 if (bbox == null && mesh == null)
                 {
                     continue;
                 }
-                int boxIndex = boxNames.IndexOf(boxes[i].box);
+                int boxIndex = boxNames.IndexOf(boxSequences[i].box);
                 Box box;
                 Segment seg;
-                //if (boxIndex == -1)
-                //{
-                //    boxNames.Add(boxes[i].box);
-                //    box = new Box(bbox);
-                //    seg = new Segment(mesh, box);
-                //    seg.idx = idx++;
-                //    this.segments.Add(seg);
-                //}
-                //else
-                //{
-                //    seg = this.segments[boxIndex];
-                //    box = seg.boundingbox;
-                //}                
-                boxNames.Add(boxes[i].box);
-                box = new Box(bbox);
-                seg = new Segment(mesh, box);
-                seg.idx = idx++;
-                this.segments.Add(seg);
+                if (boxIndex == -1)
+                {
+                    boxIndex = this.segments.Count;
+                    boxNames.Add(boxSequences[i].box);
+                    box = new Box(bbox);
+                    seg = new Segment(mesh, box);
+                    seg.idx = idx++;
+                    this.segments.Add(seg);
+                }
+                else
+                {
+                    seg = this.segments[boxIndex];
+                    box = seg.boundingbox;
+                }                
                 
                 // guides
-                if (boxes[i].guides != null)
+                if (boxSequences[i].guides != null)
                 {
                     Vector3d maxcoord = Vector3d.MinCoord();
                     Vector3d mincoord = Vector3d.MaxCoord();
-                    foreach (GuideJson guide in boxes[i].guides)
+                    List<GuideLine> lines = new List<GuideLine>();
+                    foreach (GuideJson guide in boxSequences[i].guides)
                     {
                         Vector3d pfrom = null, pto = null;
                         if (guide.from != null)
@@ -371,10 +369,10 @@ namespace Component
                         mincoord = Vector3d.Min(mincoord, pfrom);
                         mincoord = Vector3d.Min(mincoord, pto);
                         GuideLine line = new GuideLine(pfrom, pto, null, false);
-                        seg.boundingbox.guideLines.Add(line);
+                        lines.Add(line);
                     }
-                    Vector3d v1 = seg.boundingbox.guideLines[0].v - seg.boundingbox.guideLines[0].u;
-                    Vector3d v2 = seg.boundingbox.guideLines[1].v - seg.boundingbox.guideLines[1].u;
+                    Vector3d v1 = lines[0].v - lines[0].u;
+                    Vector3d v2 = lines[1].v - lines[1].u;
                     Vector3d normal = v1.Cross(v2).normalize();
                     Vector3d ends = (maxcoord - mincoord).normalize();
                     double len = (maxcoord - mincoord).Length() / 2;
@@ -386,19 +384,23 @@ namespace Component
                     points[2] = maxcoord;
                     points[3] = c + len * dir;
                     Plane plane = new Plane(points);
-                    foreach (GuideLine line in seg.boundingbox.guideLines)
+                    foreach (GuideLine line in lines)
                     {
                         line.setHostPlane(plane);
                     }
+                    seg.boundingbox.guideLines.Add(lines);
                 }
 
                 // sequence
-                string cur = "box " + i.ToString();
-                if (boxes[i].guide_sequence != null && boxes[i].guide_sequence.Count > 0)
+                string boxIndexString = "box " + boxIndex.ToString();
+                string cur = "";
+                bool writeGuide = false;
+                if (boxSequences[i].guide_sequence != null && boxSequences[i].guide_sequence.Count > 0)
                 {
-                    foreach (GuideSequenceJson seq in boxes[i].guide_sequence)
+                    foreach (GuideSequenceJson seq in boxSequences[i].guide_sequence)
                     {
-                        cur = "box " + i.ToString();
+                        cur = new string(boxIndexString.ToCharArray());
+                        cur += " guideGroup " + (box.guideLines.Count-1).ToString();
                         cur += " guide ";
                         if (seq.guide_indexes != null)
                         {
@@ -408,28 +410,60 @@ namespace Component
                             }
                         }
                         render_sequence.Add(cur);
-                    }                    
-                }
-                else
-                {
-                    render_sequence.Add(cur);
+                    }
+                    writeGuide = true;
                 }
 
-                // face to draw
-                if (boxes[i].face_to_draw != null)
+                if (boxSequences[i].face_to_highlight != null)
                 {
-                    int nps = boxes[i].face_to_draw.Count;
+                    int nps = boxSequences[i].face_to_highlight.Count;
                     Vector3d[] points = new Vector3d[nps];
                     for (int k = 0; k < nps; ++k)
                     {
-                        points[k] = new Vector3d(double.Parse(boxes[i].face_to_draw[k].x),
-                            double.Parse(boxes[i].face_to_draw[k].y),
-                            double.Parse(boxes[i].face_to_draw[k].z));
+                        points[k] = new Vector3d(double.Parse(boxSequences[i].face_to_draw[k].x),
+                            double.Parse(boxSequences[i].face_to_draw[k].y),
+                            double.Parse(boxSequences[i].face_to_draw[k].z));
                     }
-                    box.faceToDraw = new Plane(points);
-                    render_sequence.Add("box " + i.ToString() + " face");
+                    Plane face = new Plane(points);
+                    if (cur != "")
+                    {
+                        cur += " highlightFace " + box.facesToHighlight.Count.ToString();
+                        render_sequence[render_sequence.Count - 1] = cur;
+                    }
+                    else
+                    {
+                        render_sequence.Add(boxIndexString + " highlightFace " + box.facesToHighlight.Count.ToString());
+                    }
+                    box.facesToHighlight.Add(face);
+                }
+                // face to draw
+                if (boxSequences[i].face_to_draw != null)
+                {
+                    int nps = boxSequences[i].face_to_draw.Count;
+                    Vector3d[] points = new Vector3d[nps];
+                    for (int k = 0; k < nps; ++k)
+                    {
+                        points[k] = new Vector3d(double.Parse(boxSequences[i].face_to_draw[k].x),
+                            double.Parse(boxSequences[i].face_to_draw[k].y),
+                            double.Parse(boxSequences[i].face_to_draw[k].z));
+                    }
+                    Plane face = new Plane(points);
+                    if (cur != "")
+                    {
+                        render_sequence[render_sequence.Count - 1] += " face " + box.facesToDraw.Count.ToString();
+                    }
+                    else
+                    {
+                        render_sequence.Add(boxIndexString + " face " + box.facesToDraw.Count.ToString());
+                    }
+                    box.facesToDraw.Add(face);
+                }
+                else if (!writeGuide)
+                {
+                    render_sequence.Add(boxIndexString);
                 }
             }
+            render_sequence.Insert(0, "box 0");
             this.sequences = render_sequence.ToArray();
             center = this.NormalizeSegments();
             return modelView;
@@ -460,17 +494,20 @@ namespace Component
             return center;
         }// NormalizeSegments
 
-        public void parseASequence(int idx, out int segIdx, out List<int> guideLines, out int nextBox, out int lineToDraw, out bool drawFace)
+        public void parseASequence(int idx, out int segIdx, out int guidelineGroupIndex, out List<int> guideLineIndexs, 
+            out int nextBox, out int lineToDraw, out int highlightFaceIndex, out int drawFaceIndex)
         {
             string seq = this.sequences[idx];
             char[] separator = { '\n', ' ', ':', ';'};
             string[] tokens = seq.Split(separator);
             int i = -1;
             int boxIdx = -1;
-            guideLines = new List<int>();
+            guideLineIndexs = new List<int>();
             lineToDraw = -1;
             nextBox = -1;
-            drawFace = false;
+            guidelineGroupIndex = -1;
+            drawFaceIndex = -1;
+            highlightFaceIndex = -1;
             while (++i < tokens.Length)
             {
                 if (tokens[i] == "box")
@@ -479,11 +516,15 @@ namespace Component
                     ++i;
                 }
                 if (i >= tokens.Length) break;
+                if (i < tokens.Length && tokens[i] == "guideGroup")
+                {
+                    guidelineGroupIndex = Int32.Parse(tokens[++i]);
+                }
                 if (tokens[i] == "guide")
                 {
                     while (++i < tokens.Length && tokens[i] != "" && tokens[i] != "nextBox")
                     {
-                        guideLines.Add(Int32.Parse(tokens[i]));
+                        guideLineIndexs.Add(Int32.Parse(tokens[i]));
                     }
                 }
                 if (i < tokens.Length && tokens[i] == "nextBox")
@@ -496,7 +537,11 @@ namespace Component
                 }
                 if(i < tokens.Length && tokens[i] == "face")
                 {
-                    drawFace = true;
+                    drawFaceIndex = Int32.Parse(tokens[++i]);
+                }
+                if (i < tokens.Length && tokens[i] == "highlightFace")
+                {
+                    highlightFaceIndex = Int32.Parse(tokens[++i]);
                 }
             }
             segIdx = boxIdx;

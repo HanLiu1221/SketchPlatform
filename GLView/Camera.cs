@@ -167,17 +167,21 @@ namespace Component
             Vector3d nor = this.GetObjSpaceTransformedVector(planenormal);
             double[] ss = new double[3];
             double[] tt = new double[3];
+            Vector3d p3;
             if (this.UnProject(screenpt.x, screenpt.y, -1, ss) == 0 ||
                 this.UnProject(screenpt.x, screenpt.y, 1, tt) == 0)
-                return new Vector3d(0, 0, 0);
+                p3 = new Vector3d(0, 0, 0);
             Vector3d s = new Vector3d(ss);
             Vector3d t = new Vector3d(tt);
             double r = (c - t).Dot(nor) / ((s - t).Dot(nor));
-            return r * s + (1 - r) * t;
+            p3 = r * s + (1 - r) * t;
+            return p3;
         }
 
         public int UnProject(double winx, double winy, double winz, double[] objectCoordinate)
         {
+            // convert from windows coordinate to opengl coordinate
+            //winy = viewport[3] - winy;
             //Transformation matrices
             double[] m = new double[16];
             double[] A = new double[16];
@@ -187,7 +191,6 @@ namespace Component
             //Calculation for inverting a matrix, compute projection x modelview
             //and store in A[16]
             MultiplyMatrices4by4OpenGL_FLOAT(tmpA, this.modelView, this.ballMatrix);
-            //tmpA = this.modelView;
             MultiplyMatrices4by4OpenGL_FLOAT(A, this.projection, tmpA);
             //Now compute the inverse of matrix A
             if (glhInvertMatrixf2(A, m) == 0)
@@ -197,10 +200,6 @@ namespace Component
             data_in[1] = (winy - (double)this.viewport[1]) / (double)this.viewport[3] * 2.0 - 1.0;
             data_in[2] = 2.0 * winz - 1.0;
             data_in[3] = 1.0;
-            //data_in[0] = (winx - (double)this.viewport[0]) / (double)this.viewport[2];
-            //data_in[1] = (winy - (double)this.viewport[1]) / (double)this.viewport[3];
-            //data_in[2] = winz;
-            //data_in[3] = 1.0;
             //Objects coordinates
             MultiplyMatrixByVector4by4OpenGL_FLOAT(data_out, m, data_in);
             if (data_out[3] == 0.0)
@@ -210,6 +209,38 @@ namespace Component
             objectCoordinate[1] = data_out[1] * data_out[3];
             objectCoordinate[2] = data_out[2] * data_out[3];
             return 1;
+            ////Transformation matrices
+            //double[] m = new double[16];
+            //double[] A = new double[16];
+            //double[] tmpA = new double[16];
+            //double[] data_in = new double[4];
+            //double[] data_out = new double[4];
+            ////Calculation for inverting a matrix, compute projection x modelview
+            ////and store in A[16]
+            //MultiplyMatrices4by4OpenGL_FLOAT(tmpA, this.modelView, this.ballMatrix);
+            ////tmpA = this.modelView;
+            //MultiplyMatrices4by4OpenGL_FLOAT(A, this.projection, tmpA);
+            ////Now compute the inverse of matrix A
+            //if (glhInvertMatrixf2(A, m) == 0)
+            //    return 0;
+            ////Transformation of normalized coordinates between -1 and 1
+            //data_in[0] = (winx - (double)this.viewport[0]) / (double)this.viewport[2] * 2.0 - 1.0;
+            //data_in[1] = (winy - (double)this.viewport[1]) / (double)this.viewport[3] * 2.0 - 1.0;
+            //data_in[2] = 2.0 * winz - 1.0;
+            //data_in[3] = 1.0;
+            ////data_in[0] = (winx - (double)this.viewport[0]) / (double)this.viewport[2];
+            ////data_in[1] = (winy - (double)this.viewport[1]) / (double)this.viewport[3];
+            ////data_in[2] = winz;
+            ////data_in[3] = 1.0;
+            ////Objects coordinates
+            //MultiplyMatrixByVector4by4OpenGL_FLOAT(data_out, m, data_in);
+            //if (data_out[3] == 0.0)
+            //    return 0;
+            //data_out[3] = 1.0 / data_out[3];
+            //objectCoordinate[0] = data_out[0] * data_out[3];
+            //objectCoordinate[1] = data_out[1] * data_out[3];
+            //objectCoordinate[2] = data_out[2] * data_out[3];
+            //return 1;
         }
 
         private static double MAT(double[] m, int r, int c)

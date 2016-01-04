@@ -255,12 +255,14 @@ namespace SketchPlatform
         private void sequencePrevButton_Click(object sender, EventArgs e)
         {
             this.glViewer.prevSequence();
+            this.lockView.Checked = this.glViewer.lockView;
             this.glViewer.Refresh();
         }
 
         private void sequenceNextButton_Click(object sender, EventArgs e)
         {
             this.glViewer.nextSequence();
+            this.lockView.Checked = this.glViewer.lockView;
             this.glViewer.Refresh();
         }
 
@@ -289,7 +291,7 @@ namespace SketchPlatform
 
         private void vanishingLineType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (this.vanishingLineType.SelectedIndex > 0)
+            if (this.vanishingLineType.SelectedIndex < 2)
             {
                 this.glViewer.showVanishingLines = true;
                 this.glViewer.setVanishingLineDrawType(this.vanishingLineType.SelectedIndex);
@@ -339,7 +341,15 @@ namespace SketchPlatform
         private void redoSequence_Click(object sender, EventArgs e)
         {
             this.glViewer.redoSequence();
+            this.lockView.Checked = this.glViewer.lockView;
             this.glViewer.Refresh();
         }
+
+        private void lockView_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.lockView = this.lockView.Checked;
+            this.Refresh();
+        }
+
 	}
 }
