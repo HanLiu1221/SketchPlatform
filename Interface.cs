@@ -43,6 +43,7 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
+
         private void pointToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.vertexToolStripMenuItem.Checked = !this.vertexToolStripMenuItem.Checked;
@@ -350,6 +351,56 @@ namespace SketchPlatform
             this.glViewer.lockView = this.lockView.Checked;
             this.Refresh();
         }
+
+        private void exampleToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // test 1
+            //this.glViewer.showOnlyHLFace = !this.glViewer.showOnlyHLFace;
+            // test 2
+            //this.glViewer.showAllFaceToDraw = !this.glViewer.showAllFaceToDraw;
+            //if (this.glViewer.showAllFaceToDraw)
+            //{
+            //    this.glViewer.activateAllGuidelines();
+            //}
+            //else
+            //{
+            //    this.glViewer.deActivateAllGuidelines();
+            //}
+            // test 3
+            this.glViewer.activateAllBoxes();
+            this.glViewer.Refresh();
+        }
+
+        private void vanishingPoint1_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showVanishingPoint1 = this.vanishingPoint1.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void vanishingPoint2_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showVanishingPoint2 = this.vanishingPoint2.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void showBoxVanlines_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showBoxVanishingLine = this.showBoxVanlines.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void showGuideLineVanlines_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showGuideLineVanishingLine = this.showGuideLineVanlines.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void showFaceToDraw_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showFaceToDraw = this.showFaceToDraw.Checked;
+            this.glViewer.Refresh();
+        }
+
 
 	}
 }

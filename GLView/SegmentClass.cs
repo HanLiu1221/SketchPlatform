@@ -22,13 +22,18 @@ namespace Component
         {
             Pencil, Pen1, Pen2, Crayon, Ink1, Ink2
         }
+        // apple green: 49,163,84
+        // orange red: 255, 153, 102
+
         public static StrokeStyle strokeStyle = StrokeStyle.Pencil;
         public static GuideLineType GuideLineStyle = GuideLineType.SimpleCross;
-        public static int StrokeSize = 2;
-        public static Color StrokeColor = Color.FromArgb(54, 69, 79);
+        public static int StrokeSize = 6;
+        public static Color StrokeColor = Color.FromArgb(37,37,37);//(54, 69, 79);
         public static Color VanLineColor = Color.LightGray;
         public static Color HiddenColor = Color.LightGray;
-        public static Color HighlightColor = Color.FromArgb(227, 74, 51);
+        public static Color HighlightColor = Color.FromArgb(178, 24, 43);
+        public static Color FaceColor = Color.FromArgb(253, 205, 172);
+        public static Color AnimColor = Color.FromArgb(251, 128, 114);
         private string[] sequences;
 
         public SegmentClass()
@@ -420,9 +425,9 @@ namespace Component
                     Vector3d[] points = new Vector3d[nps];
                     for (int k = 0; k < nps; ++k)
                     {
-                        points[k] = new Vector3d(double.Parse(boxSequences[i].face_to_draw[k].x),
-                            double.Parse(boxSequences[i].face_to_draw[k].y),
-                            double.Parse(boxSequences[i].face_to_draw[k].z));
+                        points[k] = new Vector3d(double.Parse(boxSequences[i].face_to_highlight[k].x),
+                            double.Parse(boxSequences[i].face_to_highlight[k].y),
+                            double.Parse(boxSequences[i].face_to_highlight[k].z));
                     }
                     Plane face = new Plane(points);
                     if (cur != "")
@@ -432,7 +437,8 @@ namespace Component
                     }
                     else
                     {
-                        render_sequence.Add(boxIndexString + " highlightFace " + box.facesToHighlight.Count.ToString());
+                        cur = boxIndexString + " highlightFace " + box.facesToHighlight.Count.ToString();
+                        render_sequence.Add(cur);
                     }
                     box.facesToHighlight.Add(face);
                 }

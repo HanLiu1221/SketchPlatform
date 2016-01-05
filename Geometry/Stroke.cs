@@ -504,27 +504,28 @@ namespace Component
         public Plane hostPlane;
         private static readonly Random rand = new Random();
         public Arrow3D guideArrow;
-        private bool cross = true;
+        private bool isBoxEdge = true; // false -> guide line, less random strokes
         public bool active = true;
         public Color color = SegmentClass.StrokeColor;
         public bool isGuide = false;
         public Line3d[][] vanLines;
 
-        public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool cross)
+        public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool isBoxEdge)
         {
             this.u = v1;
             this.v = v2;
             this.hostPlane = plane;
-            this.cross = cross;
-            if (!cross)
-            {
-                this.DefineGuideLineStroke();
-            }
-            else
-            {
-                //this.DefineRandomStrokes();
-                this.DefineCrossStrokes();
-            }
+            this.isBoxEdge = isBoxEdge;
+            //if (!isBoxEdge)
+            //{
+            //    this.DefineGuideLineStroke();
+            //}
+            //else
+            //{
+            //    //this.DefineRandomStrokes();
+            //    this.DefineCrossStrokes();
+            //}
+            this.DefineCrossStrokes();
             if (plane != null)
             {
                 this.guideArrow = new Arrow3D(v1, v2, plane.normal);
@@ -556,16 +557,23 @@ namespace Component
 
         public void DefineRandomStrokes()
         {
-            if (!this.cross)
-            {
-                this.DefineGuideLineStroke();
-                return;
-            }
+            //if (!this.isBoxEdge)
+            //{
+            //    this.DefineGuideLineStroke();
+            //    return;
+            //}
             this.strokes = new List<Stroke>();
-            double gap = 0.05;
+            double gap = 0.08;
             double len = gap * (v - u).Length();
             Vector3d lineDir = (v - u).normalize();
-            this.nSketch = rand.Next(1, 5);
+            if (!this.isBoxEdge)
+            {
+                this.nSketch = rand.Next(1, 2);
+            }
+            else
+            {
+                this.nSketch = rand.Next(1, 5);
+            }
             for (int i = 0; i < this.nSketch; ++i)
             {
                 Vector3d[] endpoints = new Vector3d[2];
@@ -581,10 +589,19 @@ namespace Component
                     }
                     normal.normalize();
                     Vector3d step = this.getRandomDoubleInRange(rand, -len / 4, len / 4) * normal;
+                    if (!this.isBoxEdge)
+                    {
+                        dis = this.getRandomDoubleInRange(rand, 0, len);
+                        step = new Vector3d();
+                    }
                     if (j == 0)
                     {
                         endpoints[j] = u + dis * lineDir;
                         endpoints[j] += step;
+                        if (!this.isBoxEdge)
+                        {
+                            endpoints[j] = u - dis * lineDir;
+                        }
                     }
                     else
                     {
@@ -599,14 +616,18 @@ namespace Component
 
         public void DefineCrossStrokes()
         {
-            if (!this.cross)
-            {
-                this.DefineGuideLineStroke();
-                return;
-            }
+            //if (!this.isBoxEdge)
+            //{
+            //    this.DefineGuideLineStroke();
+            //    return;
+            //}
             this.strokes = new List<Stroke>();
             double gap = 0.2;
-            double len = gap * (v - u).Length();
+            double len = gap *(v - u).Length();
+            if (!this.isBoxEdge)
+            {
+                len /= 2;
+            }
             Vector3d lineDir = (v - u).normalize();
             this.nSketch = 1;
             Vector3d[] endpoints = new Vector3d[2];
