@@ -184,7 +184,6 @@ namespace SketchPlatform
         //########## sequence vars ##########//
         private int sequenceIdx = -1;
         private int nSequence = 0;
-        private int lineToDraw = -1;
         public int currBoxIdx = -1;
         public int nextBoxIdx = -1;
 
@@ -340,7 +339,7 @@ namespace SketchPlatform
 
             SegmentClass sc = new SegmentClass();
             //Matrix4d m = sc.DeserializeJSON(jsonFile, out this.objectCenter);
-            Matrix4d m = sc.DeserializeJSON_new(jsonFile, out this.objectCenter);
+            Matrix4d m = sc.DeserializeJSON(jsonFile, out this.objectCenter);
 
             if (m != null)
             {
@@ -893,7 +892,6 @@ namespace SketchPlatform
             {
                 return;
             }
-            this.lineToDraw = -1;
             if (this.sequenceIdx == this.nSequence - 1)
             {
                 MessageBox.Show("Finish!");
@@ -915,7 +913,6 @@ namespace SketchPlatform
             {
                 return;
             }
-            this.lineToDraw = -1;
             if (this.sequenceIdx <= 0)
             {
                 MessageBox.Show("This is the first box!");
@@ -985,7 +982,6 @@ namespace SketchPlatform
         {
             this.sequenceIdx = -1;
             this.currBoxIdx = -1;
-            this.lineToDraw = -1;
             this.nSequence = 0;
         }
 
@@ -999,8 +995,9 @@ namespace SketchPlatform
             int guideGroupIndex;
             int drawFaceIndex;
             int highlightFaceIndex = -1;
+            List<int> targetLines;
             this.currSegmentClass.parseASequence(this.sequenceIdx, out this.currBoxIdx, out guideGroupIndex, out guideLinesIndex, 
-                out this.nextBoxIdx, out this.lineToDraw, out highlightFaceIndex, out drawFaceIndex);
+                out this.nextBoxIdx, out highlightFaceIndex, out drawFaceIndex);
             this.readyForGuideArrow = false;
             Segment activeSeg = this.currSegmentClass.segments[this.currBoxIdx];
             // active box
@@ -1011,18 +1008,9 @@ namespace SketchPlatform
                 this.updateDepthVal();
             }
             //this.showFaceToDraw = true;
-            this.showAnimatedGuideLines(activeSeg, guideGroupIndex,  guideLinesIndex, highlightFaceIndex, drawFaceIndex);
+            this.showAnimatedGuideLines(activeSeg, guideGroupIndex, guideLinesIndex, highlightFaceIndex, drawFaceIndex);
             this.readyForGuideArrow = true;
-            // actuve next box (guided)
-            if (this.nextBoxIdx != -1 && this.lineToDraw != -1)
-            {
-                GuideLine edge = this.currSegmentClass.segments[this.nextBoxIdx].boundingbox.edges[this.lineToDraw];
-                foreach (Stroke s in edge.strokes)
-                {
-                    s.setStrokeSize(2);
-                    s.changeStyle((int)SegmentClass.strokeStyle);
-                }
-            }
+
             
         }// activateGuideSequence
 
@@ -1102,29 +1090,28 @@ namespace SketchPlatform
                 }
             }
             // 2. draw guidelines
-            for (int i = 0; i < guideLinesIndex.Count - 1; ++i)
+            // 3. show the target guide line (previous guidelines are computed for it)
+            for (int i = 0; i < guideLinesIndex.Count; ++i)
             {
-                GuideLine line = seg.boundingbox.guideLines[guideGroupIndex][guideLinesIndex[i]];
+                int idx = guideLinesIndex[i];
+                GuideLine line = box.guideLines[guideGroupIndex][idx];
                 line.active = true;
-                this.Refresh();
-                System.Threading.Thread.Sleep(600);
-            }
-            // 3. show the last guide line (previous guidelines are computed for it)
-            GuideLine last = null;
-            if (guideLinesIndex.Count > 0)
-            {
-                last = seg.boundingbox.guideLines[guideGroupIndex][guideLinesIndex[guideLinesIndex.Count - 1]];
-                last.active = true;
-                last.isGuide = true;
-                foreach (Stroke stroke in last.strokes)
+                if (box.targetLines[guideGroupIndex].Contains(line))
                 {
-                    stroke.strokeColor = SegmentClass.HighlightColor;
-                    stroke.setStrokeSize(4);
-                    stroke.changeStyle((int)SegmentClass.strokeStyle);
+                    foreach (Stroke stroke in line.strokes)
+                    {
+                        stroke.strokeColor = SegmentClass.HighlightColor;
+                    }
+                    // de active previous lines
+                    for (int j = 0; j < i; ++j)
+                    {
+                        box.guideLines[guideGroupIndex][guideLinesIndex[j]].active = false;
+                    }
                 }
                 this.Refresh();
                 System.Threading.Thread.Sleep(600);
             }
+
             // 4. draw the new face if there is any
             //if (drawFaceIndex != -1)
             //{
@@ -2812,7 +2799,6 @@ namespace SketchPlatform
             }
             this.drawActiveBox(seg);
             this.drawActiveGuideLines(seg);
-            this.drawLineToDraw();
             this.drawAnimatedLine();
             
             if (this.enableDepthTest)
@@ -2910,6 +2896,14 @@ namespace SketchPlatform
                     //    this.drawVanishingLines3d(line);
                     //}
                 }
+                foreach (GuideLine line in box.targetLines[g])
+                {
+                    if (!line.active) continue;
+                    foreach (Stroke stroke in line.strokes)
+                    {
+                        this.drawTriMeshShaded3D(stroke, false, false);
+                    }
+                }
             }
             
         }// drawActiveGuideLines
@@ -2938,14 +2932,7 @@ namespace SketchPlatform
             if (this.animatedLine == null) return;
             this.drawLines3D(this.animatedLine.u3, this.animatedLine.v3, SegmentClass.HighlightColor, 4.0f);
         }
-        
-        private void drawLineToDraw()
-        {
-            if (this.readyForGuideArrow && this.nextBoxIdx != -1 && this.lineToDraw != -1)
-            {
-                this.drawGuideArrow(this.currSegmentClass.segments[this.nextBoxIdx].boundingbox.edges[this.lineToDraw].guideArrow, Color.Red);
-            }
-        }
+
 
         private void drawGuideLineEndpoints(GuideLine gline, Color c, float pointSize)
         {

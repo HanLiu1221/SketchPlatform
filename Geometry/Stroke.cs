@@ -705,6 +705,7 @@ namespace Component
         public List<Plane> facesToHighlight;
         public int activeFaceIndex = -1;
         public int highlightFaceIndex = -1;
+        public List<List<GuideLine>> targetLines;
 
         public Box()
         { }
@@ -765,6 +766,7 @@ namespace Component
             this.facesToDraw = new List<Plane>();
             this.facesToHighlight = new List<Plane>();
             this.ellipses = new List<Ellipse3D>();
+            this.targetLines = new List<List<GuideLine>>();
         }
 
         public List<GuideLine> getAllLines()
