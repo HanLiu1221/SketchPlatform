@@ -106,6 +106,8 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
+            this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.enableHiddenCheck = new System.Windows.Forms.CheckBox();
             this.glViewer = new SketchPlatform.GLViewer();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
@@ -434,7 +436,8 @@
             // 
             this.testTools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.exampleToolStripMenuItem,
-            this.moveBoxToolStripMenuItem});
+            this.moveBoxToolStripMenuItem,
+            this.showSpecificFacesToolStripMenuItem});
             this.testTools.Image = ((System.Drawing.Image)(resources.GetObject("testTools.Image")));
             this.testTools.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.testTools.Name = "testTools";
@@ -445,14 +448,14 @@
             // exampleToolStripMenuItem
             // 
             this.exampleToolStripMenuItem.Name = "exampleToolStripMenuItem";
-            this.exampleToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
+            this.exampleToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.exampleToolStripMenuItem.Text = "show All guides";
             this.exampleToolStripMenuItem.Click += new System.EventHandler(this.exampleToolStripMenuItem_Click);
             // 
             // moveBoxToolStripMenuItem
             // 
             this.moveBoxToolStripMenuItem.Name = "moveBoxToolStripMenuItem";
-            this.moveBoxToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
+            this.moveBoxToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.moveBoxToolStripMenuItem.Text = "move box";
             this.moveBoxToolStripMenuItem.Click += new System.EventHandler(this.moveBoxToolStripMenuItem_Click);
             // 
@@ -472,7 +475,7 @@
             this.viewPanel.Panel2.Controls.Add(this.glViewer);
             this.viewPanel.Panel2.Controls.Add(this.statistics);
             this.viewPanel.Panel2.Controls.Add(this.toolboxPanel);
-            this.viewPanel.Size = new System.Drawing.Size(784, 681);
+            this.viewPanel.Size = new System.Drawing.Size(784, 692);
             this.viewPanel.SplitterDistance = 35;
             this.viewPanel.TabIndex = 1;
             // 
@@ -506,7 +509,7 @@
             this.toolboxPanel.Controls.Add(this.displayBox);
             this.toolboxPanel.Location = new System.Drawing.Point(3, 3);
             this.toolboxPanel.Name = "toolboxPanel";
-            this.toolboxPanel.Size = new System.Drawing.Size(165, 636);
+            this.toolboxPanel.Size = new System.Drawing.Size(165, 647);
             this.toolboxPanel.TabIndex = 2;
             // 
             // contourLabel
@@ -566,9 +569,9 @@
             this.vanishingBox.Controls.Add(this.vanishingPoint1);
             this.vanishingBox.Controls.Add(this.vanishingLineType);
             this.vanishingBox.Controls.Add(this.vlLabel);
-            this.vanishingBox.Location = new System.Drawing.Point(3, 377);
+            this.vanishingBox.Location = new System.Drawing.Point(3, 395);
             this.vanishingBox.Name = "vanishingBox";
-            this.vanishingBox.Size = new System.Drawing.Size(156, 159);
+            this.vanishingBox.Size = new System.Drawing.Size(156, 141);
             this.vanishingBox.TabIndex = 39;
             this.vanishingBox.TabStop = false;
             this.vanishingBox.Text = "Vanishing Lines";
@@ -578,7 +581,7 @@
             this.showFaceToDraw.AutoSize = true;
             this.showFaceToDraw.Checked = true;
             this.showFaceToDraw.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.showFaceToDraw.Location = new System.Drawing.Point(5, 136);
+            this.showFaceToDraw.Location = new System.Drawing.Point(5, 113);
             this.showFaceToDraw.Name = "showFaceToDraw";
             this.showFaceToDraw.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.showFaceToDraw.Size = new System.Drawing.Size(85, 17);
@@ -590,12 +593,12 @@
             // showGuideLineVanlines
             // 
             this.showGuideLineVanlines.AutoSize = true;
-            this.showGuideLineVanlines.Location = new System.Drawing.Point(4, 113);
+            this.showGuideLineVanlines.Location = new System.Drawing.Point(5, 90);
             this.showGuideLineVanlines.Name = "showGuideLineVanlines";
             this.showGuideLineVanlines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.showGuideLineVanlines.Size = new System.Drawing.Size(119, 17);
+            this.showGuideLineVanlines.Size = new System.Drawing.Size(111, 17);
             this.showGuideLineVanlines.TabIndex = 10;
-            this.showGuideLineVanlines.Text = "vanishing guide line";
+            this.showGuideLineVanlines.Text = "vanRay guide line";
             this.showGuideLineVanlines.UseVisualStyleBackColor = true;
             this.showGuideLineVanlines.CheckedChanged += new System.EventHandler(this.showGuideLineVanlines_CheckedChanged);
             // 
@@ -604,12 +607,12 @@
             this.showBoxVanlines.AutoSize = true;
             this.showBoxVanlines.Checked = true;
             this.showBoxVanlines.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.showBoxVanlines.Location = new System.Drawing.Point(5, 90);
+            this.showBoxVanlines.Location = new System.Drawing.Point(3, 67);
             this.showBoxVanlines.Name = "showBoxVanlines";
             this.showBoxVanlines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.showBoxVanlines.Size = new System.Drawing.Size(91, 17);
+            this.showBoxVanlines.Size = new System.Drawing.Size(83, 17);
             this.showBoxVanlines.TabIndex = 9;
-            this.showBoxVanlines.Text = "vanishing box";
+            this.showBoxVanlines.Text = "vanRay box";
             this.showBoxVanlines.UseVisualStyleBackColor = true;
             this.showBoxVanlines.CheckedChanged += new System.EventHandler(this.showBoxVanlines_CheckedChanged);
             // 
@@ -618,12 +621,12 @@
             this.vanishingPoint2.AutoSize = true;
             this.vanishingPoint2.Checked = true;
             this.vanishingPoint2.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.vanishingPoint2.Location = new System.Drawing.Point(4, 67);
+            this.vanishingPoint2.Location = new System.Drawing.Point(80, 44);
             this.vanishingPoint2.Name = "vanishingPoint2";
             this.vanishingPoint2.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.vanishingPoint2.Size = new System.Drawing.Size(97, 17);
+            this.vanishingPoint2.Size = new System.Drawing.Size(70, 17);
             this.vanishingPoint2.TabIndex = 8;
-            this.vanishingPoint2.Text = "vanishing ray 2";
+            this.vanishingPoint2.Text = "van ray 2";
             this.vanishingPoint2.UseVisualStyleBackColor = true;
             this.vanishingPoint2.CheckedChanged += new System.EventHandler(this.vanishingPoint2_CheckedChanged);
             // 
@@ -635,9 +638,9 @@
             this.vanishingPoint1.Location = new System.Drawing.Point(4, 44);
             this.vanishingPoint1.Name = "vanishingPoint1";
             this.vanishingPoint1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.vanishingPoint1.Size = new System.Drawing.Size(97, 17);
+            this.vanishingPoint1.Size = new System.Drawing.Size(70, 17);
             this.vanishingPoint1.TabIndex = 5;
-            this.vanishingPoint1.Text = "vanishing ray 1";
+            this.vanishingPoint1.Text = "van ray 1";
             this.vanishingPoint1.UseVisualStyleBackColor = true;
             this.vanishingPoint1.CheckedChanged += new System.EventHandler(this.vanishingPoint1_CheckedChanged);
             // 
@@ -675,7 +678,7 @@
             this.guideLineBox.Controls.Add(this.prevBoxButton);
             this.guideLineBox.Controls.Add(this.glLabel);
             this.guideLineBox.Controls.Add(this.boxesLabel);
-            this.guideLineBox.Location = new System.Drawing.Point(3, 248);
+            this.guideLineBox.Location = new System.Drawing.Point(3, 264);
             this.guideLineBox.Name = "guideLineBox";
             this.guideLineBox.Size = new System.Drawing.Size(156, 113);
             this.guideLineBox.TabIndex = 4;
@@ -765,6 +768,7 @@
             // 
             // adjustBox
             // 
+            this.adjustBox.Controls.Add(this.enableHiddenCheck);
             this.adjustBox.Controls.Add(this.depthType);
             this.adjustBox.Controls.Add(this.depthLabel);
             this.adjustBox.Controls.Add(this.guidelineType);
@@ -773,7 +777,7 @@
             this.adjustBox.Controls.Add(this.strokeSizeBox);
             this.adjustBox.Location = new System.Drawing.Point(3, 124);
             this.adjustBox.Name = "adjustBox";
-            this.adjustBox.Size = new System.Drawing.Size(156, 118);
+            this.adjustBox.Size = new System.Drawing.Size(156, 134);
             this.adjustBox.TabIndex = 3;
             this.adjustBox.TabStop = false;
             this.adjustBox.Text = "Adjust";
@@ -808,13 +812,13 @@
             // 
             this.guidelineType.FormattingEnabled = true;
             this.guidelineType.Items.AddRange(new object[] {
-            "cross",
-            "random"});
+            "random",
+            "cross"});
             this.guidelineType.Location = new System.Drawing.Point(66, 55);
             this.guidelineType.Name = "guidelineType";
             this.guidelineType.Size = new System.Drawing.Size(66, 21);
             this.guidelineType.TabIndex = 3;
-            this.guidelineType.Text = "cross";
+            this.guidelineType.Text = "random";
             this.guidelineType.SelectedIndexChanged += new System.EventHandler(this.guidelineType_SelectedIndexChanged);
             // 
             // guidelineLabel
@@ -852,7 +856,7 @@
             this.strokeSizeBox.Name = "strokeSizeBox";
             this.strokeSizeBox.Size = new System.Drawing.Size(48, 21);
             this.strokeSizeBox.TabIndex = 0;
-            this.strokeSizeBox.Text = "6";
+            this.strokeSizeBox.Text = "4";
             this.strokeSizeBox.TextChanged += new System.EventHandler(this.strokeSizeBox_TextChanged);
             // 
             // displayBox
@@ -918,6 +922,27 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
+            // showSpecificFacesToolStripMenuItem
+            // 
+            this.showSpecificFacesToolStripMenuItem.Name = "showSpecificFacesToolStripMenuItem";
+            this.showSpecificFacesToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
+            this.showSpecificFacesToolStripMenuItem.Text = "show specific faces";
+            this.showSpecificFacesToolStripMenuItem.Click += new System.EventHandler(this.showSpecificFacesToolStripMenuItem_Click);
+            // 
+            // enableHiddenCheck
+            // 
+            this.enableHiddenCheck.AutoSize = true;
+            this.enableHiddenCheck.Checked = true;
+            this.enableHiddenCheck.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.enableHiddenCheck.Location = new System.Drawing.Point(5, 111);
+            this.enableHiddenCheck.Name = "enableHiddenCheck";
+            this.enableHiddenCheck.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.enableHiddenCheck.Size = new System.Drawing.Size(77, 17);
+            this.enableHiddenCheck.TabIndex = 12;
+            this.enableHiddenCheck.Text = "hidden line";
+            this.enableHiddenCheck.UseVisualStyleBackColor = true;
+            this.enableHiddenCheck.CheckedChanged += new System.EventHandler(this.enableHiddenCheck_CheckedChanged);
+            // 
             // glViewer
             // 
             this.glViewer.AccumBits = ((byte)(0));
@@ -934,7 +959,7 @@
             this.glViewer.DepthBits = ((byte)(16));
             this.glViewer.Location = new System.Drawing.Point(170, 3);
             this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(611, 636);
+            this.glViewer.Size = new System.Drawing.Size(611, 647);
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 3;
             // 
@@ -943,7 +968,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.WhiteSmoke;
-            this.ClientSize = new System.Drawing.Size(784, 720);
+            this.ClientSize = new System.Drawing.Size(784, 731);
             this.Controls.Add(this.viewPanel);
             this.Controls.Add(this.menu);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -1053,6 +1078,8 @@
         private System.Windows.Forms.CheckBox sharpEdge;
         private System.Windows.Forms.CheckBox contour;
         private System.Windows.Forms.CheckBox showContourPoint;
+        private System.Windows.Forms.ToolStripMenuItem showSpecificFacesToolStripMenuItem;
+        private System.Windows.Forms.CheckBox enableHiddenCheck;
 
 	}
 }

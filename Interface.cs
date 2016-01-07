@@ -355,7 +355,7 @@ namespace SketchPlatform
         private void exampleToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // test 1
-            //this.glViewer.showOnlyHLFace = !this.glViewer.showOnlyHLFace;
+            this.glViewer.inExample = !this.glViewer.inExample;
             // test 2
             //this.glViewer.showAllFaceToDraw = !this.glViewer.showAllFaceToDraw;
             //if (this.glViewer.showAllFaceToDraw)
@@ -367,8 +367,15 @@ namespace SketchPlatform
             //    this.glViewer.deActivateAllGuidelines();
             //}
             // test 3
-            //this.glViewer.activateAllBoxes();
-            this.glViewer.activateSpecificEdges();
+            this.glViewer.twoBoxExample();
+            this.glViewer.Refresh();
+        }
+
+        private void showSpecificFacesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //this.glViewer.activateSpecificEdges();
+            this.glViewer.inExample = !this.glViewer.inExample;
+            this.glViewer.setSpecificFace();
             this.glViewer.Refresh();
         }
 
@@ -431,5 +438,17 @@ namespace SketchPlatform
             this.glViewer.showContourPoint = this.showContourPoint.Checked;
             this.glViewer.Refresh();
         }
+
+        private void enableHiddenCheck_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.enableHiddencheck = this.enableHiddenCheck.Checked;
+            if (!this.glViewer.enableHiddencheck)
+            {
+                this.glViewer.recoverHiddenlines();
+            }
+            this.glViewer.Refresh();
+        }
+
+
 	}
 }

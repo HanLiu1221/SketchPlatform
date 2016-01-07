@@ -41,6 +41,7 @@ namespace Component
     {
         public string box { get; set; }
         public string segment { get; set; }
+        //public GuideSequenceJson guide_sequence;
         public List<GuideSequenceJson> guide_sequence;
         public List<GuideJson> guides;
         public List<PointJson> face_to_draw;

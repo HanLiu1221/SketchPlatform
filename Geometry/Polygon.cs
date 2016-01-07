@@ -31,6 +31,11 @@ namespace Geometry
             return odd;
         }
 
+        static public double getRandomDoubleInRange(Random rand, double s, double e)
+        {
+            return s + (e - s) * rand.NextDouble();
+        }
+
         public static bool PointInPoly(Vector2d p, Vector2d[] points)
         {
             bool c = false;

@@ -31,13 +31,16 @@ namespace Component
         public Plane hostPlane;
         public double depth = 1.0;
         public int ncapoints = 5;
+        private static readonly Random rand = new Random();
+        private bool isBoxEdge = true;
 
-        public Stroke(Vector3d v1, Vector3d v2)
+        public Stroke(Vector3d v1, Vector3d v2, bool isBoxEdge)
         {
             this.u3 = v1;
             this.v3 = v2;
             this.npoints = (int)((v1 - v2).Length() / 0.01);
             this.npoints = this.npoints > 0 ? this.npoints : 1;
+            this.isBoxEdge = isBoxEdge;
             this.sampleStrokePoints();
         }
 
@@ -395,6 +398,16 @@ namespace Component
             this.meshVertices3d = new List<Vector3d>();
             int N = this.npoints;
             float start = (float)N;
+            
+            double r_size2 = Polygon.getRandomDoubleInRange(rand, this.size2 / 4, this.size2);
+            double r_size3 = Polygon.getRandomDoubleInRange(rand, this.size3 / 4, this.size3);
+            if (this.isBoxEdge)
+            {
+                r_size2 = this.size2;
+                r_size3 = this.size3;
+            }
+            double isize2 = r_size2 / 2;
+            double isize3 = r_size3 / 2;
             for (int i = 0; i < N; ++i)
             {
                 int I = i - 1 >= 0 ? i - 1 : i;
@@ -411,8 +424,7 @@ namespace Component
                 Vector3d d3 = (v3 - u3).normalize();	// dir
                 Vector3d n3 = this.hostPlane.normal.Cross(d3).normalize();
 
-                double isize2 = this.size2 / 2;
-                double isize3 = this.size3 / 2;
+
                 int op = 255;
                 switch (type)
                 {
@@ -423,15 +435,15 @@ namespace Component
                         }
                     case 1: // pen
                         {
-                            isize2 = (start - i + 1) / start * this.size2;
-                            isize3 = (start - i + 1) / start * this.size3;
+                            isize2 = (start - i + 1) / start * r_size2;
+                            isize3 = (start - i + 1) / start * r_size3;
                             op = 255; //(int)((start - i) / start * 255.0);
                             break;
                         }
                     case 2:// pen-2
                         {
-                            isize2 = (i + 1) / start * this.size2;
-                            isize3 = (i + 1) / start * size3;
+                            isize2 = (i + 1) / start * r_size2;
+                            isize3 = (i + 1) / start * r_size3;
                             op = 255; // (int)(i / start * 255.0);
                             break;
                         }
@@ -444,8 +456,8 @@ namespace Component
                         {
                             double diff = (i - start / 2) / start * 8;
                             diff = Math.Pow(Math.E, -(diff * diff) / 10);
-                            isize2 = diff * this.size2;
-                            isize3 = diff * size3;
+                            isize2 = diff * r_size2;
+                            isize3 = diff * r_size3;
                             op = (int)((diff + 0.1) * 255.0);
                             if (op > 255)
                                 op = 255;
@@ -461,8 +473,8 @@ namespace Component
                                 diff = diff - 1;
                             diff += 0.2;
                             if (diff > 1) diff = 1.0;
-                            isize2 = diff * this.size2;
-                            isize3 = diff * size3;
+                            isize2 = diff * r_size2;
+                            isize3 = diff * r_size3;
                             op = (int)(diff * 255.0);
                             break;
                         }
@@ -509,6 +521,7 @@ namespace Component
         public Color color = SegmentClass.StrokeColor;
         public bool isGuide = false;
         public Line3d[][] vanLines;
+        public bool makeVisible = false;
 
         public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool isBoxEdge)
         {
@@ -572,8 +585,9 @@ namespace Component
             }
             else
             {
-                this.nSketch = rand.Next(1, 5);
+                this.nSketch = rand.Next(1, 4);
             }
+
             for (int i = 0; i < this.nSketch; ++i)
             {
                 Vector3d[] endpoints = new Vector3d[2];
@@ -609,7 +623,7 @@ namespace Component
                         endpoints[j] += step;
                     }
                 }
-                Stroke line = new Stroke(endpoints[0], endpoints[1]);
+                Stroke line = new Stroke(endpoints[0], endpoints[1], this.isBoxEdge);
                 this.strokes.Add(line);
             }
         }//DefineRandomStrokes
@@ -634,14 +648,14 @@ namespace Component
             double dis = this.getRandomDoubleInRange(rand, 0, len);
             endpoints[0] = u - dis * lineDir;
             endpoints[1] = v + dis * lineDir;
-            Stroke line = new Stroke(endpoints[0], endpoints[1]);
+            Stroke line = new Stroke(endpoints[0], endpoints[1], this.isBoxEdge);
             this.strokes.Add(line);
         }
 
         public void DefineGuideLineStroke()
         {
             this.strokes = new List<Stroke>();
-            Stroke line = new Stroke(this.u,this.v);
+            Stroke line = new Stroke(this.u, this.v, this.isBoxEdge);
             this.strokes.Add(line);
         }
 
@@ -804,11 +818,6 @@ namespace Component
             }
         }
 
-        private double getRandomDoubleInRange(Random rand, double s, double e)
-        {
-            return s + (e - s) * rand.NextDouble();
-        }
-
         public void buildVanishingLines(Vector3d v, int vidx)
         {
             double ext = 0.1;
@@ -821,9 +830,9 @@ namespace Component
             {
                 Vector3d vi = this.points[i];
                 Vector3d d = (vi - v).normalize();
-                ext = getRandomDoubleInRange(rand, 0, 0.2);
+                ext = Polygon.getRandomDoubleInRange(rand, 0, 0.2);
                 Vector3d v1 = vi + ext * d;
-                ext = getRandomDoubleInRange(rand, 0, 0.2);
+                ext = Polygon.getRandomDoubleInRange(rand, 0, 0.2);
                 Vector3d v2 = v - ext * d;
                 Line3d line = new Line3d(v1, v2);
                 this.vanLines[vidx][i] = line;
@@ -842,9 +851,9 @@ namespace Component
             {
                 Vector2d vi = this.points2[i];
                 Vector2d d = (vi - v).normalize();
-                ext = getRandomDoubleInRange(rand, 0, 20);
+                ext = Polygon.getRandomDoubleInRange(rand, 0, 20);
                 Vector2d v1 = vi + ext * d;
-                ext = getRandomDoubleInRange(rand, 0, 20);
+                ext = Polygon.getRandomDoubleInRange(rand, 0, 20);
                 Vector2d v2 = v - ext * d;
                 Line3d line = new Line3d(v1, v2);
                 this.vanLines[vidx][i] = line;

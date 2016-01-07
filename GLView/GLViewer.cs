@@ -135,6 +135,7 @@ namespace SketchPlatform
         public bool showContourLine = false;
         public bool showSharpEdge = false;
         public bool showContourPoint = false;
+        public bool enableHiddencheck = true;
 
         private bool inGuideMode = false;
         Vector3d eye = new Vector3d(0, 0, 1);
@@ -707,12 +708,26 @@ namespace SketchPlatform
                         {
                             stroke.strokeColor = gc;
                         }
-                        stroke.setStrokeSize(size * 0.8);
+                        stroke.setStrokeSize(size);
                         stroke.changeStyle((int)SegmentClass.strokeStyle);
                     }
                 }
             }
         }// setStrokeStylePerSeg - per seg
+
+        private void setStrokeStylePerLine(int size, GuideLine line, Color c, Color gc)
+        {
+            foreach (Stroke stroke in line.strokes)
+            {
+                if (c != Color.White)
+                {
+                    stroke.strokeColor = c;
+                }
+                stroke.setStrokeSize(size);
+                stroke.changeStyle((int)SegmentClass.strokeStyle);
+            }
+
+        }// setStrokeStylePerLine - per seg
 
         public void setGuideLineColor(Color c)
         {
@@ -749,10 +764,10 @@ namespace SketchPlatform
         {
             switch (idx)
             {
-                case 1:
+                case 0:
                     SegmentClass.GuideLineStyle = SegmentClass.GuideLineType.Random;
                     break;
-                case 0:
+                case 1:
                 default:
                     SegmentClass.GuideLineStyle = SegmentClass.GuideLineType.SimpleCross;
                     break;
@@ -977,13 +992,54 @@ namespace SketchPlatform
             }
         }
 
-        public void activateAllBoxes()
+        public void twoBoxExample()
         {
             foreach (Segment seg in this.currSegmentClass.segments)
             {
                 seg.active = true;
+                foreach (GuideLine line in seg.boundingbox.edges)
+                {
+                    line.active = true;
+                    foreach (Stroke stroke in line.strokes)
+                    {
+                        stroke.strokeColor = SegmentClass.StrokeColor;
+                    }
+                }
             }
-        }//activateAllBoxes
+            GuideLine edge = this.currSegmentClass.segments[1].boundingbox.edges[3];
+            foreach (Stroke stroke in edge.strokes)
+            {
+                stroke.strokeColor = SegmentClass.HighlightColor;
+            }
+            edge = this.currSegmentClass.segments[1].boundingbox.edges[11];
+            foreach (Stroke stroke in edge.strokes)
+            {
+                stroke.strokeColor = SegmentClass.HighlightColor;
+            }
+        }//twoBoxExample
+
+        public void setSpecificFace()
+        {
+            int[] eids = { 2, 6, 7, 10 };
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                foreach (GuideLine line in seg.boundingbox.edges)
+                {
+                    line.active = false;
+                }
+            }
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                for (int i = 0; i < eids.Length; ++i)
+                {
+                    seg.boundingbox.edges[eids[i]].active = true;
+                    foreach (Stroke stroke in seg.boundingbox.edges[eids[i]].strokes)
+                    {
+                        stroke.strokeColor = SegmentClass.StrokeColor;
+                    }
+                }
+            }
+        }//setSpecificFace
 
         // 3 box example
         private List<GuideLine> testLines;
@@ -1269,13 +1325,6 @@ namespace SketchPlatform
                 GuideLine line = seg.boundingbox.guideLines[guideGroupIndex][guideLinesIndex[i]];
                 //line.active = false;
             }
-            //if (last != null)
-            //{
-            //    foreach (Stroke stroke in last.strokes)
-            //    {
-            //        stroke.strokeColor = SegmentClass.HighlightColor;
-            //    }
-            //}
             if (this.enableDepthTest)
                 Gl.glEnable(Gl.GL_DEPTH_TEST);
         }// showAnimatedGuideLines
@@ -1315,10 +1364,10 @@ namespace SketchPlatform
                 }
             }
 
-            Matrix4d m = this.camera.GetProjMat() * this.camera.GetModelviewMat() * this.camera.GetBallMat();
-            m = m.Transpose();
-            m = this.modelTransformMatrix;
-            this.currSegmentClass.ChangeStrokeStyle(m, camera);
+            //Matrix4d m = this.camera.GetProjMat() * this.camera.GetModelviewMat() * this.camera.GetBallMat();
+            //m = m.Transpose();
+            //m = this.modelTransformMatrix;
+            this.currSegmentClass.ChangeStrokeStyle(this.modelTransformMatrix, camera);
 
         }// calculateSketchMesh
 
@@ -1806,56 +1855,54 @@ namespace SketchPlatform
             }
         }// calculateStrokePointDepthByCameraPos
 
-        int[] visibleTriangleVertices;
-        #region
-        private void goThroughVisibilityTest_working()
+        private void setHiddenLines()
         {
+            if (this.depthType == Depthtype.hidden) return;
             this.clearScene();
+            // draw the whole sceen from "Draw3D()" to get the visibility info depth value
             int n = 0;
+            int nsample = 10; // sample 10 points on each line
+            // drawAllActiveBoxes() or drawSketchyEdges3D_hiddenLine()
             foreach (Segment seg in this.currSegmentClass.segments)
             {
+                if (!seg.active) continue;
                 foreach (GuideLine edge in seg.boundingbox.edges)
                 {
-                    foreach (Stroke stroke in edge.strokes)
-                    {
-                        n += stroke.FaceCount;
-                    }
+                    n += nsample;
                 }
             }
+            // draw and get visibility
             int[] queryIDs = new int[n];
-            //Gl.glGenQueries(n, queryIDs);
-            for (int i = 0; i < n; ++i)
-            {
-                queryIDs[i] = i;
-            }
+            Gl.glGenQueries(n, queryIDs);
+            //for (int i = 0; i < n; ++i)
+            //{
+            //    queryIDs[i] = i;
+            //}
             Gl.glEnable(Gl.GL_DEPTH_TEST);
             int idx = 0;
             this.setViewMatrix();
             foreach (Segment seg in this.currSegmentClass.segments)
             {
+                if (!seg.active) continue;
                 this.drawBoundingbox(seg.boundingbox, Color.White);
             }
             foreach (Segment seg in this.currSegmentClass.segments)
             {
+                if (!seg.active) continue;
                 foreach (GuideLine edge in seg.boundingbox.edges)
                 {
-                    foreach (Stroke stroke in edge.strokes)
+                    Vector3d dir = (edge.v - edge.u).normalize();
+                    double dist = (edge.v-edge.u).Length()/nsample;
+                    Gl.glBeginQuery(Gl.GL_SAMPLES_PASSED, queryIDs[idx++]);
+                    Gl.glColor3ub(0, 0, 0);
+                    Gl.glBegin(Gl.GL_POINTS);
+                    for (int i = 0; i < nsample; ++i)
                     {
-                        for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
-                        {
-                            int vidx1 = stroke.faceIndex[j];
-                            int vidx2 = stroke.faceIndex[j + 1];
-                            int vidx3 = stroke.faceIndex[j + 2];
-                            Gl.glBeginQuery(Gl.GL_SAMPLES_PASSED, queryIDs[idx++]);
-                            Gl.glColor3ub(0, 0, 0);
-                            Gl.glBegin(Gl.GL_POLYGON);
-                            Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
-                            Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
-                            Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
-                            Gl.glEnd();
-                            Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
-                        }
+                        Vector3d v = edge.u + i * dist * dir;
+                        Gl.glVertex3dv(v.ToArray());
                     }
+                    Gl.glEnd();
+                    Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
                 }
             }
             Gl.glDisable(Gl.GL_DEPTH_TEST);
@@ -1863,8 +1910,9 @@ namespace SketchPlatform
             Gl.glPopMatrix();
             //this.SwapBuffers();
 
-            visibleTriangleVertices = new int[n];
-            int sum = 0;
+            // get # passed samples
+            int[] visPnts = new int[n];
+            int maxv = 0;
             for (int i = 0; i < n; ++i)
             {
                 int queryReady = Gl.GL_FALSE;
@@ -1875,92 +1923,42 @@ namespace SketchPlatform
                 }
                 if (queryReady == Gl.GL_FALSE)
                 {
-                    sum += 0;
                     count = 1000;
                     while (queryReady != Gl.GL_TRUE && count-- > 0)
                     {
                         Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
                     }
                 }
-                Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT, out visibleTriangleVertices[i]);
-                if (this.visibleTriangleVertices[i] > 2)
+                Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT, out visPnts[i]);
+                if (visPnts[i] > maxv)
                 {
-                    sum += 0;
+                    maxv = visPnts[i];
                 }
-                sum += visibleTriangleVertices[i];
             }
             Gl.glDeleteQueries(n, queryIDs);
-            //this.SwapBuffers();
-            // smooth samples
-            int nloop = 6;
-            int iloop = 0;
-            int thr = 2;
-            while (iloop < nloop)
+
+            idx = 0;
+            this.triangleDepth = new byte[n];
+            foreach (Segment seg in this.currSegmentClass.segments)
             {
-                idx = 0;
-                foreach (Segment seg in this.currSegmentClass.segments)
+                if (!seg.active) continue;
+                foreach (GuideLine edge in seg.boundingbox.edges)
                 {
-                    foreach (GuideLine edge in seg.boundingbox.edges)
+                    if (visPnts[idx++] > 7)
                     {
-                        foreach (Stroke stroke in edge.strokes)
-                        {
-                            for (int i = 0; i < stroke.FaceCount; ++i)
-                            {
-                                if (this.visibleTriangleVertices[idx] > 0)
-                                {
-                                    ++idx;
-                                    continue;
-                                }
-                                int neig = 0;
-                                if (i + 1 < stroke.FaceCount && this.visibleTriangleVertices[idx + 1] > 0)
-                                {
-                                    ++neig;
-                                }
-                                if (i - 1 >= 0 && this.visibleTriangleVertices[idx - 1] > 0)
-                                {
-                                    ++neig;
-                                }
-                                if (neig == 2 && this.visibleTriangleVertices[idx] == 0)
-                                {
-                                    this.visibleTriangleVertices[idx] = neig;
-                                    ++idx;
-                                    continue;
-                                }
-                                // if in any direction there is no more samples, cut it
-                                int n_end = 0;
-                                for (int j = i + 1, k = 1; j < stroke.FaceCount && n_end < thr; ++j, ++k)
-                                {
-                                    if (this.visibleTriangleVertices[idx + k] > 0)
-                                    {
-                                        ++n_end;
-                                    }
-                                }
-                                if (n_end >= thr)
-                                {
-                                    //end = thr < i ? thr : i;
-                                    n_end = 0;
-                                    for (int j = i - 1, k = 1; j >= 0 && n_end < thr; --j, ++k)
-                                    {
-                                        if (this.visibleTriangleVertices[idx - k] > 0)
-                                        {
-                                            ++n_end;
-                                        }
-                                    }
-                                }
-                                if (n_end >= thr && this.visibleTriangleVertices[idx] == 0)
-                                {
-                                    this.visibleTriangleVertices[idx] = Math.Min(1, n_end);
-                                }
-                                ++idx;
-                            }
-                        }
+                        this.setStrokeStylePerLine(SegmentClass.StrokeSize, edge, SegmentClass.StrokeColor, GuideLineColor);
+                    }
+                    else
+                    {
+                        this.setStrokeStylePerLine(SegmentClass.StrokeSize / 2, edge, SegmentClass.HiddenLineColor, GuideLineColor);
                     }
                 }
-                ++iloop;
-            }// loop
-        }// goThroughVisibilityTest
-        #endregion
+            }
+            this.currSegmentClass.perturbStrokeColor();
+        }// setHiddenLines
 
+        int[] visibleTriangleVertices;
+        byte[] triangleDepth;
         private void goThroughVisibilityTest()
         {
             this.clearScene();
@@ -1984,26 +1982,13 @@ namespace SketchPlatform
                     }
                 }
             }
-            //// DrawHighlight3D
-            //// drawActiveBox(Segment seg)
-            //if (this.inGuideMode)
-            //{
-            //    Segment currSeg = this.currSegmentClass.segments[this.currBoxIdx];
-            //    foreach (GuideLine edge in currSeg.boundingbox.edges)
-            //    {
-            //        foreach (Stroke stroke in edge.strokes)
-            //        {
-            //            n += stroke.FaceCount;
-            //        }
-            //    }
-            //}
             // draw and get visibility
             int[] queryIDs = new int[n];
-            //Gl.glGenQueries(n, queryIDs);
-            for (int i = 0; i < n; ++i)
-            {
-                queryIDs[i] = i;
-            }
+            Gl.glGenQueries(n, queryIDs);
+            //for (int i = 0; i < n; ++i)
+            //{
+            //    queryIDs[i] = i;
+            //}
             Gl.glEnable(Gl.GL_DEPTH_TEST);
             int idx = 0;
             this.setViewMatrix();
@@ -2012,11 +1997,6 @@ namespace SketchPlatform
                 if (!seg.active) continue;
                 this.drawBoundingbox(seg.boundingbox, Color.White);
             }
-            //if (this.inGuideMode)
-            //{
-            //    Segment currSeg = this.currSegmentClass.segments[this.currBoxIdx];
-            //    this.drawBoundingbox(currSeg.boundingbox, Color.White);
-            //}
             List<Stroke> activeStrokes = new List<Stroke>();
             foreach (Segment seg in this.currSegmentClass.segments)
             {
@@ -2050,32 +2030,6 @@ namespace SketchPlatform
                     }
                 }
             }
-            //if (this.inGuideMode)
-            //{
-            //    Segment currSeg = this.currSegmentClass.segments[this.currBoxIdx];
-            //    foreach (GuideLine edge in currSeg.boundingbox.edges)
-            //    {
-            //        foreach (Stroke stroke in edge.strokes)
-            //        {
-            //            for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
-            //            {
-            //                int vidx1 = stroke.faceIndex[j];
-            //                int vidx2 = stroke.faceIndex[j + 1];
-            //                int vidx3 = stroke.faceIndex[j + 2];
-            //                Gl.glBeginQuery(Gl.GL_SAMPLES_PASSED, queryIDs[idx++]);
-            //                Gl.glColor3ub(0, 0, 0);
-            //                Gl.glBegin(Gl.GL_POLYGON);
-            //                Gl.glVertex3dv(stroke.meshVertices3d[vidx1].ToArray());
-            //                Gl.glVertex3dv(stroke.meshVertices3d[vidx2].ToArray());
-            //                Gl.glVertex3dv(stroke.meshVertices3d[vidx3].ToArray());
-            //                Gl.glEnd();
-            //                Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
-            //            }
-            //            activeStrokes.Add(stroke);
-            //        }
-            //    }
-            //}
-
             Gl.glDisable(Gl.GL_DEPTH_TEST);
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
@@ -2083,7 +2037,7 @@ namespace SketchPlatform
 
             // get # passed samples
             visibleTriangleVertices = new int[n];
-            int sum = 0;
+            int maxv = 0;
             for (int i = 0; i < n; ++i)
             {
                 int queryReady = Gl.GL_FALSE;
@@ -2094,7 +2048,6 @@ namespace SketchPlatform
                 }
                 if (queryReady == Gl.GL_FALSE)
                 {
-                    sum += 0;
                     count = 1000;
                     while (queryReady != Gl.GL_TRUE && count-- > 0)
                     {
@@ -2102,11 +2055,10 @@ namespace SketchPlatform
                     }
                 }
                 Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT, out visibleTriangleVertices[i]);
-                if (this.visibleTriangleVertices[i] > 2)
+                if (this.visibleTriangleVertices[i] > maxv)
                 {
-                    sum += 0;
-                }
-                sum += visibleTriangleVertices[i];
+                    maxv = visibleTriangleVertices[i];
+                }                
             }
             Gl.glDeleteQueries(n, queryIDs);
             //this.SwapBuffers();
@@ -2171,7 +2123,37 @@ namespace SketchPlatform
                 }
                 ++iloop;
             }// loop
-        }// goThroughVisibilityTest
+            idx = 0;
+            this.triangleDepth = new byte[n];
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active) continue;
+                foreach (GuideLine edge in seg.boundingbox.edges)
+                {
+                    int nstrokes = edge.strokes.Count;
+                    if (this.inGuideMode)
+                    {
+                        nstrokes = nstrokes > 2 ? 2 : nstrokes;
+                    }
+                    for (int i = 0; i < nstrokes; ++i)
+                    {
+                        Stroke stroke = edge.strokes[i];
+                        for (int j = 0; j < stroke.FaceCount; ++j)
+                        {
+                            this.triangleDepth[idx] = (byte)(((float)this.visibleTriangleVertices[idx] / maxv) * 255);
+                            if (this.triangleDepth[idx] == 0)
+                            {
+                                this.triangleDepth[idx] = 50;
+                            }
+                            ++idx;
+                        }
+                    }
+                }
+            }
+
+        }// setHiddenLines
+
+
         private void calculateStrokePointDepth()
         {
             this.updateCamera();
@@ -2362,6 +2344,21 @@ namespace SketchPlatform
             return false;
         }// isIntersectAPlaneByDistance
 
+        public void recoverHiddenlines()
+        {
+            if (this.currSegmentClass == null || this.depthType == Depthtype.hidden) return;
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active) continue;
+                foreach (GuideLine edge in seg.boundingbox.edges)
+                {
+                    this.setStrokeStylePerLine(SegmentClass.StrokeSize, edge, SegmentClass.StrokeColor, GuideLineColor);
+                }
+            }
+        }//recoverHiddenlines
+
+        
+
         //########## set modes ##########//
         public void setTabIndex(int i)
         {
@@ -2422,6 +2419,11 @@ namespace SketchPlatform
             this.transMat = Matrix4d.IdentityMatrix();
             this.updateDepthVal();
             this.cal2D();
+            if (this.enableHiddencheck)
+            {
+                this.setHiddenLines();
+            }
+            this.computeContours();
             this.Refresh();
         }
         
@@ -2432,6 +2434,11 @@ namespace SketchPlatform
             this.modelTransformMatrix = Matrix4d.IdentityMatrix();
             this.updateDepthVal();
             this.cal2D();
+            if (this.enableHiddencheck)
+            {
+                this.setHiddenLines();
+            }
+            this.computeContours();
             this.Refresh();
         }
         
@@ -2509,6 +2516,7 @@ namespace SketchPlatform
             if (!this.isMouseDown) return;
             this.arcBall.mouseMove(x, y);
         }// viewMouseMove
+
         
         private void viewMouseUp()
         {
@@ -2531,6 +2539,10 @@ namespace SketchPlatform
 
             this.cal2D();
             this.updateDepthVal();
+            if (this.enableHiddencheck)
+            {
+                this.setHiddenLines();
+            }
             this.computeContours();
         }// viewMouseUp
 
@@ -2820,12 +2832,12 @@ namespace SketchPlatform
             {
                 this.drawPaperBoundary2d();
             }
-            if (!this.showOnlyHLFace)
-            {
-                this.drawVanishingPoints2d();
-            }
 
             this.DrawHighlight2D();
+
+
+                this.drawVanishingPoints2d();
+
             //this.drawSketchyLines2D();   
          
             /*****TEST*****/
@@ -2869,14 +2881,27 @@ namespace SketchPlatform
         private void drawVanishingPoints2d()
         {
             if (this.vanishingPoints == null || !this.showVanishingPoints) return;
+            Gl.glEnable(Gl.GL_POINT_SMOOTH);
+            Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
+
             Color c = Color.DarkOrange;
             Gl.glColor3ub(c.R, c.G, c.B);
             Gl.glPointSize(10.0f);
             Gl.glBegin(Gl.GL_POINTS);
-            Gl.glVertex2dv(this.vanishingPoints[0].pos2.ToArray());
-            Gl.glVertex2dv(this.vanishingPoints[1].pos2.ToArray());
-            Gl.glEnd();  
-        }
+
+            if (this.showVanishingRay1)
+            {
+                Gl.glVertex2dv(this.vanishingPoints[0].pos2.ToArray());
+            }
+            if (this.showVanishingRay2)
+            {
+                Gl.glVertex2dv(this.vanishingPoints[1].pos2.ToArray());
+            }
+            Gl.glEnd();
+
+            Gl.glDisable(Gl.GL_POINT_SMOOTH);
+        }//drawVanishingPoints2d
+
         private void drawPaperBoundary3d()
         {
             Color c = Color.Red;
@@ -2933,7 +2958,7 @@ namespace SketchPlatform
             }
 
             // for visibility rendering, the order is computed from
-            // goThroughVisibilityTest()
+            // setHiddenLines()
             
 
             Gl.glEnable(Gl.GL_POLYGON_OFFSET_FILL);
@@ -3123,7 +3148,6 @@ namespace SketchPlatform
             {
                 return;
             }
-            //if (this.showOnlyHLFace) return;
             this.visibilityIdx = 0;
             foreach (Segment seg in this.currSegmentClass.segments)
             {
@@ -3266,6 +3290,10 @@ namespace SketchPlatform
 
         private void DrawHighlight2D()
         {
+            if (this.inExample)
+            {
+                this.drawVanishingGuide2d(this.currSegmentClass.segments[0]);
+            }
             if (this.currBoxIdx == -1 || this.currBoxIdx > this.currSegmentClass.segments.Count)
                 return;
 
@@ -3309,7 +3337,7 @@ namespace SketchPlatform
             }
         }// DrawHighlight3D
 
-        public bool showOnlyHLFace = false;
+        public bool inExample = false;
         private void drawActiveBox(Segment seg)
         {
             if (!this.inGuideMode) return;
@@ -3393,7 +3421,7 @@ namespace SketchPlatform
         {
             if (this.showVanishingLines && this.showBoxVanishingLine)
             {
-                this.drawVanishingLines2d(seg.boundingbox, SegmentClass.VanLineColor);
+                this.drawVanishingLines2d(seg.boundingbox, SegmentClass.VanLineColor, 0.5f);
             }
             for (int g = 0; g < seg.boundingbox.guideLines.Count; ++g)
             {
@@ -3402,7 +3430,7 @@ namespace SketchPlatform
                     if (!line.active) continue;
                     if (line.isGuide && this.showGuideLineVanishingLine)
                     {
-                        this.drawVanishingLines2d(line, SegmentClass.HighlightColor);
+                        this.drawVanishingLines2d(line, SegmentClass.HighlightColor, 0.5f);
                     }
                 }
             }
@@ -3641,7 +3669,7 @@ namespace SketchPlatform
             }                         
         }
 
-        private void drawVanishingLines2d(Box box, Color c)
+        private void drawVanishingLines2d(Box box, Color c, float width)
         {
             if (this.showVanishingRay1)
             {
@@ -3651,10 +3679,10 @@ namespace SketchPlatform
                     switch (this.vanishinglineDrawType)
                     {
                         case 0:
-                            this.drawLines2D(line.u2, line.v2, c, 1.0f);
+                            this.drawLines2D(line.u2, line.v2, c, width);
                             break;
                         case 1:
-                            this.drawDashedLines2D(line.u2, line.v2, c, 1.0f);
+                            this.drawDashedLines2D(line.u2, line.v2, c, width);
                             break;
                         default:
                             break;
@@ -3669,10 +3697,10 @@ namespace SketchPlatform
                     switch (this.vanishinglineDrawType)
                     {
                         case 0:
-                            this.drawLines2D(line.u2, line.v2, c, 1.0f);
+                            this.drawLines2D(line.u2, line.v2, c, width);
                             break;
                         case 1:
-                            this.drawDashedLines2D(line.u2, line.v2, c, 1.0f);
+                            this.drawDashedLines2D(line.u2, line.v2, c, width);
                             break;
                         default:
                             break;
@@ -3681,7 +3709,7 @@ namespace SketchPlatform
             }
         }
 
-        private void drawVanishingLines2d(GuideLine line, Color c)
+        private void drawVanishingLines2d(GuideLine line, Color c, float width)
         {
             switch (this.vanishinglineDrawType)
             {
@@ -3689,13 +3717,13 @@ namespace SketchPlatform
                     {
                         if (this.showVanishingRay1)
                         {
-                            this.drawLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, 1.0f);
-                            this.drawLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, 1.0f);
+                            this.drawLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, width);
+                            this.drawLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, width);
                         }
                         if (this.showVanishingRay2)
                         {
-                            this.drawLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, 1.0f);
-                            this.drawLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, 1.0f);
+                            this.drawLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, width);
+                            this.drawLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, width);
                         }
                         break;
                     }
@@ -3703,13 +3731,13 @@ namespace SketchPlatform
                     {
                         if (this.showVanishingRay1)
                         {
-                            this.drawDashedLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, 1.0f);
-                            this.drawDashedLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, 1.0f);
+                            this.drawDashedLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, width);
+                            this.drawDashedLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, width);
                         }
                         if (this.showVanishingRay2)
                         {
-                            this.drawDashedLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, 1.0f);
-                            this.drawDashedLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, 1.0f);
+                            this.drawDashedLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, width);
+                            this.drawDashedLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, width);
                         }
                         break;
                     }
@@ -4104,6 +4132,7 @@ namespace SketchPlatform
                 StrokePoint pt = stroke.strokePoints[ipt];
 
                 byte opa = pt.opacity;
+                //opa = this.triangleDepth[this.visibilityIdx++];
                 if (!highlight)
                 {
                     Gl.glColor4ub(stroke.strokeColor.R, stroke.strokeColor.G, stroke.strokeColor.B, (byte)opa);

@@ -8,6 +8,7 @@ using System.Net;
 using System.Runtime.Serialization.Json;
 using System.Web.Script.Serialization;
 using System.Drawing;
+using TrimeshWrapper;
 
 namespace Component
 {
@@ -16,7 +17,7 @@ namespace Component
         public List<Segment> segments;
         public enum GuideLineType
         {
-            SimpleCross, Random
+            Random, SimpleCross
         }
         public enum StrokeStyle
         {
@@ -26,16 +27,19 @@ namespace Component
         // orange red: 255, 153, 102
 
         public static StrokeStyle strokeStyle = StrokeStyle.Pencil;
-        public static GuideLineType GuideLineStyle = GuideLineType.SimpleCross;
-        public static int StrokeSize = 6;
-        public static Color StrokeColor = Color.FromArgb(37,37,37);//(54, 69, 79);
+        public static GuideLineType GuideLineStyle = GuideLineType.Random;
+        public static int StrokeSize = 4;
+        public static int GuideLineSize = 4;
+        public static Color StrokeColor = Color.FromArgb(60, 60, 60);//(54, 69, 79);
         public static Color VanLineColor = Color.LightGray;
         public static Color HiddenColor = Color.LightGray;
         public static Color HighlightColor = Color.FromArgb(222, 45, 38);
         public static Color FaceColor = Color.FromArgb(253, 205, 172);
         public static Color AnimColor = Color.FromArgb(251, 128, 114);
+        public static Color HiddenLineColor = Color.FromArgb(120, 120, 120);
         public static Color HiddenGuideLinecolor = Color.FromArgb(158, 202, 225);
         private string[] sequences;
+        
 
         public SegmentClass()
         { }
@@ -137,11 +141,11 @@ namespace Component
                 {
                     switch (idx)
                     {
-                        case 1:
+                        case 0:
                             GuideLineStyle = GuideLineType.Random;
                             line.DefineRandomStrokes();
                             break;
-                        case 0:
+                        case 1:
                         default:
                             GuideLineStyle = GuideLineType.SimpleCross;
                             line.DefineCrossStrokes();
@@ -149,6 +153,7 @@ namespace Component
                     }                    
                 }
             }
+            this.perturbStrokeColor();
         } // ChangeGuidelineStyle
 
         public void ChangeStrokeStyle(Matrix4d T, Camera camera)
@@ -161,7 +166,7 @@ namespace Component
                     {
                         foreach (Stroke stroke in line.strokes)
                         {
-                            stroke.setStrokeSize(StrokeSize / 2);
+                            stroke.setStrokeSize(GuideLineSize);
                         }
                     }
                 }
@@ -174,7 +179,24 @@ namespace Component
                     }
                 }
             }
+            this.perturbStrokeColor();
         }// ChangeStrokeStyle
+
+        public void perturbStrokeColor()
+        {
+            foreach (Segment seg in this.segments)
+            {
+                if (!seg.active) continue;
+                foreach (GuideLine edge in seg.boundingbox.edges)
+                {
+                    for (int i = 1; i < edge.strokes.Count; ++i)
+                    {
+                        Stroke stroke = edge.strokes[i];
+                        stroke.strokeColor = SegmentClass.HiddenLineColor;
+                    }
+                }
+            }
+        }//perturbStrokeColor
 
         public bool shadedOrTexture()
         {
@@ -330,7 +352,7 @@ namespace Component
                         box.guideLines[box.guideLines.Count - 1][last].isGuide = true;
                     }
                 }
-
+                Plane faceToHighlight = null;
                 if (boxSequences[i].face_to_highlight != null)
                 {
                     int nps = boxSequences[i].face_to_highlight.Count;
@@ -344,6 +366,7 @@ namespace Component
                     Plane face = new Plane(points);
                     cur += " highlightFace " + box.facesToHighlight.Count.ToString();
                     box.facesToHighlight.Add(face);
+                    faceToHighlight = face;
                 }
                 // face to draw
                 if (boxSequences[i].face_to_draw != null)
@@ -361,6 +384,14 @@ namespace Component
                     box.facesToDraw.Add(face);
                 }
                 render_sequence.Add(cur);
+
+                if (faceToHighlight != null)
+                {
+                    foreach (GuideLine line in seg.boundingbox.guideLines[seg.boundingbox.guideLines.Count - 1])
+                    {
+                        line.setHostPlane(faceToHighlight);
+                    }
+                }
             }
             render_sequence.Insert(0, "box 0");
             this.sequences = render_sequence.ToArray();
