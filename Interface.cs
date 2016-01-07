@@ -108,7 +108,7 @@ namespace SketchPlatform
         private void loadSegmentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog dialog = new FolderBrowserDialog();
-            dialog.SelectedPath = "D:\\Projects\\sketchingTutorial\\SketchPlatform\\Data\\segments";
+            dialog.SelectedPath = "D:\\Projects\\sketchingTutorial\\SketchPlatform\\Data\\old\\segments";
             //dialog.SelectedPath = "D:\\Projects\\sketchingTutorial\\CGPlatform\\Data";
             //if (dialog.ShowDialog(this) == DialogResult.OK)
             //{
@@ -367,19 +367,20 @@ namespace SketchPlatform
             //    this.glViewer.deActivateAllGuidelines();
             //}
             // test 3
-            this.glViewer.activateAllBoxes();
+            //this.glViewer.activateAllBoxes();
+            this.glViewer.activateSpecificEdges();
             this.glViewer.Refresh();
         }
 
         private void vanishingPoint1_CheckedChanged(object sender, EventArgs e)
         {
-            this.glViewer.showVanishingPoint1 = this.vanishingPoint1.Checked;
+            this.glViewer.showVanishingRay1 = this.vanishingPoint1.Checked;
             this.glViewer.Refresh();
         }
 
         private void vanishingPoint2_CheckedChanged(object sender, EventArgs e)
         {
-            this.glViewer.showVanishingPoint2 = this.vanishingPoint2.Checked;
+            this.glViewer.showVanishingRay2 = this.vanishingPoint2.Checked;
             this.glViewer.Refresh();
         }
 
@@ -401,6 +402,34 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
+        private void contourToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.computeContours();
+            this.glViewer.Refresh();
+        }
 
+        private void moveBoxToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.moveBox();
+            this.glViewer.Refresh();
+        }
+
+        private void contour_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showContourLine = this.contour.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void sharpEdge_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showSharpEdge = this.sharpEdge.Checked;
+            this.glViewer.Refresh();
+        }
+
+        private void showContourPoint_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showContourPoint = this.showContourPoint.Checked;
+            this.glViewer.Refresh();
+        }
 	}
 }

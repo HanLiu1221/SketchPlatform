@@ -90,7 +90,7 @@ namespace SketchPlatform
             ColorSet[18] = Color.FromArgb(188, 128, 189);
             ColorSet[19] = Color.FromArgb(217, 217, 217);
 
-            ModelColor = ColorSet[0];
+            ModelColor = Color.FromArgb(166, 189, 219);
             GuideLineColor = Color.FromArgb(67, 162, 202);// Color.FromArgb(0, 15, 85); // pen ink blue
         }
         
@@ -131,6 +131,10 @@ namespace SketchPlatform
         public bool showVanishingLines = true;
         public bool lockView = false;
         public bool showFaceToDraw = true;
+
+        public bool showContourLine = false;
+        public bool showSharpEdge = false;
+        public bool showContourPoint = false;
 
         private bool inGuideMode = false;
         Vector3d eye = new Vector3d(0, 0, 1);
@@ -187,10 +191,11 @@ namespace SketchPlatform
         public int currBoxIdx = -1;
         public int nextBoxIdx = -1;
 
-        public bool showVanishingPoint1 = true;
-        public bool showVanishingPoint2 = true;
+        public bool showVanishingRay1 = true;
+        public bool showVanishingRay2 = true;
+        public bool showVanishingPoints = true;
         public bool showBoxVanishingLine = true;
-        public bool showGuideLineVanishingLine = true;
+        public bool showGuideLineVanishingLine = false;
 
         //########## static vars ##########//
         public static Color[] ColorSet;
@@ -385,6 +390,8 @@ namespace SketchPlatform
             {
                 this.nSequence = this.currSegmentClass.LoadGuideSequence(seqfile);
             }
+
+            this.testLines = new List<GuideLine>();
 
             this.Refresh();
 
@@ -976,6 +983,122 @@ namespace SketchPlatform
             {
                 seg.active = true;
             }
+        }//activateAllBoxes
+
+        // 3 box example
+        private List<GuideLine> testLines;
+        public int drawBoxIdx = 0;
+        public void activateSpecificEdges()
+        {
+            int[] eids = { 2, 6, 7, 10 };
+            
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                seg.active = true;
+                foreach (GuideLine line in seg.boundingbox.edges)
+                {
+                    line.active = false;
+                }
+            }
+            if (this.drawBoxIdx == 1)
+            {
+                this.currSegmentClass.segments[2].active = false;
+            }
+            
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                for (int i = 0; i < eids.Length; ++i)
+                {
+                    seg.boundingbox.edges[eids[i]].active = true;
+                    foreach (Stroke stroke in seg.boundingbox.edges[eids[i]].strokes)
+                    {
+                        stroke.strokeColor = SegmentClass.StrokeColor;
+                    }
+                }
+                foreach (List<GuideLine> lines in seg.boundingbox.guideLines)
+                {
+                    foreach (GuideLine line in lines)
+                    {
+                        if (!this.inGuideMode && !line.isGuide)
+                        {
+                            line.active = false;
+                        }
+                        foreach (Stroke stroke in line.strokes)
+                        {
+                            if (!line.isGuide)
+                            {
+                                stroke.strokeColor = SegmentClass.HiddenColor;
+                            }
+                            else
+                            {
+                                stroke.strokeColor = SegmentClass.HighlightColor;
+                            }
+                        }
+                    }
+                }
+            }
+            ++this.drawBoxIdx;
+            if (this.currBoxIdx != -1 && this.currGroupIdx != -1)
+            {
+                Box box = this.currSegmentClass.segments[currBoxIdx].boundingbox;
+                List<GuideLine> lines = box.guideLines[this.currGroupIdx];
+                foreach (GuideLine line in lines)
+                {
+                    line.active = true;
+                }
+            }
+            //this.testLines = new List<GuideLine>();
+            //GuideLine ln = new GuideLine(new Vector3d(-1.4, -0.5, 0.5), new Vector3d(1.4, -0.5, 0.5),
+            //    this.currSegmentClass.segments[0].boundingbox.planes[4], false);
+            //this.testLines.Add(ln);
+            //ln = new GuideLine(new Vector3d(-1.4, 0.5, 0.5), new Vector3d(1.4, 0.5, 0.5),
+            //    this.currSegmentClass.segments[0].boundingbox.planes[4], false);
+            //this.testLines.Add(ln);
+            //ln = new GuideLine(new Vector3d(0, -0.17, 0.5), new Vector3d(1.4, -0.17, 0.5),
+            //    this.currSegmentClass.segments[0].boundingbox.planes[4], false);
+            //this.testLines.Add(ln);
+            //ln = new GuideLine(new Vector3d(0, -0.83, 0.5), new Vector3d(1.4, -0.83, 0.5),
+            //    this.currSegmentClass.segments[0].boundingbox.planes[4], false);
+            //this.testLines.Add(ln);
+            this.showVanishingPoints = false;
+        }//activateSpecificEdges
+
+        public void moveBox()
+        {
+            int[] bids = { 1, 2 };
+            double offset = 0.1;
+            for (int b = 0; b < bids.Length; ++b)
+            {
+                double off = offset;
+                if (b == 1)
+                {
+                    off = -0.07;
+                };
+                Segment seg = this.currSegmentClass.segments[bids[b]];
+                for (int i = 0; i < seg.boundingbox.points.Length; ++i)
+                {
+                    seg.boundingbox.points[i].y += off;
+                }
+                foreach (GuideLine line in seg.boundingbox.edges)
+                {
+                    foreach (Stroke stroke in line.strokes)
+                    {
+                        stroke.u3.y += off;
+                        stroke.v3.y += off;
+                        for (int i = 0; i < stroke.meshVertices3d.Count; ++i)
+                        {
+                            stroke.meshVertices3d[i].y += off;
+                        }
+                        for (int i = 0; i < stroke.strokePoints.Count; ++i)
+                        {
+                            stroke.strokePoints[i].pos3.y += off;
+                        }
+                    }
+                    line.u.y += off;
+                    line.v.y += off;
+                }
+            }
+            this.cal2D();
         }
 
         private void resetHighlightVars()
@@ -985,7 +1108,7 @@ namespace SketchPlatform
             this.nSequence = 0;
         }
 
-        
+        private int currGroupIdx = -1;
         private void activateGuideSequence()
         {
             this.activateDrawnBoxes();
@@ -995,7 +1118,6 @@ namespace SketchPlatform
             int guideGroupIndex;
             int drawFaceIndex;
             int highlightFaceIndex = -1;
-            List<int> targetLines;
             this.currSegmentClass.parseASequence(this.sequenceIdx, out this.currBoxIdx, out guideGroupIndex, out guideLinesIndex, 
                 out this.nextBoxIdx, out highlightFaceIndex, out drawFaceIndex);
             this.readyForGuideArrow = false;
@@ -1011,7 +1133,7 @@ namespace SketchPlatform
             this.showAnimatedGuideLines(activeSeg, guideGroupIndex, guideLinesIndex, highlightFaceIndex, drawFaceIndex);
             this.readyForGuideArrow = true;
 
-            
+            this.currGroupIdx = guideGroupIndex;
         }// activateGuideSequence
 
         private void activateDrawnBoxes()
@@ -1020,7 +1142,7 @@ namespace SketchPlatform
             foreach (Segment seg in this.currSegmentClass.segments)
             {
                 if (!seg.active) continue;
-                this.setStrokeStylePerSeg(SegmentClass.StrokeSize, seg, SegmentClass.HiddenColor, GuideLineColor);
+                this.setStrokeStylePerSeg(SegmentClass.StrokeSize / 2, seg, SegmentClass.HiddenColor, GuideLineColor);
                 foreach (GuideLine line in seg.boundingbox.edges)
                 {
                     line.active = true;
@@ -1039,6 +1161,10 @@ namespace SketchPlatform
         private void activateBox(Segment activeSeg)
         {
             activeSeg.active = true;
+            foreach (GuideLine line in activeSeg.boundingbox.edges)
+            {
+                line.active = true;
+            }
             this.setStrokeStylePerSeg(4, activeSeg, SegmentClass.StrokeColor, GuideLineColor);
         }// activateBox
 
@@ -1061,7 +1187,7 @@ namespace SketchPlatform
             activeSeg.boundingbox.highlightFaceIndex = -1;
         }// deActivateBoxAndGuideLines
 
-
+        public int sleepTime = 100;
         private void showAnimatedGuideLines(Segment seg, int guideGroupIndex, List<int> guideLinesIndex, int highlightFaceIndex, int drawFaceIndex)
         {
             // draw arrows
@@ -1096,20 +1222,31 @@ namespace SketchPlatform
                 int idx = guideLinesIndex[i];
                 GuideLine line = box.guideLines[guideGroupIndex][idx];
                 line.active = true;
-                if (box.targetLines[guideGroupIndex].Contains(line))
+                if (line.isGuide)
                 {
                     foreach (Stroke stroke in line.strokes)
                     {
                         stroke.strokeColor = SegmentClass.HighlightColor;
                     }
-                    // de active previous lines
-                    for (int j = 0; j < i; ++j)
-                    {
-                        box.guideLines[guideGroupIndex][guideLinesIndex[j]].active = false;
-                    }
                 }
                 this.Refresh();
-                System.Threading.Thread.Sleep(600);
+                System.Threading.Thread.Sleep(this.sleepTime);
+                if (line.isGuide)
+                {
+                    // deactivate previous lines
+                    for (int j = 0; j < i; ++j)
+                    {
+                        GuideLine jline = box.guideLines[guideGroupIndex][guideLinesIndex[j]];
+                        if (!jline.isGuide)
+                        {
+                            //jline.active = false;
+                            foreach (Stroke stroke in jline.strokes)
+                            {
+                                stroke.strokeColor = SegmentClass.HiddenGuideLinecolor;
+                            }
+                        }
+                    }
+                }
             }
 
             // 4. draw the new face if there is any
@@ -1267,8 +1404,8 @@ namespace SketchPlatform
         {
             var bmp = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             var gfx = Graphics.FromImage(bmp);
-            Size newSize = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Size.Width, Screen.PrimaryScreen.Bounds.Size.Height - 40);
-            gfx.CopyFromScreen(Screen.PrimaryScreen.Bounds.X, Screen.PrimaryScreen.Bounds.Y, 0, 0, newSize, CopyPixelOperation.SourceCopy);
+            Size newSize = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Size.Width - 400, Screen.PrimaryScreen.Bounds.Size.Height - 150);
+            gfx.CopyFromScreen(Screen.PrimaryScreen.Bounds.X + 250, Screen.PrimaryScreen.Bounds.Y + 100, 0, 0, newSize, CopyPixelOperation.SourceCopy);
             string imageFolder = foldername + "\\screenCapture";
             if (!Directory.Exists(imageFolder))
             {
@@ -1276,6 +1413,321 @@ namespace SketchPlatform
             }
             string name = imageFolder + "\\seq_" + idx.ToString() + ".png";
             bmp.Save(name, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        public void computeContours()
+        {
+            if (this.currSegmentClass == null && this.meshClasses == null) return;
+            this.contourPoints = new List<Vector3d>();
+            this.sharpEdges = new List<Vector3d>();
+            //this.currSegmentClass.calculateContourPoint(this.currModelTransformMatrix, this.eye);
+            if (this.currSegmentClass != null)
+            {
+                this.computeContourEdges();
+            }
+            else if(this.currMeshClass != null)
+            {
+                List<int> vidxs = this.computeMeshContour(this.currMeshClass.Mesh);
+                //this.regionGrowingContours(this.currMeshClass.Mesh, vidxs);
+                //this.computeContourByVisibility(this.currMeshClass.Mesh);
+                this.computeMeshSharpEdge(this.currMeshClass.Mesh);
+            }
+            if (this.contourPoints.Count > 0)
+            {
+                this.drawEdge = false;
+            }
+        }//computeContours
+
+        private List<Vector3d> contourPoints;
+        private List<Vector3d> sharpEdges;
+        private List<List<Vector3d>> contourLines;
+
+        public void computeContourEdges()
+        {
+            // current pos, normal
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (seg.mesh == null) continue;
+                List<int> vidxs = this.computeMeshContour(seg.mesh);
+                //seg.regionGrowingContours(vidxs);
+                this.computeMeshSharpEdge(seg.mesh);
+            }// fore each segment
+        }//computeContourEdges
+
+        #region
+        // contour tests
+        public void regionGrowingContours(Mesh m, List<int> labeled)
+        {
+            int ndist = 10;
+            this.contourLines = new List<List<Vector3d>>();
+            while (labeled.Count > 0)
+            {
+                int i = labeled[0];
+                labeled.RemoveAt(0);
+                if (!m.Flags[i])
+                {
+                    continue;
+                }
+                m.Flags[i] = false;
+                List<int> vids = new List<int>();
+                List<int> queue = new List<int>();
+                vids.Add(i);
+                queue.Add(i);
+                int s = 0;
+                int d = 0;
+                while (s < queue.Count && d < ndist)
+                {
+                    int j = queue[s];
+                    for (int k = 0; k < m.VertexFaceIndex.GetLength(1); ++k)
+                    {
+                        int f = m.VertexFaceIndex[j, k];
+                        if (f == -1) continue;
+                        for (int fi = 0; fi < 3; ++fi)
+                        {
+                            int kv = m.FaceVertexIndex[f * 3 + fi];
+                            if (m.Flags[kv])
+                            {
+                                vids.Add(kv);
+                                m.Flags[kv] = false;
+                                d = 0;
+                            }
+                            if (!queue.Contains(kv))
+                            {
+                                queue.Add(kv);
+                            }
+                        }
+                        ++s;
+                        ++d;
+                    }
+                }
+                if (vids.Count > 4)
+                {
+                    List<Vector3d> c = new List<Vector3d>();
+                    foreach (int v in vids)
+                    {
+                        c.Add(m.getVertexPos(v));
+                    }
+                    this.contourLines.Add(c);
+                }
+            }
+        }//regionGrowingContours
+       
+        private void computeContourByVisibility(Mesh m)
+        {
+            this.clearScene();
+            int n = m.FaceCount;
+            int[] queryIDs = new int[n];
+            Gl.glGenQueries(n, queryIDs);
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+            this.setViewMatrix();
+            for (int i = 0, j = 0; i < m.FaceCount; ++i, j += 3)
+            {
+                int vidx1 = m.FaceVertexIndex[j];
+                int vidx2 = m.FaceVertexIndex[j + 1];
+                int vidx3 = m.FaceVertexIndex[j + 2];
+                Vector3d v1 = new Vector3d(
+                    m.VertexPos[vidx1 * 3], m.VertexPos[vidx1 * 3 + 1], m.VertexPos[vidx1 * 3 + 2]);
+                Vector3d v2 = new Vector3d(
+                    m.VertexPos[vidx2 * 3], m.VertexPos[vidx2 * 3 + 1], m.VertexPos[vidx2 * 3 + 2]);
+                Vector3d v3 = new Vector3d(
+                    m.VertexPos[vidx3 * 3], m.VertexPos[vidx3 * 3 + 1], m.VertexPos[vidx3 * 3 + 2]);
+                Gl.glBeginQuery(Gl.GL_SAMPLES_PASSED, queryIDs[i]);
+                Gl.glColor3ub(0, 0, 0);
+                Gl.glBegin(Gl.GL_TRIANGLES);
+                Gl.glVertex3d(v1.x, v1.y, v1.z);
+                Gl.glVertex3d(v2.x, v2.y, v2.z);
+                Gl.glVertex3d(v3.x, v3.y, v3.z);
+                Gl.glEnd();
+                Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
+            }
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            Gl.glPopMatrix();
+
+            // get # passed samples
+            int[] faceVis = new int[n];
+            int sum = 0;
+            for (int i = 0; i < n; ++i)
+            {
+                int queryReady = Gl.GL_FALSE;
+                int count = 1000;
+                while (queryReady != Gl.GL_TRUE && count-- > 0)
+                {
+                    Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
+                }
+                if (queryReady == Gl.GL_FALSE)
+                {
+                    count = 1000;
+                    while (queryReady != Gl.GL_TRUE && count-- > 0)
+                    {
+                        Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
+                    }
+                }
+                Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT, out faceVis[i]);
+                if (faceVis[i] > 2)
+                {
+                    sum += 0;
+                }
+                sum += faceVis[i];
+            }
+            Gl.glDeleteQueries(n, queryIDs);
+
+            foreach (HalfEdge edge in m.HalfEdges)
+            {
+                if (edge.invHalfEdge == null) // boudnary
+                {
+                    //this.sharpEdges.Add(m.getVertexPos(edge.FromIndex));
+                    //this.sharpEdges.Add(m.getVertexPos(edge.ToIndex));
+                    continue;
+                }
+                if (edge.invHalfEdge.index < edge.index)
+                {
+                    continue; // checked
+                }
+                int fidx = edge.FaceIndex;
+                int invfidx = edge.invHalfEdge.FaceIndex;
+                if ((faceVis[fidx] < 3 && faceVis[invfidx] >= 3) ||
+                    (faceVis[invfidx] < 3 && faceVis[fidx] >= 3))
+                {
+                    this.contourPoints.Add(m.getVertexPos(edge.FromIndex));
+                    this.contourPoints.Add(m.getVertexPos(edge.ToIndex));
+                }
+            }
+
+        }//computeContourByVisibility
+        #endregion
+
+        private List<int> computeMeshContour(Mesh mesh)
+        {
+            double thresh = 0.1;
+            double[] vertexPos = new double[mesh.VertexPos.Length];
+            List<int> vidxs = new List<int>();
+            for (int i = 0, j = 0; i < mesh.VertexCount; ++i, j += 3)
+            {
+                Vector3d v0 = new Vector3d(mesh.VertexPos[j],
+                    mesh.VertexPos[j + 1],
+                    mesh.VertexPos[j + 2]);
+                Vector3d v1 = (this.currModelTransformMatrix * new Vector4d(v0, 1)).ToVector3D();
+                vertexPos[j] = v1.x;
+                vertexPos[j + 1] = v1.y;
+                vertexPos[j + 2] = v1.z;
+            }
+
+            // transformed mesh
+            Mesh m = new Mesh(mesh, vertexPos);
+            //for (int i = 0, j = 0; i < m.VertexCount; ++i, j += 3)
+            //{
+            //    Vector3d v0 = m.getVertexPos(i);
+            //    Vector3d vn = new Vector3d(m.VertexNormal[j],
+            //        m.VertexNormal[j + 1],
+            //        m.VertexNormal[j + 2]).normalize();
+            //    Vector3d v = (eye - v0).normalize();
+            //    double cosv = v.Dot(vn);
+            //    if (Math.Abs(cosv) < thresh)// && cosv > 0)
+            //    {
+            //        mesh.Flags[i] = true;
+            //        vidxs.Add(i);
+            //        this.contourPoints.Add(mesh.getVertexPos(i));
+            //    }
+            //}
+
+            #region
+            // check the sign change of each edge
+            foreach (HalfEdge edge in m.HalfEdges)
+            {
+                if (edge.invHalfEdge == null) // boudnary
+                {
+                    //this.contourPoints.Add(mesh.getVertexPos(edge.FromIndex));
+                    //this.contourPoints.Add(mesh.getVertexPos(edge.ToIndex));
+                    continue;
+                }
+                if (edge.invHalfEdge.index < edge.index)
+                {
+                    continue; // checked
+                }
+                int fidx = edge.FaceIndex;
+                int invfidx = edge.invHalfEdge.FaceIndex;
+                Vector3d v1 = m.getFaceCenter(fidx);
+                Vector3d v2 = m.getFaceCenter(invfidx);
+                //Vector3d v1 = m.getVertexPos(edge.FromIndex);
+                //Vector3d v2 = m.getVertexPos(edge.ToIndex);
+                Vector3d e1 = (this.eye - v1).normalize();
+                Vector3d e2 = (this.eye - v2).normalize();
+                Vector3d n1 = m.getFaceNormal(fidx);
+                Vector3d n2 = m.getFaceNormal(invfidx);
+                double c1 = e1.Dot(n1);
+                double c2 = e2.Dot(n2);
+                //if (Math.Abs(c1) < thresh || Math.Abs(c2) < thresh)
+                //{
+                //    this.contourPoints.Add(mesh.getVertexPos(edge.FromIndex));
+                //    this.contourPoints.Add(mesh.getVertexPos(edge.ToIndex));
+                //}
+                if (c1 * c2 <= 0)
+                {
+                    this.contourPoints.Add(mesh.getVertexPos(edge.FromIndex));
+                    this.contourPoints.Add(mesh.getVertexPos(edge.ToIndex));
+                    vidxs.Add(edge.FromIndex);
+                    vidxs.Add(edge.ToIndex);
+                    mesh.Flags[edge.FromIndex] = true;
+                    mesh.Flags[edge.ToIndex] = true;
+                }
+            }
+
+            #endregion
+
+            return vidxs;
+        }// computeMeshContour
+
+        private void collectContourLines()
+        {
+            if (this.contourPoints == null) return;
+            this.contourLines = new List<List<Vector3d>>();
+
+        }
+
+        private void computeMeshSharpEdge(Mesh mesh)
+        {
+            double thresh = 0.1;
+            double[] vertexPos = new double[mesh.VertexPos.Length];
+            for (int i = 0, j = 0; i < mesh.VertexCount; ++i, j += 3)
+            {
+                Vector3d v0 = new Vector3d(mesh.VertexPos[j],
+                    mesh.VertexPos[j + 1],
+                    mesh.VertexPos[j + 2]);
+                Vector3d v1 = (this.currModelTransformMatrix * new Vector4d(v0, 1)).ToVector3D();
+                vertexPos[j] = v1.x;
+                vertexPos[j + 1] = v1.y;
+                vertexPos[j + 2] = v1.z;
+            }
+
+            // transformed mesh
+            Mesh m = new Mesh(mesh, vertexPos);
+            // check the sign change of each edge
+            foreach (HalfEdge edge in m.HalfEdges)
+            {
+                if (edge.invHalfEdge == null) // boudnary
+                {
+                    this.sharpEdges.Add(mesh.getVertexPos(edge.FromIndex));
+                    this.sharpEdges.Add(mesh.getVertexPos(edge.ToIndex));
+                    continue;
+                }
+                if (edge.invHalfEdge.index < edge.index)
+                {
+                    continue; // checked
+                }
+                int fidx = edge.FaceIndex;
+                int invfidx = edge.invHalfEdge.FaceIndex;
+                Vector3d v1 = m.getFaceCenter(fidx);
+                Vector3d v2 = m.getFaceCenter(invfidx);
+                Vector3d n1 = m.getFaceNormal(fidx);
+                Vector3d n2 = m.getFaceNormal(invfidx);
+                double c = n1.Dot(n2);
+                if (Math.Abs(c) < thresh)
+                {
+                    this.sharpEdges.Add(mesh.getVertexPos(edge.FromIndex));
+                    this.sharpEdges.Add(mesh.getVertexPos(edge.ToIndex));
+                }
+            }
         }
 
         //########## depth ##########//
@@ -1514,7 +1966,7 @@ namespace SketchPlatform
             this.clearScene();
             // draw the whole sceen from "Draw3D()" to get the visibility info depth value
             int n = 0;
-            // drawSketchyEdges3D() or drawSketchyEdges3D_hiddenLine()
+            // drawAllActiveBoxes() or drawSketchyEdges3D_hiddenLine()
             foreach (Segment seg in this.currSegmentClass.segments)
             {
                 if (!seg.active) continue;
@@ -2079,6 +2531,7 @@ namespace SketchPlatform
 
             this.cal2D();
             this.updateDepthVal();
+            this.computeContours();
         }// viewMouseUp
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -2269,6 +2722,11 @@ namespace SketchPlatform
                         this.Refresh();
                         break;
                     }
+                case Keys.Space:
+                    {
+                        this.lockView = !this.lockView;
+                        break;
+                    }
                 case Keys.PageDown:
                 case Keys.Right:
                     {
@@ -2410,7 +2868,7 @@ namespace SketchPlatform
 
         private void drawVanishingPoints2d()
         {
-            if (this.vanishingPoints == null) return;
+            if (this.vanishingPoints == null || !this.showVanishingPoints) return;
             Color c = Color.DarkOrange;
             Gl.glColor3ub(c.R, c.G, c.B);
             Gl.glPointSize(10.0f);
@@ -2476,7 +2934,7 @@ namespace SketchPlatform
 
             // for visibility rendering, the order is computed from
             // goThroughVisibilityTest()
-            this.visibilityIdx = 0;
+            
 
             Gl.glEnable(Gl.GL_POLYGON_OFFSET_FILL);
 
@@ -2489,7 +2947,14 @@ namespace SketchPlatform
                 if (this.drawFace)
                 {
                     //this.currMeshClass.renderShaded();
-                    this.drawMesh(this.currMeshClass.Mesh, Color.Blue, true);
+                    if (this.showContourPoint && this.contourPoints != null && this.contourPoints.Count > 0)
+                    {
+                        this.drawMeshFace(this.currMeshClass.Mesh, Color.White, false);
+                    }
+                    else
+                    {
+                        this.drawMeshFace(this.currMeshClass.Mesh, Color.Blue, true);
+                    }
                 }
                 if (this.drawEdge)
                 {
@@ -2505,22 +2970,31 @@ namespace SketchPlatform
             }           
 
             this.drawSegments();
+            this.drawTestLines();
+
             if (this.showSketchyEdges)
             {
-                this.drawSketchyEdges3D();
-                //if (this.depthType == Depthtype.hidden)
-                //{
-                //    this.drawSketchyEdges3D_hiddenLine();
-                //}
-                //else
-                //{
-                //    this.drawSketchyEdges3D();
-                //}                
+                this.drawAllActiveBoxes();              
             }
             if (this.showGuideLines)
             {
                 this.drawGuideLines3D();
             }
+            this.drawAllActiveBoxes();
+
+            if (this.showContourLine)
+            {
+                this.drawContourLine();
+            }
+            if (this.showContourPoint)
+            {
+                this.drawContourPoints();
+            }
+            if (this.showSharpEdge)
+            {
+                this.drawSharpEdges();
+            }
+
             this.DrawHighlight3D();
 
             //if (this.vanishingPoints != null)
@@ -2564,7 +3038,22 @@ namespace SketchPlatform
             {
                 if (this.showMesh)
                 {
-                    this.drawMesh(seg.mesh, seg.color, false);
+                    if (this.drawFace)
+                    {
+                        if (this.showContourPoint && this.contourPoints != null && this.contourPoints.Count > 0)
+                        {
+                            this.drawMeshFace(seg.mesh, Color.White, false);
+                        }
+                        else
+                        {
+                            this.drawMeshFace(seg.mesh, seg.color, false);
+                        }
+                        
+                    }
+                    if (this.drawEdge)
+                    {
+                        this.drawMeshEdge(seg.mesh);
+                    }
                 }
                 if (this.showBoundingbox)
                 {
@@ -2628,13 +3117,14 @@ namespace SketchPlatform
             }
         }// drawSketchyEdges3D_hiddenLine
 
-        private void drawSketchyEdges3D()
+        private void drawAllActiveBoxes()
         {
             if (this.currSegmentClass == null || !this.showSketchyEdges)
             {
                 return;
             }
-            if (this.showOnlyHLFace) return;
+            //if (this.showOnlyHLFace) return;
+            this.visibilityIdx = 0;
             foreach (Segment seg in this.currSegmentClass.segments)
             {
                 if (!seg.active) continue;
@@ -2646,6 +3136,7 @@ namespace SketchPlatform
                 foreach (GuideLine edge in seg.boundingbox.edges)
                 {
                     //this.drawGuideLineEndpoints(edge, Color.Gray, 2.0f);
+                    if (!edge.active) continue;
                     int nstrokes = edge.strokes.Count;
                     if (this.inGuideMode)
                     {
@@ -2677,7 +3168,7 @@ namespace SketchPlatform
                 }
                 
             }
-        }// drawSketchyEdges3D
+        }// drawAllActiveBoxes
 
         private void drawGuideLines3D()
         {
@@ -2716,6 +3207,15 @@ namespace SketchPlatform
             }
             
         }// drawGuideLines3D
+
+        private void drawTestLines()
+        {
+            if (this.testLines == null) return;
+            foreach (GuideLine line in this.testLines)
+            {
+                this.drawDashedLines3D(line.u, line.v, SegmentClass.HiddenColor, 4.0f);
+            }
+        }
 
         private void drawGuideArrow(Arrow3D a, Color c)
         {
@@ -2800,6 +3300,8 @@ namespace SketchPlatform
             this.drawActiveBox(seg);
             this.drawActiveGuideLines(seg);
             this.drawAnimatedLine();
+
+            this.drawAllActiveBoxes();
             
             if (this.enableDepthTest)
             {
@@ -2816,24 +3318,11 @@ namespace SketchPlatform
                 this.drawBoundingbox(seg.boundingbox, Color.White);
             }
 
-            if (this.showOnlyHLFace)
-            {
-                int[] eids = { 2, 6, 7, 10 };
-                for (int i = 0; i < eids.Length; ++i)
-                {
-                    foreach (Stroke stroke in seg.boundingbox.edges[eids[i]].strokes)
-                    {
-                        //stroke.strokeColor = SegmentClass.StrokeColor;
-                        this.drawTriMeshShaded3D(stroke, false, this.showOcclusion);
-                    }
-                }
-                return;
-            }
-
             // draw bounding edges
             foreach (GuideLine edge in seg.boundingbox.edges)
             {
                 //this.drawGuideLineEndpoints(edge, Color.Gray, 1.0f);
+                if (!edge.active) continue;
                 foreach (Stroke stroke in edge.strokes)
                 {
                     if (stroke.meshVertices3d == null || stroke.meshVertices3d.Count == 0)
@@ -2895,14 +3384,6 @@ namespace SketchPlatform
                     //{
                     //    this.drawVanishingLines3d(line);
                     //}
-                }
-                foreach (GuideLine line in box.targetLines[g])
-                {
-                    if (!line.active) continue;
-                    foreach (Stroke stroke in line.strokes)
-                    {
-                        this.drawTriMeshShaded3D(stroke, false, false);
-                    }
                 }
             }
             
@@ -3162,7 +3643,7 @@ namespace SketchPlatform
 
         private void drawVanishingLines2d(Box box, Color c)
         {
-            if (this.showVanishingPoint1)
+            if (this.showVanishingRay1)
             {
                 for (int i = 0; i < vp1.Length; ++i)
                 {
@@ -3180,7 +3661,7 @@ namespace SketchPlatform
                     }
                 }
             }
-            if (this.showVanishingPoint2)
+            if (this.showVanishingRay2)
             {
                 for (int i = 0; i < vp2.Length; ++i)
                 {
@@ -3206,12 +3687,12 @@ namespace SketchPlatform
             {
                 case 0:
                     {
-                        if (this.showVanishingPoint1)
+                        if (this.showVanishingRay1)
                         {
                             this.drawLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, 1.0f);
                             this.drawLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, 1.0f);
                         }
-                        if (this.showVanishingPoint2)
+                        if (this.showVanishingRay2)
                         {
                             this.drawLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, 1.0f);
                             this.drawLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, 1.0f);
@@ -3220,12 +3701,12 @@ namespace SketchPlatform
                     }
                 case 1:
                     {
-                        if (this.showVanishingPoint1)
+                        if (this.showVanishingRay1)
                         {
                             this.drawDashedLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, 1.0f);
                             this.drawDashedLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, 1.0f);
                         }
-                        if (this.showVanishingPoint2)
+                        if (this.showVanishingRay2)
                         {
                             this.drawDashedLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, 1.0f);
                             this.drawDashedLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, 1.0f);
@@ -3288,6 +3769,8 @@ namespace SketchPlatform
             Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
             Gl.glEnable(Gl.GL_LINE_SMOOTH);
             Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+            Gl.glEnable(Gl.GL_POINT_SMOOTH);
+            Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
 
             Gl.glLineWidth(linewidth);
             Gl.glColor3ub(c.R, c.G, c.B);
@@ -3435,30 +3918,31 @@ namespace SketchPlatform
         }
 
         // draw mesh
-        public void drawMesh(Mesh m, Color c, bool useMeshColor)
+        public void drawMeshFace(Mesh m, Color c, bool useMeshColor)
         {
             if (m == null) return;
-            Gl.glEnable(Gl.GL_COLOR_MATERIAL);
-            Gl.glColorMaterial(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE);
-            //Gl.glEnable(Gl.GL_CULL_FACE);
-            Gl.glEnable(Gl.GL_LIGHT0);
-            Gl.glDepthFunc(Gl.GL_LESS);
-            Gl.glEnable(Gl.GL_DEPTH_TEST);
-            Gl.glEnable(Gl.GL_LIGHTING);
-            Gl.glEnable(Gl.GL_NORMALIZE);
 
-            Gl.glDisable(Gl.GL_CULL_FACE);
             Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
-            Gl.glShadeModel(Gl.GL_SMOOTH);
+
             Gl.glEnable(Gl.GL_POLYGON_SMOOTH);
+            Gl.glHint(Gl.GL_POLYGON_SMOOTH_HINT, Gl.GL_NICEST);
+            Gl.glEnable(Gl.GL_LINE_SMOOTH);
+            Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glShadeModel(Gl.GL_SMOOTH);
+
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
 
             if (useMeshColor)
             {
+                Gl.glColor3ub(GLViewer.ModelColor.R, GLViewer.ModelColor.G, GLViewer.ModelColor.B);
                 for (int i = 0, j = 0; i < m.FaceCount; ++i, j += 3)
                 {
-                    int vidx1 = m.FaceVertex[j];
-                    int vidx2 = m.FaceVertex[j + 1];
-                    int vidx3 = m.FaceVertex[j + 2];
+                    int vidx1 = m.FaceVertexIndex[j];
+                    int vidx2 = m.FaceVertexIndex[j + 1];
+                    int vidx3 = m.FaceVertexIndex[j + 2];
                     Vector3d v1 = new Vector3d(
                         m.VertexPos[vidx1 * 3], m.VertexPos[vidx1 * 3 + 1], m.VertexPos[vidx1 * 3 + 2]);
                     Vector3d v2 = new Vector3d(
@@ -3466,13 +3950,13 @@ namespace SketchPlatform
                     Vector3d v3 = new Vector3d(
                         m.VertexPos[vidx3 * 3], m.VertexPos[vidx3 * 3 + 1], m.VertexPos[vidx3 * 3 + 2]);
                     Color fc = Color.FromArgb(m.FaceColor[i * 4 + 3], m.FaceColor[i * 4], m.FaceColor[i * 4 + 1], m.FaceColor[i * 4 + 2]);
-                    Gl.glColor4ub(fc.R, fc.G, fc.B, fc.A);
+                    //Gl.glColor4ub(fc.R, fc.G, fc.B, fc.A);
                     Gl.glBegin(Gl.GL_TRIANGLES);
-                    Gl.glNormal3d(m.VertexNormal[vidx1 * 3], m.VertexNormal[vidx1 * 3 + 1], m.VertexNormal[vidx1 * 3 + 2]);
+                    //Gl.glNormal3d(m.VertexNormal[vidx1 * 3], m.VertexNormal[vidx1 * 3 + 1], m.VertexNormal[vidx1 * 3 + 2]);
                     Gl.glVertex3d(v1.x, v1.y, v1.z);
-                    Gl.glNormal3d(m.VertexNormal[vidx2 * 3], m.VertexNormal[vidx2 * 3 + 1], m.VertexNormal[vidx2 * 3 + 2]);
+                    //Gl.glNormal3d(m.VertexNormal[vidx2 * 3], m.VertexNormal[vidx2 * 3 + 1], m.VertexNormal[vidx2 * 3 + 2]);
                     Gl.glVertex3d(v2.x, v2.y, v2.z);
-                    Gl.glNormal3d(m.VertexNormal[vidx3 * 3], m.VertexNormal[vidx3 * 3 + 1], m.VertexNormal[vidx3 * 3 + 2]);
+                    //Gl.glNormal3d(m.VertexNormal[vidx3 * 3], m.VertexNormal[vidx3 * 3 + 1], m.VertexNormal[vidx3 * 3 + 2]);
                     Gl.glVertex3d(v3.x, v3.y, v3.z);
                     Gl.glEnd();
                 }
@@ -3483,32 +3967,55 @@ namespace SketchPlatform
                 Gl.glBegin(Gl.GL_TRIANGLES);
                 for (int i = 0, j = 0; i < m.FaceCount; ++i, j += 3)
                 {
-                    int vidx1 = m.FaceVertex[j];
-                    int vidx2 = m.FaceVertex[j + 1];
-                    int vidx3 = m.FaceVertex[j + 2];
+                    int vidx1 = m.FaceVertexIndex[j];
+                    int vidx2 = m.FaceVertexIndex[j + 1];
+                    int vidx3 = m.FaceVertexIndex[j + 2];
                     Vector3d v1 = new Vector3d(
                         m.VertexPos[vidx1 * 3], m.VertexPos[vidx1 * 3 + 1], m.VertexPos[vidx1 * 3 + 2]);
                     Vector3d v2 = new Vector3d(
                         m.VertexPos[vidx2 * 3], m.VertexPos[vidx2 * 3 + 1], m.VertexPos[vidx2 * 3 + 2]);
                     Vector3d v3 = new Vector3d(
                         m.VertexPos[vidx3 * 3], m.VertexPos[vidx3 * 3 + 1], m.VertexPos[vidx3 * 3 + 2]);
-                    Gl.glNormal3d(m.VertexNormal[vidx1 * 3], m.VertexNormal[vidx1 * 3 + 1], m.VertexNormal[vidx1 * 3 + 2]);
+                    //Gl.glNormal3d(m.VertexNormal[vidx1 * 3], m.VertexNormal[vidx1 * 3 + 1], m.VertexNormal[vidx1 * 3 + 2]);
                     Gl.glVertex3d(v1.x, v1.y, v1.z);
-                    Gl.glNormal3d(m.VertexNormal[vidx2 * 3], m.VertexNormal[vidx2 * 3 + 1], m.VertexNormal[vidx2 * 3 + 2]);
+                    //Gl.glNormal3d(m.VertexNormal[vidx2 * 3], m.VertexNormal[vidx2 * 3 + 1], m.VertexNormal[vidx2 * 3 + 2]);
                     Gl.glVertex3d(v2.x, v2.y, v2.z);
-                    Gl.glNormal3d(m.VertexNormal[vidx3 * 3], m.VertexNormal[vidx3 * 3 + 1], m.VertexNormal[vidx3 * 3 + 2]);
+                    //Gl.glNormal3d(m.VertexNormal[vidx3 * 3], m.VertexNormal[vidx3 * 3 + 1], m.VertexNormal[vidx3 * 3 + 2]);
                     Gl.glVertex3d(v3.x, v3.y, v3.z);
                 }
                 Gl.glEnd();
             }
 
             Gl.glDisable(Gl.GL_DEPTH_TEST);
-            Gl.glDisable(Gl.GL_NORMALIZE);
+            //Gl.glDisable(Gl.GL_NORMALIZE);
             Gl.glDisable(Gl.GL_LIGHTING);
-            Gl.glDisable(Gl.GL_LIGHT0);
-            //Gl.glDisable(Gl.GL_CULL_FACE);
             Gl.glDisable(Gl.GL_COLOR_MATERIAL);
             Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+        }
+
+        private void drawMeshEdge(Mesh m)
+        {
+            if (m == null) return;
+            Gl.glEnable(Gl.GL_LINE_SMOOTH);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glEnable(Gl.GL_LINE_SMOOTH);
+            Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+            Gl.glColor3ub(GLViewer.ColorSet[1].R, GLViewer.ColorSet[1].G, GLViewer.ColorSet[1].B);
+            Gl.glBegin(Gl.GL_LINES);
+            for (int i = 0; i < m.Edges.Length; ++i)
+            {
+                int fromIdx = m.Edges[i].FromIndex;
+                int toIdx = m.Edges[i].ToIndex;
+                Gl.glVertex3d(m.VertexPos[fromIdx * 3],
+                    m.VertexPos[fromIdx * 3 + 1],
+                    m.VertexPos[fromIdx * 3 + 2]);
+                Gl.glVertex3d(m.VertexPos[toIdx * 3],
+                    m.VertexPos[toIdx * 3 + 1],
+                    m.VertexPos[toIdx * 3 + 2]);
+            }
+            Gl.glEnd();
+            Gl.glDisable(Gl.GL_LINE_SMOOTH);
+            //Gl.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
         }
 
         public void drawBoundingboxWithEdges(Box box, Color c)
@@ -3862,5 +4369,86 @@ namespace SketchPlatform
 
             Gl.glTranslated(-this.vanishingPoints[1].pos3.x, -this.vanishingPoints[1].pos3.y, -this.vanishingPoints[1].pos3.z);
         }
+
+        public void drawContourPoints()
+        {
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+            //Color c = SegmentClass.StrokeColor;
+            //Gl.glColor3ub(c.R, c.G, c.B);
+            //Gl.glPointSize(4.0f);
+            //Gl.glBegin(Gl.GL_POINTS);
+            //for (int i = 0; i < this.contourPoints.Count; i += 2)
+            //{
+            //    Gl.glVertex3dv(this.contourPoints[i].ToArray());
+            //}
+            //Gl.glEnd();
+
+            for (int i = 0; i < this.contourPoints.Count  - 2; i += 2)
+            {
+                Vector3d p1 = this.contourPoints[i];
+                Vector3d p2 = this.contourPoints[i + 1];
+                this.drawLines3D(p1, p2, Color.Black, 3.0f);
+            }
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+        }
+        public void drawContourLine()
+        {
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+            //Gl.glColor3ub(0, 0, 255);
+            //Gl.glPointSize(4.0f);
+            //Gl.glBegin(Gl.GL_POINTS);
+            //for (int i = 0; i < this.contourPoints.Count; i += 2)
+            //{
+            //    Gl.glVertex3dv(this.contourPoints[i].ToArray());
+            //}
+            //Gl.glEnd();
+
+            if (this.currSegmentClass != null)
+            {
+                foreach (Segment seg in this.currSegmentClass.segments)
+                {
+                    if (seg.contours == null) continue;
+                    foreach (List<int> vids in seg.contours)
+                    {
+                        for (int i = 0; i < vids.Count - 1; ++i)
+                        {
+                            Vector3d p1 = seg.mesh.getVertexPos(vids[i]);
+                            Vector3d p2 = seg.mesh.getVertexPos(vids[i + 1]);
+                            this.drawLines3D(p1, p2, SegmentClass.StrokeColor, 2.0f);
+                        }
+                    }
+                }
+            }
+            if (this.currMeshClass != null && this.contourLines != null)
+            {
+                foreach (List<Vector3d> points in this.contourLines)
+                {
+                    for (int i = 0; i < points.Count - 1; ++i)
+                    {
+                        this.drawLines3D(points[i], points[i + 1], Color.Blue, 2.0f);
+                    }
+                }
+            }
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+        }//drawContourLine
+
+
+        public void drawSharpEdges()
+        {
+            if (this.sharpEdges == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < this.sharpEdges.Count; i += 2)
+            {
+                Vector3d p1 = this.sharpEdges[i];
+                Vector3d p2 = this.sharpEdges[i + 1];
+                this.drawLines3D(p1, p2, Color.Pink, 2.0f);
+            }
+
+        }//drawContourLine
+
+
     }// GLViewer
 }// namespace

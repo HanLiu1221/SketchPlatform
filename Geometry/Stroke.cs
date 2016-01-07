@@ -591,7 +591,7 @@ namespace Component
                     Vector3d step = this.getRandomDoubleInRange(rand, -len / 4, len / 4) * normal;
                     if (!this.isBoxEdge)
                     {
-                        dis = this.getRandomDoubleInRange(rand, 0, len);
+                        dis = this.getRandomDoubleInRange(rand, 0, 0.05);
                         step = new Vector3d();
                     }
                     if (j == 0)
@@ -705,7 +705,6 @@ namespace Component
         public List<Plane> facesToHighlight;
         public int activeFaceIndex = -1;
         public int highlightFaceIndex = -1;
-        public List<List<GuideLine>> targetLines;
 
         public Box()
         { }
@@ -766,7 +765,6 @@ namespace Component
             this.facesToDraw = new List<Plane>();
             this.facesToHighlight = new List<Plane>();
             this.ellipses = new List<Ellipse3D>();
-            this.targetLines = new List<List<GuideLine>>();
         }
 
         public List<GuideLine> getAllLines()

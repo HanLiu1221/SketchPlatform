@@ -31,9 +31,10 @@ namespace Component
         public static Color StrokeColor = Color.FromArgb(37,37,37);//(54, 69, 79);
         public static Color VanLineColor = Color.LightGray;
         public static Color HiddenColor = Color.LightGray;
-        public static Color HighlightColor = Color.FromArgb(178, 24, 43);
+        public static Color HighlightColor = Color.FromArgb(222, 45, 38);
         public static Color FaceColor = Color.FromArgb(253, 205, 172);
         public static Color AnimColor = Color.FromArgb(251, 128, 114);
+        public static Color HiddenGuideLinecolor = Color.FromArgb(158, 202, 225);
         private string[] sequences;
 
         public SegmentClass()
@@ -154,6 +155,16 @@ namespace Component
 		{
             foreach(Segment seg in this.segments)
             {
+                foreach (List<GuideLine> lines in seg.boundingbox.guideLines)
+                {
+                    foreach (GuideLine line in lines)
+                    {
+                        foreach (Stroke stroke in line.strokes)
+                        {
+                            stroke.setStrokeSize(StrokeSize / 2);
+                        }
+                    }
+                }
                 List<GuideLine> allLines = seg.boundingbox.getAllLines();
                 foreach (GuideLine edge in allLines)
                 {
@@ -240,7 +251,6 @@ namespace Component
                     box = new Box(bbox);
                     seg = new Segment(mesh, box);
                     seg.idx = idx++;
-                    box.targetLines = new List<List<GuideLine>>();
                     this.segments.Add(seg);
                 }
                 else
@@ -303,7 +313,6 @@ namespace Component
                 // sequence
                 string boxIndexString = "box " + boxIndex.ToString();
                 string cur = boxIndexString + " ";
-                List<GuideLine> targets = new List<GuideLine>();
                 if (boxSequences[i].guide_sequence != null && boxSequences[i].guide_sequence.Count > 0)
                 {
                     cur += "guideGroup " + (box.guideLines.Count - 1).ToString();
@@ -318,9 +327,8 @@ namespace Component
                             }
                         }
                         int last = Int32.Parse(seq.guide_indexes[seq.guide_indexes.Count-1]);
-                        targets.Add(box.guideLines[box.guideLines.Count - 1][last]);
+                        box.guideLines[box.guideLines.Count - 1][last].isGuide = true;
                     }
-                    box.targetLines.Add(targets);
                 }
 
                 if (boxSequences[i].face_to_highlight != null)
@@ -356,34 +364,43 @@ namespace Component
             }
             render_sequence.Insert(0, "box 0");
             this.sequences = render_sequence.ToArray();
-            center = this.NormalizeSegments();
+            //center = this.NormalizeSegmentsToBox();
             return modelView;
         }//DeserializeJSON
 
 
-        public Vector3d NormalizeSegments()
+        public Vector3d NormalizeSegmentsToBox()
         {
             Vector3d maxCoord = Vector3d.MinCoord();
             Vector3d minCoord = Vector3d.MaxCoord();
+            Vector3d m_maxCoord = Vector3d.MinCoord();
+            Vector3d m_minCoord = Vector3d.MaxCoord();
             foreach (Segment seg in this.segments)
             {
                 if (seg.mesh == null) continue;
-                maxCoord = Vector3d.Max(maxCoord, seg.mesh.MaxCoord);
-                minCoord = Vector3d.Min(minCoord, seg.mesh.MinCoord);
+                m_maxCoord = Vector3d.Max(m_maxCoord, seg.mesh.MaxCoord);
+                m_minCoord = Vector3d.Min(m_minCoord, seg.mesh.MinCoord);
+                maxCoord = Vector3d.Max(maxCoord, seg.boundingbox.points[6]);
+                minCoord = Vector3d.Min(minCoord, seg.boundingbox.points[0]);
             }
             Vector3d center = (maxCoord + minCoord) / 2;
-            Vector3d d = maxCoord - minCoord;
-            double scale = d.x > d.y ? d.x : d.y;
-            scale = d.z > scale ? d.z : scale;
-            scale /= 2; // [-1, 1]
-            //foreach (Segment seg in this.segments)
-            //{
-            //    if (seg.mesh == null) continue;
-            //    seg.mesh.normalize(center, scale);
-            //    seg.boundingbox.normalize(center, scale);
-            //}
+            Vector3d m_d = m_maxCoord - m_minCoord;
+            Vector3d b_d = maxCoord - minCoord;
+            double scale = m_d.x > m_d.y ? m_d.x : m_d.y;
+            scale = m_d.z > scale ? m_d.z : scale;
+            //scale /= 2; // [-1, 1]
+            double b_scale = b_d.x > b_d.y ? b_d.x : b_d.y;
+            b_scale = b_d.z > b_scale ? b_d.z : b_scale;
+
+            scale = scale / b_scale;
+            foreach (Segment seg in this.segments)
+            {
+                if (seg.mesh == null) continue;
+                seg.mesh.normalize(center, scale);
+                //seg.boundingbox.normalize(center, scale);
+            }
             return center;
-        }// NormalizeSegments
+        }// NormalizeSegmentsToBox
 
         public void parseASequence(int idx, out int segIdx, out int guidelineGroupIndex, out List<int> guideLineIndexs, 
             out int nextBox, out int highlightFaceIndex, out int drawFaceIndex)
@@ -442,5 +459,109 @@ namespace Component
             sr.Close();
             return this.sequences.Length;
         }
+
+        public List<Mesh> currMeshes;
+        public List<Vector3d> contourPoints;
+
+        public void calculateContourPoint(Matrix4d trans, Vector3d eye)
+        {
+            this.currMeshes = new List<Mesh>();
+            this.contourPoints = new List<Vector3d>();
+            double thresh = 0.1;
+            // current pos, normal
+            foreach (Segment seg in this.segments)
+            {
+                if (seg.mesh == null) continue;
+                double[] vertexPos = new double[seg.mesh.VertexPos.Length];
+                for (int i = 0, j = 0; i < seg.mesh.VertexCount; ++i, j += 3)
+                {
+                    Vector3d v0 = new Vector3d(seg.mesh.VertexPos[j],
+                        seg.mesh.VertexPos[j + 1],
+                        seg.mesh.VertexPos[j + 2]);
+                    Vector3d v1 = (trans * new Vector4d(v0, 1)).ToVector3D();
+                    vertexPos[j] = v1.x;
+                    vertexPos[j + 1] = v1.y;
+                    vertexPos[j + 2] = v1.z;
+                }
+                // transformed mesh
+                Mesh m = new Mesh(seg.mesh, vertexPos);
+                currMeshes.Add(m);
+                for (int i = 0, j = 0; i < m.VertexCount; ++i, j += 3)
+                {
+                    Vector3d v0 = new Vector3d(m.VertexPos[j],
+                        m.VertexPos[j + 1],
+                        m.VertexPos[j + 2]);
+                    Vector3d vn = new Vector3d(m.VertexNormal[j],
+                        m.VertexNormal[j + 1],
+                        m.VertexNormal[j + 2]).normalize();
+                    Vector3d v = (eye - v0).normalize();
+                    double cosv = v.Dot(vn);
+                    if (Math.Abs(cosv) < thresh && cosv > 0)
+                    {
+                        this.contourPoints.Add(new Vector3d(seg.mesh.VertexPos[j],
+                        seg.mesh.VertexPos[j + 1],
+                        seg.mesh.VertexPos[j + 2]));
+                    }
+                }
+            }// fore each segment
+        }//calculateContourPoint
+
+        public void computeContourEdges(Matrix4d trans, Vector3d eye)
+        {
+            this.currMeshes = new List<Mesh>();
+            this.contourPoints = new List<Vector3d>();
+            double thresh = 0.1;
+
+            // current pos, normal
+            foreach (Segment seg in this.segments)
+            {
+                if (seg.mesh == null) continue;
+                double[] vertexPos = new double[seg.mesh.VertexPos.Length];
+                for (int i = 0, j = 0; i < seg.mesh.VertexCount; ++i, j += 3)
+                {
+                    Vector3d v0 = new Vector3d(seg.mesh.VertexPos[j],
+                        seg.mesh.VertexPos[j + 1],
+                        seg.mesh.VertexPos[j + 2]);
+                    Vector3d v1 = (trans * new Vector4d(v0, 1)).ToVector3D();
+                    vertexPos[j] = v1.x;
+                    vertexPos[j + 1] = v1.y;
+                    vertexPos[j + 2] = v1.z;
+                }
+                
+                // transformed mesh
+                Mesh m = new Mesh(seg.mesh, vertexPos);
+                currMeshes.Add(m);
+
+                // check the sign change of each edge
+                foreach (HalfEdge edge in m.HalfEdges)
+                {
+                    if (edge.invHalfEdge == null) // boudnary
+                    {
+                        this.contourPoints.Add(seg.mesh.getVertexPos(edge.FromIndex));
+                        this.contourPoints.Add(seg.mesh.getVertexPos(edge.ToIndex));
+                        continue;
+                    }
+                    if (edge.invHalfEdge.index < edge.index)
+                    {
+                        continue; // checked
+                    }
+                    int fidx = edge.FaceIndex;
+                    int invfidx = edge.invHalfEdge.FaceIndex;
+                    Vector3d v1 = m.getFaceCenter(fidx);
+                    Vector3d v2 = m.getFaceCenter(invfidx);
+                    Vector3d e1 = (eye - v1).normalize();
+                    Vector3d e2 = (eye - v2).normalize();
+                    Vector3d n1 = m.getFaceNormal(fidx);
+                    Vector3d n2 = m.getFaceNormal(invfidx);
+                    double c1 = e1.Dot(n1);
+                    double c2 = e2.Dot(n2);
+                    if (c1 * c2 <= 0)
+                    {
+                        this.contourPoints.Add(seg.mesh.getVertexPos(edge.FromIndex));
+                        this.contourPoints.Add(seg.mesh.getVertexPos(edge.ToIndex));
+                    }
+                }
+            }// fore each segment
+        }//computeContourEdges
     }
 }

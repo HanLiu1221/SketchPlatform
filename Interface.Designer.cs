@@ -55,7 +55,7 @@
             this.faceSelection = new System.Windows.Forms.ToolStripMenuItem();
             this.display = new System.Windows.Forms.ToolStripDropDownButton();
             this.displayAxis = new System.Windows.Forms.ToolStripMenuItem();
-            this.exampleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.contourToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.strokeStyle = new System.Windows.Forms.ToolStripDropDownButton();
             this.pencilToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pen1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -65,11 +65,17 @@
             this.ink2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.edgeColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.guideLineColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.testTools = new System.Windows.Forms.ToolStripDropDownButton();
+            this.exampleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.moveBoxToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
-            this.glViewer = new SketchPlatform.GLViewer();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
+            this.contourLabel = new System.Windows.Forms.GroupBox();
+            this.showContourPoint = new System.Windows.Forms.CheckBox();
+            this.sharpEdge = new System.Windows.Forms.CheckBox();
+            this.contour = new System.Windows.Forms.CheckBox();
             this.vanishingBox = new System.Windows.Forms.GroupBox();
             this.showFaceToDraw = new System.Windows.Forms.CheckBox();
             this.showGuideLineVanlines = new System.Windows.Forms.CheckBox();
@@ -100,12 +106,14 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
+            this.glViewer = new SketchPlatform.GLViewer();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
             this.viewPanel.Panel2.SuspendLayout();
             this.viewPanel.SuspendLayout();
             this.toolboxPanel.SuspendLayout();
+            this.contourLabel.SuspendLayout();
             this.vanishingBox.SuspendLayout();
             this.guideLineBox.SuspendLayout();
             this.adjustBox.SuspendLayout();
@@ -121,7 +129,8 @@
             this.renderOption,
             this.selectElement,
             this.display,
-            this.strokeStyle});
+            this.strokeStyle,
+            this.testTools});
             this.menu.Location = new System.Drawing.Point(0, 0);
             this.menu.Name = "menu";
             this.menu.Size = new System.Drawing.Size(784, 39);
@@ -325,7 +334,7 @@
             // 
             this.display.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.displayAxis,
-            this.exampleToolStripMenuItem});
+            this.contourToolStripMenuItem});
             this.display.Image = ((System.Drawing.Image)(resources.GetObject("display.Image")));
             this.display.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.display.Name = "display";
@@ -336,16 +345,16 @@
             // displayAxis
             // 
             this.displayAxis.Name = "displayAxis";
-            this.displayAxis.Size = new System.Drawing.Size(155, 22);
+            this.displayAxis.Size = new System.Drawing.Size(116, 22);
             this.displayAxis.Text = "Axis";
             this.displayAxis.Click += new System.EventHandler(this.displayAxis_Click);
             // 
-            // exampleToolStripMenuItem
+            // contourToolStripMenuItem
             // 
-            this.exampleToolStripMenuItem.Name = "exampleToolStripMenuItem";
-            this.exampleToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.exampleToolStripMenuItem.Text = "show all guides";
-            this.exampleToolStripMenuItem.Click += new System.EventHandler(this.exampleToolStripMenuItem_Click);
+            this.contourToolStripMenuItem.Name = "contourToolStripMenuItem";
+            this.contourToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.contourToolStripMenuItem.Text = "contour";
+            this.contourToolStripMenuItem.Click += new System.EventHandler(this.contourToolStripMenuItem_Click);
             // 
             // strokeStyle
             // 
@@ -421,6 +430,32 @@
             this.guideLineColorToolStripMenuItem.Text = "guide line color";
             this.guideLineColorToolStripMenuItem.Click += new System.EventHandler(this.guideLineColorToolStripMenuItem_Click);
             // 
+            // testTools
+            // 
+            this.testTools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.exampleToolStripMenuItem,
+            this.moveBoxToolStripMenuItem});
+            this.testTools.Image = ((System.Drawing.Image)(resources.GetObject("testTools.Image")));
+            this.testTools.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.testTools.Name = "testTools";
+            this.testTools.Size = new System.Drawing.Size(45, 36);
+            this.testTools.Text = "Test";
+            this.testTools.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
+            // 
+            // exampleToolStripMenuItem
+            // 
+            this.exampleToolStripMenuItem.Name = "exampleToolStripMenuItem";
+            this.exampleToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
+            this.exampleToolStripMenuItem.Text = "show All guides";
+            this.exampleToolStripMenuItem.Click += new System.EventHandler(this.exampleToolStripMenuItem_Click);
+            // 
+            // moveBoxToolStripMenuItem
+            // 
+            this.moveBoxToolStripMenuItem.Name = "moveBoxToolStripMenuItem";
+            this.moveBoxToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
+            this.moveBoxToolStripMenuItem.Text = "move box";
+            this.moveBoxToolStripMenuItem.Click += new System.EventHandler(this.moveBoxToolStripMenuItem_Click);
+            // 
             // viewPanel
             // 
             this.viewPanel.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -437,8 +472,8 @@
             this.viewPanel.Panel2.Controls.Add(this.glViewer);
             this.viewPanel.Panel2.Controls.Add(this.statistics);
             this.viewPanel.Panel2.Controls.Add(this.toolboxPanel);
-            this.viewPanel.Size = new System.Drawing.Size(784, 598);
-            this.viewPanel.SplitterDistance = 31;
+            this.viewPanel.Size = new System.Drawing.Size(784, 681);
+            this.viewPanel.SplitterDistance = 35;
             this.viewPanel.TabIndex = 1;
             // 
             // fileNameTabs
@@ -450,26 +485,6 @@
             this.fileNameTabs.SelectedIndex = 0;
             this.fileNameTabs.Size = new System.Drawing.Size(778, 35);
             this.fileNameTabs.TabIndex = 0;
-            // 
-            // glViewer
-            // 
-            this.glViewer.AccumBits = ((byte)(0));
-            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.glViewer.AutoCheckErrors = false;
-            this.glViewer.AutoFinish = false;
-            this.glViewer.AutoMakeCurrent = true;
-            this.glViewer.AutoSwapBuffers = true;
-            this.glViewer.BackColor = System.Drawing.Color.Black;
-            this.glViewer.ColorBits = ((byte)(32));
-            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
-            this.glViewer.DepthBits = ((byte)(16));
-            this.glViewer.Location = new System.Drawing.Point(170, 3);
-            this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(611, 557);
-            this.glViewer.StencilBits = ((byte)(0));
-            this.glViewer.TabIndex = 3;
             // 
             // statistics
             // 
@@ -484,14 +499,63 @@
             this.toolboxPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
             this.toolboxPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.toolboxPanel.Controls.Add(this.contourLabel);
             this.toolboxPanel.Controls.Add(this.vanishingBox);
             this.toolboxPanel.Controls.Add(this.guideLineBox);
             this.toolboxPanel.Controls.Add(this.adjustBox);
             this.toolboxPanel.Controls.Add(this.displayBox);
             this.toolboxPanel.Location = new System.Drawing.Point(3, 3);
             this.toolboxPanel.Name = "toolboxPanel";
-            this.toolboxPanel.Size = new System.Drawing.Size(165, 557);
+            this.toolboxPanel.Size = new System.Drawing.Size(165, 636);
             this.toolboxPanel.TabIndex = 2;
+            // 
+            // contourLabel
+            // 
+            this.contourLabel.Controls.Add(this.showContourPoint);
+            this.contourLabel.Controls.Add(this.sharpEdge);
+            this.contourLabel.Controls.Add(this.contour);
+            this.contourLabel.Location = new System.Drawing.Point(3, 542);
+            this.contourLabel.Name = "contourLabel";
+            this.contourLabel.Size = new System.Drawing.Size(156, 89);
+            this.contourLabel.TabIndex = 40;
+            this.contourLabel.TabStop = false;
+            this.contourLabel.Text = "Contour";
+            // 
+            // showContourPoint
+            // 
+            this.showContourPoint.AutoSize = true;
+            this.showContourPoint.Location = new System.Drawing.Point(6, 65);
+            this.showContourPoint.Name = "showContourPoint";
+            this.showContourPoint.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showContourPoint.Size = new System.Drawing.Size(88, 17);
+            this.showContourPoint.TabIndex = 14;
+            this.showContourPoint.Text = "contour point";
+            this.showContourPoint.UseVisualStyleBackColor = true;
+            this.showContourPoint.CheckedChanged += new System.EventHandler(this.showContourPoint_CheckedChanged);
+            // 
+            // sharpEdge
+            // 
+            this.sharpEdge.AutoSize = true;
+            this.sharpEdge.Location = new System.Drawing.Point(5, 42);
+            this.sharpEdge.Name = "sharpEdge";
+            this.sharpEdge.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.sharpEdge.Size = new System.Drawing.Size(79, 17);
+            this.sharpEdge.TabIndex = 13;
+            this.sharpEdge.Text = "sharp edge";
+            this.sharpEdge.UseVisualStyleBackColor = true;
+            this.sharpEdge.CheckedChanged += new System.EventHandler(this.sharpEdge_CheckedChanged);
+            // 
+            // contour
+            // 
+            this.contour.AutoSize = true;
+            this.contour.Location = new System.Drawing.Point(4, 19);
+            this.contour.Name = "contour";
+            this.contour.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.contour.Size = new System.Drawing.Size(62, 17);
+            this.contour.TabIndex = 12;
+            this.contour.Text = "contour";
+            this.contour.UseVisualStyleBackColor = true;
+            this.contour.CheckedChanged += new System.EventHandler(this.contour_CheckedChanged);
             // 
             // vanishingBox
             // 
@@ -526,8 +590,6 @@
             // showGuideLineVanlines
             // 
             this.showGuideLineVanlines.AutoSize = true;
-            this.showGuideLineVanlines.Checked = true;
-            this.showGuideLineVanlines.CheckState = System.Windows.Forms.CheckState.Checked;
             this.showGuideLineVanlines.Location = new System.Drawing.Point(4, 113);
             this.showGuideLineVanlines.Name = "showGuideLineVanlines";
             this.showGuideLineVanlines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
@@ -559,9 +621,9 @@
             this.vanishingPoint2.Location = new System.Drawing.Point(4, 67);
             this.vanishingPoint2.Name = "vanishingPoint2";
             this.vanishingPoint2.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.vanishingPoint2.Size = new System.Drawing.Size(106, 17);
+            this.vanishingPoint2.Size = new System.Drawing.Size(97, 17);
             this.vanishingPoint2.TabIndex = 8;
-            this.vanishingPoint2.Text = "vanishing point 2";
+            this.vanishingPoint2.Text = "vanishing ray 2";
             this.vanishingPoint2.UseVisualStyleBackColor = true;
             this.vanishingPoint2.CheckedChanged += new System.EventHandler(this.vanishingPoint2_CheckedChanged);
             // 
@@ -573,9 +635,9 @@
             this.vanishingPoint1.Location = new System.Drawing.Point(4, 44);
             this.vanishingPoint1.Name = "vanishingPoint1";
             this.vanishingPoint1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.vanishingPoint1.Size = new System.Drawing.Size(106, 17);
+            this.vanishingPoint1.Size = new System.Drawing.Size(97, 17);
             this.vanishingPoint1.TabIndex = 5;
-            this.vanishingPoint1.Text = "vanishing point 1";
+            this.vanishingPoint1.Text = "vanishing ray 1";
             this.vanishingPoint1.UseVisualStyleBackColor = true;
             this.vanishingPoint1.CheckedChanged += new System.EventHandler(this.vanishingPoint1_CheckedChanged);
             // 
@@ -596,7 +658,7 @@
             // vlLabel
             // 
             this.vlLabel.AutoSize = true;
-            this.vlLabel.Location = new System.Drawing.Point(3, 20);
+            this.vlLabel.Location = new System.Drawing.Point(6, 20);
             this.vlLabel.Name = "vlLabel";
             this.vlLabel.Size = new System.Drawing.Size(47, 13);
             this.vlLabel.TabIndex = 6;
@@ -856,12 +918,32 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
+            // glViewer
+            // 
+            this.glViewer.AccumBits = ((byte)(0));
+            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.glViewer.AutoCheckErrors = false;
+            this.glViewer.AutoFinish = false;
+            this.glViewer.AutoMakeCurrent = true;
+            this.glViewer.AutoSwapBuffers = true;
+            this.glViewer.BackColor = System.Drawing.Color.Black;
+            this.glViewer.ColorBits = ((byte)(32));
+            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
+            this.glViewer.DepthBits = ((byte)(16));
+            this.glViewer.Location = new System.Drawing.Point(170, 3);
+            this.glViewer.Name = "glViewer";
+            this.glViewer.Size = new System.Drawing.Size(611, 636);
+            this.glViewer.StencilBits = ((byte)(0));
+            this.glViewer.TabIndex = 3;
+            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.WhiteSmoke;
-            this.ClientSize = new System.Drawing.Size(784, 637);
+            this.ClientSize = new System.Drawing.Size(784, 720);
             this.Controls.Add(this.viewPanel);
             this.Controls.Add(this.menu);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -875,6 +957,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).EndInit();
             this.viewPanel.ResumeLayout(false);
             this.toolboxPanel.ResumeLayout(false);
+            this.contourLabel.ResumeLayout(false);
+            this.contourLabel.PerformLayout();
             this.vanishingBox.ResumeLayout(false);
             this.vanishingBox.PerformLayout();
             this.guideLineBox.ResumeLayout(false);
@@ -955,13 +1039,20 @@
         private System.Windows.Forms.Button redoSequence;
         private System.Windows.Forms.CheckBox lockView;
         private GLViewer glViewer;
-        private System.Windows.Forms.ToolStripMenuItem exampleToolStripMenuItem;
         private System.Windows.Forms.GroupBox vanishingBox;
         private System.Windows.Forms.CheckBox showGuideLineVanlines;
         private System.Windows.Forms.CheckBox showBoxVanlines;
         private System.Windows.Forms.CheckBox vanishingPoint2;
         private System.Windows.Forms.CheckBox vanishingPoint1;
         private System.Windows.Forms.CheckBox showFaceToDraw;
+        private System.Windows.Forms.ToolStripMenuItem contourToolStripMenuItem;
+        private System.Windows.Forms.ToolStripDropDownButton testTools;
+        private System.Windows.Forms.ToolStripMenuItem exampleToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem moveBoxToolStripMenuItem;
+        private System.Windows.Forms.GroupBox contourLabel;
+        private System.Windows.Forms.CheckBox sharpEdge;
+        private System.Windows.Forms.CheckBox contour;
+        private System.Windows.Forms.CheckBox showContourPoint;
 
 	}
 }

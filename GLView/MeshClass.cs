@@ -191,7 +191,7 @@ namespace SketchPlatform
         {
             fixed (double* vertexPos = this.mesh.VertexPos)
             {
-                fixed (int* faceIndex = this.mesh.FaceVertex)
+                fixed (int* faceIndex = this.mesh.FaceVertexIndex)
                 {
                     for (int i = 0, j = 0; i < this.mesh.FaceCount; ++i, j += 3)
                     {
@@ -234,16 +234,16 @@ namespace SketchPlatform
         /******************** Render ********************/
         public void renderShaded()
         {
-            Gl.glEnable(Gl.GL_COLOR_MATERIAL);
-            Gl.glColorMaterial(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE);
-            Gl.glEnable(Gl.GL_CULL_FACE);
-            Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE, material);
-            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_AMBIENT, ambient);
-            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, diffuse);
-            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, specular);
-            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, position);
-            Gl.glEnable(Gl.GL_LIGHT0);
-            Gl.glDepthFunc(Gl.GL_LESS);
+            //Gl.glEnable(Gl.GL_COLOR_MATERIAL);
+            //Gl.glColorMaterial(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE);
+            //Gl.glEnable(Gl.GL_CULL_FACE);
+            //Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE, material);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_AMBIENT, ambient);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, diffuse);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, specular);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, position);
+            //Gl.glEnable(Gl.GL_LIGHT0);
+            //Gl.glDepthFunc(Gl.GL_LESS);
             Gl.glEnable(Gl.GL_DEPTH_TEST);
             Gl.glEnable(Gl.GL_LIGHTING);
             Gl.glEnable(Gl.GL_NORMALIZE);
@@ -252,7 +252,7 @@ namespace SketchPlatform
 
             fixed (double* vp = this.mesh.VertexPos)
             fixed (double* vn = this.mesh.FaceNormal)
-            fixed (int* index = this.mesh.FaceVertex)
+            fixed (int* index = this.mesh.FaceVertexIndex)
             {
                 Gl.glBegin(Gl.GL_TRIANGLES);
                 for (int i = 0, j = 0; i < this.mesh.FaceCount; ++i, j += 3)
@@ -361,7 +361,7 @@ namespace SketchPlatform
             }
             Gl.glColor3ub(255, 0, 0);
             fixed (double* vp = this.mesh.VertexPos)
-            fixed (int* index = this.mesh.FaceVertex)
+            fixed (int* index = this.mesh.FaceVertexIndex)
             {
                 Gl.glBegin(Gl.GL_TRIANGLES);
                 for (int i = 0; i < this.selectedFaces.Count; ++i)
