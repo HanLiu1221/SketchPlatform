@@ -91,7 +91,7 @@ namespace SketchPlatform
             ColorSet[19] = Color.FromArgb(217, 217, 217);
 
             ModelColor = Color.FromArgb(166, 189, 219);
-            GuideLineColor = Color.FromArgb(67, 162, 202);// Color.FromArgb(0, 15, 85); // pen ink blue
+            GuideLineColor = Color.FromArgb(4, 90, 141);// Color.FromArgb(0, 15, 85); // pen ink blue
         }
         
         //private void initializeCamera()
@@ -323,6 +323,15 @@ namespace SketchPlatform
             meshStats[2] = m.FaceCount;
         }
 
+        public void loadTriMesh(string filename)
+        {
+            MeshClass mc = new MeshClass();
+            this.contourPoints = mc.loadTriMesh(filename, this.eye);
+            this.meshClasses.Add(mc);
+            this.currMeshClass = mc;
+            this.Refresh();
+        }
+
         public void loadSegments(string segfolder)
         {
             this.segmentClasses = new List<SegmentClass>();
@@ -498,16 +507,24 @@ namespace SketchPlatform
                     }
                 }
             }
+            Vector2d center = (maxCoord + minCoord) / 2;
             double w = 297, h = 210;
             int sx = this.Location.X, sy = this.Location.Y;
             sx = 0;
             sy = 0;
+            minCoord = Vector2d.Min(minCoord, this.vanishingPoints[0].pos2);
+            maxCoord = Vector2d.Max(maxCoord, this.vanishingPoints[1].pos2);
+
+            int off = 20;
+            double heig = this.Height - off * 2;
+            double wid = heig * w / h;
+
             minCoord -= new Vector2d(this.Location.X, this.Location.Y);
             maxCoord -= new Vector2d(this.Location.X, this.Location.Y);
-            int off = Math.Min(this.Width, this.Height) / 4;
-            double y0 = Math.Max(sy + 10, minCoord.y - off);
-            double x0 = Math.Max(sx + 10, minCoord.x - off * 1.4);
-            double y1 = Math.Min(sy + this.Height - 10, maxCoord.y + off * 2);
+
+            double y0 = sy + off; // Math.Max(sy + 10, minCoord.y - off * 2);
+            double x0 = center.x - wid / 2;// Math.Max(sx + 10, center.x - this.Width / 2 + 10);
+            double y1 = sy + this.Height - off;// Math.Min(sy + this.Height - 10, maxCoord.y + off);
             //x0 -= 20;
             this.paperPos[0] = new StrokePoint(new Vector2d(x0, y0));
             this.paperPos[3] = new StrokePoint(new Vector2d(this.paperPos[0].pos2.x, y1));
@@ -715,7 +732,7 @@ namespace SketchPlatform
             }
         }// setStrokeStylePerSeg - per seg
 
-        private void setStrokeStylePerLine(int size, GuideLine line, Color c, Color gc)
+        private void setStrokeStylePerLine(GuideLine line, int size, Color c)
         {
             foreach (Stroke stroke in line.strokes)
             {
@@ -1167,6 +1184,7 @@ namespace SketchPlatform
         private int currGroupIdx = -1;
         private void activateGuideSequence()
         {
+
             this.activateDrawnBoxes();
             //this.showFaceToDraw = false;
             // parse sequence
@@ -1194,6 +1212,11 @@ namespace SketchPlatform
 
         private void activateDrawnBoxes()
         {
+            /////!!!this code dies the program
+            //if (this.enableHiddencheck)
+            //{
+            //    this.setHiddenLines(); // for the current active box
+            //}
             // fade out the boxes that have already been drawn
             foreach (Segment seg in this.currSegmentClass.segments)
             {
@@ -1212,6 +1235,7 @@ namespace SketchPlatform
                 }
                 seg.boundingbox.activeFaceIndex = -1;
             }
+            
         }// activateDrawnBox
 
         private void activateBox(Segment activeSeg)
@@ -1222,6 +1246,7 @@ namespace SketchPlatform
                 line.active = true;
             }
             this.setStrokeStylePerSeg(4, activeSeg, SegmentClass.StrokeColor, GuideLineColor);
+            this.setHiddenLines(activeSeg);
         }// activateBox
 
 
@@ -1246,10 +1271,29 @@ namespace SketchPlatform
         public int sleepTime = 100;
         private void showAnimatedGuideLines(Segment seg, int guideGroupIndex, List<int> guideLinesIndex, int highlightFaceIndex, int drawFaceIndex)
         {
+            Box box = seg.boundingbox;
             // draw arrows
+            if (guideLinesIndex.Count > 0 && guideLinesIndex[0] != 0)
+            {
+                // fixe to the format
+                for (int i = 0; i < guideLinesIndex[0]; ++i)
+                {
+                    GuideLine line = box.guideLines[guideGroupIndex][i];
+                    //line.active = true;                    
+                    if (line.isGuide)
+                    {
+                        line.active = true;  
+                        this.setStrokeStylePerLine(line, (int)(SegmentClass.GuideLineSize * 0.8), SegmentClass.HiddenHighlightcolor);
+                    }
+                    else
+                    {
+                        this.setStrokeStylePerLine(line, SegmentClass.GuideLineSize / 2, SegmentClass.HiddenGuideLinecolor);
+                    }
+                }
+            }
             if (this.enableDepthTest)
                 Gl.glDisable(Gl.GL_DEPTH_TEST);
-            Box box = seg.boundingbox;
+            
             // 1. highligh the hosting face 
             if (highlightFaceIndex != -1)
             {
@@ -1290,41 +1334,25 @@ namespace SketchPlatform
                 if (line.isGuide)
                 {
                     // deactivate previous lines
-                    for (int j = 0; j < i; ++j)
+                    for (int j = 0; j <= idx; ++j)
                     {
-                        GuideLine jline = box.guideLines[guideGroupIndex][guideLinesIndex[j]];
-                        if (!jline.isGuide)
+                        GuideLine jline = box.guideLines[guideGroupIndex][j];
+                        if (jline.isGuide)
+                        {
+                            this.setStrokeStylePerLine(jline, (int)(SegmentClass.GuideLineSize * 0.8), SegmentClass.HiddenHighlightcolor);
+                        }
+                        else
                         {
                             //jline.active = false;
-                            foreach (Stroke stroke in jline.strokes)
-                            {
-                                stroke.strokeColor = SegmentClass.HiddenGuideLinecolor;
-                            }
+                            this.setStrokeStylePerLine(jline, SegmentClass.GuideLineSize / 2, SegmentClass.HiddenGuideLinecolor);
                         }
                     }
+                    this.Refresh();
                 }
             }
-
-            // 4. draw the new face if there is any
-            //if (drawFaceIndex != -1)
-            //{
-            //    Plane q = box.facesToDraw[drawFaceIndex];
-            //    this.drawQuad3d(q, Color.White);
-            //    for (int i = 0; i < 4; ++i)
-            //    {
-            //        this.animatedLine = new Line3d(q.points[i], q.points[(i + 1) % q.points.Length]);
-            //        this.Refresh();
-            //        System.Threading.Thread.Sleep(400);
-            //    }
-            //}
             this.animatedLine = null;
             box.activeFaceIndex =  drawFaceIndex;
             box.highlightFaceIndex = -1;
-            for (int i = 0; i < guideLinesIndex.Count - 1; ++i)
-            {
-                GuideLine line = seg.boundingbox.guideLines[guideGroupIndex][guideLinesIndex[i]];
-                //line.active = false;
-            }
             if (this.enableDepthTest)
                 Gl.glEnable(Gl.GL_DEPTH_TEST);
         }// showAnimatedGuideLines
@@ -1451,10 +1479,10 @@ namespace SketchPlatform
 
         private void captureScreen(int idx)
         {
-            var bmp = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            Size newSize = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Size.Width - 500, Screen.PrimaryScreen.Bounds.Size.Height - 150);
+            var bmp = new Bitmap(newSize.Width, newSize.Height);
             var gfx = Graphics.FromImage(bmp);
-            Size newSize = new System.Drawing.Size(Screen.PrimaryScreen.Bounds.Size.Width - 400, Screen.PrimaryScreen.Bounds.Size.Height - 150);
-            gfx.CopyFromScreen(Screen.PrimaryScreen.Bounds.X + 250, Screen.PrimaryScreen.Bounds.Y + 100, 0, 0, newSize, CopyPixelOperation.SourceCopy);
+            gfx.CopyFromScreen((int)(this.paperPos[0].pos2.x + this.Location.X - 50), Screen.PrimaryScreen.Bounds.Y + 100, 0, 0, newSize, CopyPixelOperation.SourceCopy);
             string imageFolder = foldername + "\\screenCapture";
             if (!Directory.Exists(imageFolder))
             {
@@ -1466,6 +1494,30 @@ namespace SketchPlatform
 
         public void computeContours()
         {
+            if (this.currMeshClass != null)
+            {
+                Mesh mesh = this.currMeshClass.Mesh;
+                double[] vertexPos = new double[mesh.VertexPos.Length];
+                List<int> vidxs = new List<int>();
+                for (int i = 0, j = 0; i < mesh.VertexCount; ++i, j += 3)
+                {
+                    Vector3d v0 = new Vector3d(mesh.VertexPos[j],
+                        mesh.VertexPos[j + 1],
+                        mesh.VertexPos[j + 2]);
+                    Vector3d v1 = (this.currModelTransformMatrix * new Vector4d(v0, 1)).ToVector3D();
+                    vertexPos[j] = v1.x;
+                    vertexPos[j + 1] = v1.y;
+                    vertexPos[j + 2] = v1.z;
+                }
+                this.contourPoints = this.currMeshClass.computeContour(vertexPos, this.eye);
+                for (int i = 0; i < this.contourPoints.Count; ++i )
+                {
+                    Vector3d v = this.contourPoints[i];
+                    Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+                    this.contourPoints[i] = vt;
+                }
+            }
+            return;
             if (this.currSegmentClass == null && this.meshClasses == null) return;
             this.contourPoints = new List<Vector3d>();
             this.sharpEdges = new List<Vector3d>();
@@ -1804,7 +1856,7 @@ namespace SketchPlatform
 
         private Vector3d getCurPos(Vector3d v)
         {
-            return (this.modelTransformMatrix * new Vector4d(v, 1)).ToVector3D();
+            return (this.currModelTransformMatrix * new Vector4d(v, 1)).ToVector3D();
         }
 
         private Vector3d getOriPos(Vector3d v)
@@ -1823,8 +1875,8 @@ namespace SketchPlatform
             double minD = double.MaxValue, maxD = double.MinValue;
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                List<GuideLine> allLines = seg.boundingbox.getAllLines();
-                foreach (GuideLine line in allLines)
+                //List<GuideLine> allLines = seg.boundingbox.getAllLines();
+                foreach (GuideLine line in seg.boundingbox.edges)
                 {
                     foreach (Stroke stroke in line.strokes)
                     {
@@ -1841,8 +1893,8 @@ namespace SketchPlatform
             double scale = maxD - minD;
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                List<GuideLine> allLines = seg.boundingbox.getAllLines();
-                foreach (GuideLine line in allLines)
+                //List<GuideLine> allLines = seg.boundingbox.getAllLines();
+                foreach (GuideLine line in seg.boundingbox.edges)
                 {
                     foreach (Stroke stroke in line.strokes)
                     {
@@ -1855,9 +1907,99 @@ namespace SketchPlatform
             }
         }// calculateStrokePointDepthByCameraPos
 
-        private void setHiddenLines()
+        private void setHiddenLines(Segment seg)
         {
             if (this.depthType == Depthtype.hidden) return;
+
+            this.clearScene();
+            // draw the whole sceen from "Draw3D()" to get the visibility info depth value
+            int n = 0;
+            int nsample = 10; // sample 10 points on each line
+
+            foreach (GuideLine edge in seg.boundingbox.edges)
+            {
+                n += nsample;
+            }
+            // draw and get visibility
+            int[] queryIDs = new int[n];
+            Gl.glGenQueries(n, queryIDs);
+
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+            int idx = 0;
+            this.setViewMatrix();
+
+            this.drawBoundingbox(seg.boundingbox, Color.White);
+
+            foreach (GuideLine edge in seg.boundingbox.edges)
+            {
+                Vector3d dir = (edge.v - edge.u).normalize();
+                double dist = (edge.v - edge.u).Length() / nsample;
+                Gl.glBeginQuery(Gl.GL_SAMPLES_PASSED, queryIDs[idx++]);
+                Gl.glColor3ub(0, 0, 0);
+                Gl.glBegin(Gl.GL_POINTS);
+                for (int i = 0; i < nsample; ++i)
+                {
+                    Vector3d v = edge.u + i * dist * dir;
+                    Gl.glVertex3dv(v.ToArray());
+                }
+                Gl.glEnd();
+                Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
+            }
+
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            Gl.glPopMatrix();
+            //this.SwapBuffers();
+
+            // get # passed samples
+            int[] visPnts = new int[n];
+            int maxv = 0;
+            for (int i = 0; i < n; ++i)
+            {
+                int queryReady = Gl.GL_FALSE;
+                int count = 1000;
+                while (queryReady != Gl.GL_TRUE && count-- > 0)
+                {
+                    Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
+                }
+                if (queryReady == Gl.GL_FALSE)
+                {
+                    count = 1000;
+                    while (queryReady != Gl.GL_TRUE && count-- > 0)
+                    {
+                        Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
+                    }
+                }
+                Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT, out visPnts[i]);
+                if (visPnts[i] > maxv)
+                {
+                    maxv = visPnts[i];
+                }
+            }
+            Gl.glDeleteQueries(n, queryIDs);
+
+            idx = 0;
+
+            foreach (GuideLine edge in seg.boundingbox.edges)
+            {
+                if (visPnts[idx++] < 10)
+                {
+                    this.setStrokeStylePerLine(edge, SegmentClass.StrokeSize / 2, SegmentClass.HiddenLineColor);
+                    
+                }
+                else
+                {
+                    this.setStrokeStylePerLine(edge, SegmentClass.StrokeSize, SegmentClass.StrokeColor);
+                }
+            }
+
+        }// setHiddenLines
+
+        private void setHiddenLines()
+        {
+            if (this.currSegmentClass == null || this.depthType == Depthtype.hidden || this.inGuideMode) 
+                return;
+
             this.clearScene();
             // draw the whole sceen from "Draw3D()" to get the visibility info depth value
             int n = 0;
@@ -1938,23 +2080,22 @@ namespace SketchPlatform
             Gl.glDeleteQueries(n, queryIDs);
 
             idx = 0;
-            this.triangleDepth = new byte[n];
             foreach (Segment seg in this.currSegmentClass.segments)
             {
                 if (!seg.active) continue;
                 foreach (GuideLine edge in seg.boundingbox.edges)
                 {
-                    if (visPnts[idx++] > 7)
+                    if (visPnts[idx++] < 10)
                     {
-                        this.setStrokeStylePerLine(SegmentClass.StrokeSize, edge, SegmentClass.StrokeColor, GuideLineColor);
+                        this.setStrokeStylePerLine(edge, SegmentClass.StrokeSize / 2, SegmentClass.HiddenLineColor);
+                        
                     }
                     else
                     {
-                        this.setStrokeStylePerLine(SegmentClass.StrokeSize / 2, edge, SegmentClass.HiddenLineColor, GuideLineColor);
+                        this.setStrokeStylePerLine(edge, SegmentClass.StrokeSize, SegmentClass.StrokeColor);
                     }
                 }
             }
-            this.currSegmentClass.perturbStrokeColor();
         }// setHiddenLines
 
         int[] visibleTriangleVertices;
@@ -2352,7 +2493,7 @@ namespace SketchPlatform
                 if (!seg.active) continue;
                 foreach (GuideLine edge in seg.boundingbox.edges)
                 {
-                    this.setStrokeStylePerLine(SegmentClass.StrokeSize, edge, SegmentClass.StrokeColor, GuideLineColor);
+                    this.setStrokeStylePerLine(edge, SegmentClass.StrokeSize, SegmentClass.StrokeColor);
                 }
             }
         }//recoverHiddenlines
@@ -3061,6 +3202,7 @@ namespace SketchPlatform
             
             foreach (Segment seg in this.currSegmentClass.segments)
             {
+                if (!seg.active) continue;
                 if (this.showMesh)
                 {
                     if (this.drawFace)
@@ -3161,7 +3303,7 @@ namespace SketchPlatform
                 {
                     //this.drawGuideLineEndpoints(edge, Color.Gray, 2.0f);
                     if (!edge.active) continue;
-                    int nstrokes = edge.strokes.Count;
+                    int nstrokes = edge.strokes.Count;// rand.Next(1, edge.strokes.Count);                    
                     if (this.inGuideMode)
                     {
                         nstrokes = nstrokes > 2 ? 2 : nstrokes;
@@ -3408,10 +3550,19 @@ namespace SketchPlatform
                         }
                         this.drawTriMeshShaded3D(stroke, false, false);
                     }
-                    //if (line.isGuide)
-                    //{
-                    //    this.drawVanishingLines3d(line);
-                    //}
+                }
+                // draw red guide lines
+                foreach (GuideLine line in box.guideLines[g])
+                {
+                    if (!line.active || !line.isGuide) continue;
+                    foreach (Stroke stroke in line.strokes)
+                    {
+                        if (stroke.meshVertices3d == null || stroke.meshVertices3d.Count == 0)
+                        {
+                            this.drawLines3D(stroke.u3, stroke.v3, stroke.strokeColor, 2.0f);
+                        }
+                        this.drawTriMeshShaded3D(stroke, false, false);
+                    }
                 }
             }
             
@@ -4412,12 +4563,18 @@ namespace SketchPlatform
             //}
             //Gl.glEnd();
 
-            for (int i = 0; i < this.contourPoints.Count  - 2; i += 2)
+            for (int i = 0; i < this.contourPoints.Count - 2; i += 2)
             {
                 Vector3d p1 = this.contourPoints[i];
                 Vector3d p2 = this.contourPoints[i + 1];
-                this.drawLines3D(p1, p2, Color.Black, 3.0f);
+                this.drawLines3D(p1, p2, Color.Black, 10.0f);
             }
+            //for (int i = 0; i < this.contourPoints.Count - 1; ++i)
+            //{
+            //    Vector3d p1 = this.contourPoints[i];
+            //    Vector3d p2 = this.contourPoints[i + 1];
+            //    this.drawLines3D(p1, p2, Color.Blue, 10.0f);
+            //}
             Gl.glDisable(Gl.GL_DEPTH_TEST);
         }
         public void drawContourLine()

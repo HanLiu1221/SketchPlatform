@@ -449,6 +449,24 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
+        private void loadTriMeshToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Filter = "3D model (*.obj; *.off; *.ply)|*.obj; *.off; *.ply|All Files(*.*)|*.*";
+            dialog.CheckFileExists = true;
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                string filename = dialog.FileName;
+                // load mesh
+                this.glViewer.loadTriMesh(filename);
+                // set tab page
+                TabPage tp = new TabPage(Path.GetFileName(filename));
+                this.fileNameTabs.TabPages.Add(tp);
+                this.fileNameTabs.SelectedTab = tp;
+            }
+            this.glViewer.Refresh();
+        }
+
 
 	}
 }

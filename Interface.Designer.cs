@@ -68,6 +68,7 @@
             this.testTools = new System.Windows.Forms.ToolStripDropDownButton();
             this.exampleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.moveBoxToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
             this.statistics = new System.Windows.Forms.Label();
@@ -94,6 +95,7 @@
             this.glLabel = new System.Windows.Forms.Label();
             this.boxesLabel = new System.Windows.Forms.Label();
             this.adjustBox = new System.Windows.Forms.GroupBox();
+            this.enableHiddenCheck = new System.Windows.Forms.CheckBox();
             this.depthType = new System.Windows.Forms.ComboBox();
             this.depthLabel = new System.Windows.Forms.Label();
             this.guidelineType = new System.Windows.Forms.ComboBox();
@@ -106,9 +108,8 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.enableHiddenCheck = new System.Windows.Forms.CheckBox();
             this.glViewer = new SketchPlatform.GLViewer();
+            this.loadTriMeshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -147,7 +148,8 @@
             this.saveAs3D,
             this.loadSegmentsToolStripMenuItem,
             this.loadJSONFileToolStripMenuItem,
-            this.outputSeqToolStripMenuItem});
+            this.outputSeqToolStripMenuItem,
+            this.loadTriMeshToolStripMenuItem});
             this.ModelFile.Image = ((System.Drawing.Image)(resources.GetObject("ModelFile.Image")));
             this.ModelFile.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.ModelFile.Name = "ModelFile";
@@ -458,6 +460,13 @@
             this.moveBoxToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.moveBoxToolStripMenuItem.Text = "move box";
             this.moveBoxToolStripMenuItem.Click += new System.EventHandler(this.moveBoxToolStripMenuItem_Click);
+            // 
+            // showSpecificFacesToolStripMenuItem
+            // 
+            this.showSpecificFacesToolStripMenuItem.Name = "showSpecificFacesToolStripMenuItem";
+            this.showSpecificFacesToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
+            this.showSpecificFacesToolStripMenuItem.Text = "show specific faces";
+            this.showSpecificFacesToolStripMenuItem.Click += new System.EventHandler(this.showSpecificFacesToolStripMenuItem_Click);
             // 
             // viewPanel
             // 
@@ -782,6 +791,20 @@
             this.adjustBox.TabStop = false;
             this.adjustBox.Text = "Adjust";
             // 
+            // enableHiddenCheck
+            // 
+            this.enableHiddenCheck.AutoSize = true;
+            this.enableHiddenCheck.Checked = true;
+            this.enableHiddenCheck.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.enableHiddenCheck.Location = new System.Drawing.Point(5, 111);
+            this.enableHiddenCheck.Name = "enableHiddenCheck";
+            this.enableHiddenCheck.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.enableHiddenCheck.Size = new System.Drawing.Size(77, 17);
+            this.enableHiddenCheck.TabIndex = 12;
+            this.enableHiddenCheck.Text = "hidden line";
+            this.enableHiddenCheck.UseVisualStyleBackColor = true;
+            this.enableHiddenCheck.CheckedChanged += new System.EventHandler(this.enableHiddenCheck_CheckedChanged);
+            // 
             // depthType
             // 
             this.depthType.FormattingEnabled = true;
@@ -922,27 +945,6 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
-            // showSpecificFacesToolStripMenuItem
-            // 
-            this.showSpecificFacesToolStripMenuItem.Name = "showSpecificFacesToolStripMenuItem";
-            this.showSpecificFacesToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
-            this.showSpecificFacesToolStripMenuItem.Text = "show specific faces";
-            this.showSpecificFacesToolStripMenuItem.Click += new System.EventHandler(this.showSpecificFacesToolStripMenuItem_Click);
-            // 
-            // enableHiddenCheck
-            // 
-            this.enableHiddenCheck.AutoSize = true;
-            this.enableHiddenCheck.Checked = true;
-            this.enableHiddenCheck.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.enableHiddenCheck.Location = new System.Drawing.Point(5, 111);
-            this.enableHiddenCheck.Name = "enableHiddenCheck";
-            this.enableHiddenCheck.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.enableHiddenCheck.Size = new System.Drawing.Size(77, 17);
-            this.enableHiddenCheck.TabIndex = 12;
-            this.enableHiddenCheck.Text = "hidden line";
-            this.enableHiddenCheck.UseVisualStyleBackColor = true;
-            this.enableHiddenCheck.CheckedChanged += new System.EventHandler(this.enableHiddenCheck_CheckedChanged);
-            // 
             // glViewer
             // 
             this.glViewer.AccumBits = ((byte)(0));
@@ -962,6 +964,13 @@
             this.glViewer.Size = new System.Drawing.Size(611, 647);
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 3;
+            // 
+            // loadTriMeshToolStripMenuItem
+            // 
+            this.loadTriMeshToolStripMenuItem.Name = "loadTriMeshToolStripMenuItem";
+            this.loadTriMeshToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadTriMeshToolStripMenuItem.Text = "Load tri mesh";
+            this.loadTriMeshToolStripMenuItem.Click += new System.EventHandler(this.loadTriMeshToolStripMenuItem_Click);
             // 
             // Interface
             // 
@@ -1080,6 +1089,7 @@
         private System.Windows.Forms.CheckBox showContourPoint;
         private System.Windows.Forms.ToolStripMenuItem showSpecificFacesToolStripMenuItem;
         private System.Windows.Forms.CheckBox enableHiddenCheck;
+        private System.Windows.Forms.ToolStripMenuItem loadTriMeshToolStripMenuItem;
 
 	}
 }

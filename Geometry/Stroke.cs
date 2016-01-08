@@ -585,7 +585,7 @@ namespace Component
             }
             else
             {
-                this.nSketch = rand.Next(1, 4);
+                this.nSketch = rand.Next(1, 3);
             }
 
             for (int i = 0; i < this.nSketch; ++i)

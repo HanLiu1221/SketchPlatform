@@ -8,11 +8,12 @@ using System.Net;
 using System.Runtime.Serialization.Json;
 using System.Web.Script.Serialization;
 using System.Drawing;
+
 using TrimeshWrapper;
 
 namespace Component
 {
-    public class SegmentClass
+    public unsafe class SegmentClass
     {
         public List<Segment> segments;
         public enum GuideLineType
@@ -31,13 +32,14 @@ namespace Component
         public static int StrokeSize = 4;
         public static int GuideLineSize = 4;
         public static Color StrokeColor = Color.FromArgb(60, 60, 60);//(54, 69, 79);
-        public static Color VanLineColor = Color.LightGray;
+        public static Color VanLineColor = Color.FromArgb(200,200,200);
         public static Color HiddenColor = Color.LightGray;
         public static Color HighlightColor = Color.FromArgb(222, 45, 38);
         public static Color FaceColor = Color.FromArgb(253, 205, 172);
         public static Color AnimColor = Color.FromArgb(251, 128, 114);
         public static Color HiddenLineColor = Color.FromArgb(120, 120, 120);
-        public static Color HiddenGuideLinecolor = Color.FromArgb(158, 202, 225);
+        public static Color HiddenGuideLinecolor = Color.FromArgb(5, 112, 176);
+        public static Color HiddenHighlightcolor = Color.FromArgb(251, 106, 74);
         private string[] sequences;
         
 
@@ -153,7 +155,7 @@ namespace Component
                     }                    
                 }
             }
-            this.perturbStrokeColor();
+            //this.perturbStrokeColor();
         } // ChangeGuidelineStyle
 
         public void ChangeStrokeStyle(Matrix4d T, Camera camera)
@@ -179,7 +181,7 @@ namespace Component
                     }
                 }
             }
-            this.perturbStrokeColor();
+            //this.perturbStrokeColor();
         }// ChangeStrokeStyle
 
         public void perturbStrokeColor()
@@ -209,6 +211,27 @@ namespace Component
                 return true;
             }
         }//shadedOrTexture
+
+        static private void ArrayConvCtoSB(ref sbyte[] to_sbyte, char[] from_char)
+        {
+            for (int i = 0; i < from_char.Length; i++)
+            {
+                Array.Resize(ref to_sbyte, to_sbyte.Length + 1);
+                to_sbyte[i] = (sbyte)from_char[i];
+            }
+        }
+
+        //MyTriMesh2 triMesh;
+        //public void loadTriMesh(string filename)
+        //{
+        //    sbyte[] fn = new sbyte[0];
+        //    ArrayConvCtoSB(ref fn, filename.ToCharArray());
+
+        //    fixed (sbyte* meshName = fn)
+        //    {
+        //        triMesh = new MyTriMesh2(meshName);
+        //    }
+        //}
 
         public Matrix4d DeserializeJSON(string filename, out Vector3d center)
         {
@@ -335,10 +358,12 @@ namespace Component
                 // sequence
                 string boxIndexString = "box " + boxIndex.ToString();
                 string cur = boxIndexString + " ";
+                List<string> curGuides = new List<string>();
                 if (boxSequences[i].guide_sequence != null && boxSequences[i].guide_sequence.Count > 0)
                 {
                     cur += "guideGroup " + (box.guideLines.Count - 1).ToString();
                     cur += " guide ";
+                    string cur_backup = new string(cur.ToArray());
                     foreach (GuideSequenceJson seq in boxSequences[i].guide_sequence)
                     {
                         if (seq.guide_indexes != null)
@@ -350,7 +375,13 @@ namespace Component
                         }
                         int last = Int32.Parse(seq.guide_indexes[seq.guide_indexes.Count-1]);
                         box.guideLines[box.guideLines.Count - 1][last].isGuide = true;
+                        curGuides.Add(cur);
+                        cur = new string(cur_backup.ToArray());
                     }
+                }
+                if (curGuides.Count == 0)
+                {
+                    curGuides.Add(cur);
                 }
                 Plane faceToHighlight = null;
                 if (boxSequences[i].face_to_highlight != null)
@@ -364,7 +395,7 @@ namespace Component
                             double.Parse(boxSequences[i].face_to_highlight[k].z));
                     }
                     Plane face = new Plane(points);
-                    cur += " highlightFace " + box.facesToHighlight.Count.ToString();
+                    curGuides[0] += " highlightFace " + box.facesToHighlight.Count.ToString();
                     box.facesToHighlight.Add(face);
                     faceToHighlight = face;
                 }
@@ -379,11 +410,14 @@ namespace Component
                             double.Parse(boxSequences[i].face_to_draw[k].y),
                             double.Parse(boxSequences[i].face_to_draw[k].z));
                     }
-                    cur += " faceToDraw " + box.facesToDraw.Count.ToString();
+                    curGuides[0] += " faceToDraw " + box.facesToDraw.Count.ToString();
                     Plane face = new Plane(points);
                     box.facesToDraw.Add(face);
                 }
-                render_sequence.Add(cur);
+                foreach (string s in curGuides)
+                {
+                    render_sequence.Add(s);
+                }
 
                 if (faceToHighlight != null)
                 {

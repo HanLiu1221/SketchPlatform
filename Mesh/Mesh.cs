@@ -414,7 +414,7 @@ namespace Geometry
 				string line = sr.ReadLine();
                 line.Replace("  ", " ");
 				string[] array = line.Split(separator);
-                if (line[0] == '#' || line[0] == 'g') 
+                if (line == "" || line[0] == '#' || line[0] == 'g') 
                     continue;
                 //if (array.Length != 4)
                 //{
@@ -425,7 +425,7 @@ namespace Geometry
 				if(line[0] == 'v')
 				{
                     Vector3d v = new Vector3d();
-                    for (int i = 1; i < array.Length; ++i) 
+                    for (int i = 1; i < 4; ++i) 
                     {
                         if (array[i] == "") continue;
                         v[i - 1] = double.Parse(array[i]);

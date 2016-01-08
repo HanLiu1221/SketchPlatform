@@ -6,10 +6,14 @@ using System.Text;
 using Tao.OpenGl;
 using Geometry;
 
+using TrimeshWrapper;
+
 namespace SketchPlatform
 {
     public unsafe class MeshClass
     {
+        public MeshClass() { }
+
         public MeshClass(Mesh m)
         {
             this.mesh = m;
@@ -38,6 +42,71 @@ namespace SketchPlatform
         private List<int> selectedEdges = new List<int>();
         private List<int> selectedFaces = new List<int>();
         private bool unSelect = false;
+
+        static private void ArrayConvCtoSB(ref sbyte[] to_sbyte, char[] from_char)
+        {
+            for (int i = 0; i < from_char.Length; i++)
+            {
+                Array.Resize(ref to_sbyte, to_sbyte.Length + 1);
+                to_sbyte[i] = (sbyte)from_char[i];
+            }
+        }
+
+        MyTriMesh2 triMesh;
+      
+        public List<Vector3d> loadTriMesh(string filename, Vector3d eye)
+        {
+            this.mesh = new Mesh(filename, false);
+            sbyte[] fn = new sbyte[0];
+            ArrayConvCtoSB(ref fn, filename.ToCharArray());
+            List<Vector3d> contourPoints = new List<Vector3d>();
+            fixed (sbyte* meshName = fn)
+            {
+                triMesh = new MyTriMesh2(meshName);
+                double[] pos = eye.ToArray();
+                double[] contour = new double[25000];
+                int npoints = triMesh.vertextCount();
+                fixed (double* eyepos = pos)
+                fixed (double* output = contour)
+                {
+                    int nps = triMesh.get_contour(eyepos, 0, output);
+                    for (int i = 0; i < nps; i+=3)
+                    {
+                        Vector3d v = new Vector3d(contour[i], contour[i + 1], contour[i + 2]);
+                        contourPoints.Add(v);
+                    }
+                }
+                double[] curvature = new double[npoints*3];
+                fixed (double* curv1 = curvature)
+                {
+                    triMesh.getCurvature1(curv1);
+                }
+            }
+            return contourPoints;
+        }
+
+        public List<Vector3d> computeContour(double[] verts, Vector3d eye)
+        {
+            List<Vector3d> contourPoints = new List<Vector3d>();
+            double[] pos = eye.ToArray();
+            double[] contour = new double[25000];
+            int npoints = triMesh.vertextCount();
+            fixed (double* verts_ = verts)
+            {
+                triMesh.set_transformed_Vertices(verts_);
+            }
+            fixed (double* eyepos = pos)
+            fixed (double* output = contour)
+            {
+                int nps = triMesh.get_contour(eyepos, 0, output);
+                for (int i = 0; i < nps; i += 3)
+                {
+                    Vector3d v = new Vector3d(contour[i], contour[i + 1], contour[i + 2]);
+                    contourPoints.Add(v);
+                }
+            }
+            return contourPoints;
+        }
         
         public Vector3d projectToScreen(Vector3d v)
         {
