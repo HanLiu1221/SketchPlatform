@@ -9,7 +9,6 @@ using System.Runtime.Serialization.Json;
 using System.Web.Script.Serialization;
 using System.Drawing;
 
-using TrimeshWrapper;
 
 namespace Component
 {
@@ -212,27 +211,6 @@ namespace Component
             }
         }//shadedOrTexture
 
-        static private void ArrayConvCtoSB(ref sbyte[] to_sbyte, char[] from_char)
-        {
-            for (int i = 0; i < from_char.Length; i++)
-            {
-                Array.Resize(ref to_sbyte, to_sbyte.Length + 1);
-                to_sbyte[i] = (sbyte)from_char[i];
-            }
-        }
-
-        //MyTriMesh2 triMesh;
-        //public void loadTriMesh(string filename)
-        //{
-        //    sbyte[] fn = new sbyte[0];
-        //    ArrayConvCtoSB(ref fn, filename.ToCharArray());
-
-        //    fixed (sbyte* meshName = fn)
-        //    {
-        //        triMesh = new MyTriMesh2(meshName);
-        //    }
-        //}
-
         public Matrix4d DeserializeJSON(string filename, out Vector3d center)
         {
             StreamReader sr = new StreamReader(filename);
@@ -272,6 +250,7 @@ namespace Component
             {
                 Vector3d[] bbox = null;
                 Mesh mesh = null;
+                string meshfileName = "";
                 if (boxSequences[i].box != null)
                 {
                     string file = path + boxSequences[i].box;
@@ -281,29 +260,38 @@ namespace Component
                 {
                     string file = path + boxSequences[i].segment;
                     mesh = new Mesh(file, false);
+                    meshfileName  = file;
                 }
                 if (bbox == null && mesh == null)
                 {
                     continue;
                 }
                 int boxIndex = boxNames.IndexOf(boxSequences[i].box);
-                Box box;
-                Segment seg;
+                
+                Segment seg = null;
                 if (boxIndex == -1)
                 {
                     boxIndex = this.segments.Count;
                     boxNames.Add(boxSequences[i].box);
-                    box = new Box(bbox);
-                    seg = new Segment(mesh, box);
-                    seg.idx = idx++;
-                    this.segments.Add(seg);
+                    Box newBox = new Box(bbox);
+                    Segment newSeg = new Segment(mesh, newBox);
+                    if (meshfileName != "")
+                    {
+                        newSeg.loadTrieMesh(meshfileName);
+                    }
+                    newSeg.idx = idx++;
+                    this.segments.Add(newSeg);
+                    foreach (Segment tests in this.segments)
+                    {
+                        int nv = tests.getTriMeshVertexCount();
+                    }
+                    seg = newSeg;
                 }
                 else
                 {
                     seg = this.segments[boxIndex];
-                    box = seg.boundingbox;
-
-                }                
+                }
+                Box box = seg.boundingbox;
                 
                 // guides
                 if (boxSequences[i].guides != null)

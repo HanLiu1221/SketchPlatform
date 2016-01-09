@@ -37,6 +37,7 @@
             this.loadSegmentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadJSONFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.outputSeqToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadTriMeshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tools = new System.Windows.Forms.ToolStripDropDownButton();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -71,12 +72,15 @@
             this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
+            this.glViewer = new SketchPlatform.GLViewer();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.contourLabel = new System.Windows.Forms.GroupBox();
-            this.showContourPoint = new System.Windows.Forms.CheckBox();
+            this.showSegApparentRidge = new System.Windows.Forms.CheckBox();
+            this.showSegSuggestiveContour = new System.Windows.Forms.CheckBox();
+            this.showSegSilhouette = new System.Windows.Forms.CheckBox();
+            this.showSegContour = new System.Windows.Forms.CheckBox();
             this.sharpEdge = new System.Windows.Forms.CheckBox();
-            this.contour = new System.Windows.Forms.CheckBox();
             this.vanishingBox = new System.Windows.Forms.GroupBox();
             this.showFaceToDraw = new System.Windows.Forms.CheckBox();
             this.showGuideLineVanlines = new System.Windows.Forms.CheckBox();
@@ -95,6 +99,8 @@
             this.glLabel = new System.Windows.Forms.Label();
             this.boxesLabel = new System.Windows.Forms.Label();
             this.adjustBox = new System.Windows.Forms.GroupBox();
+            this.sketchyDegreeTrackBar = new System.Windows.Forms.TrackBar();
+            this.sketcyLable = new System.Windows.Forms.Label();
             this.enableHiddenCheck = new System.Windows.Forms.CheckBox();
             this.depthType = new System.Windows.Forms.ComboBox();
             this.depthLabel = new System.Windows.Forms.Label();
@@ -108,8 +114,6 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.glViewer = new SketchPlatform.GLViewer();
-            this.loadTriMeshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -120,6 +124,7 @@
             this.vanishingBox.SuspendLayout();
             this.guideLineBox.SuspendLayout();
             this.adjustBox.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.sketchyDegreeTrackBar)).BeginInit();
             this.displayBox.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -136,7 +141,7 @@
             this.testTools});
             this.menu.Location = new System.Drawing.Point(0, 0);
             this.menu.Name = "menu";
-            this.menu.Size = new System.Drawing.Size(784, 39);
+            this.menu.Size = new System.Drawing.Size(866, 39);
             this.menu.TabIndex = 0;
             this.menu.Text = "toolStrip1";
             // 
@@ -197,6 +202,13 @@
             this.outputSeqToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.outputSeqToolStripMenuItem.Text = "Output Box seq";
             this.outputSeqToolStripMenuItem.Click += new System.EventHandler(this.outputSeqToolStripMenuItem_Click);
+            // 
+            // loadTriMeshToolStripMenuItem
+            // 
+            this.loadTriMeshToolStripMenuItem.Name = "loadTriMeshToolStripMenuItem";
+            this.loadTriMeshToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadTriMeshToolStripMenuItem.Text = "Load tri mesh";
+            this.loadTriMeshToolStripMenuItem.Click += new System.EventHandler(this.loadTriMeshToolStripMenuItem_Click);
             // 
             // tools
             // 
@@ -484,8 +496,8 @@
             this.viewPanel.Panel2.Controls.Add(this.glViewer);
             this.viewPanel.Panel2.Controls.Add(this.statistics);
             this.viewPanel.Panel2.Controls.Add(this.toolboxPanel);
-            this.viewPanel.Size = new System.Drawing.Size(784, 692);
-            this.viewPanel.SplitterDistance = 35;
+            this.viewPanel.Size = new System.Drawing.Size(866, 715);
+            this.viewPanel.SplitterDistance = 36;
             this.viewPanel.TabIndex = 1;
             // 
             // fileNameTabs
@@ -495,8 +507,28 @@
             this.fileNameTabs.Location = new System.Drawing.Point(3, 0);
             this.fileNameTabs.Name = "fileNameTabs";
             this.fileNameTabs.SelectedIndex = 0;
-            this.fileNameTabs.Size = new System.Drawing.Size(778, 35);
+            this.fileNameTabs.Size = new System.Drawing.Size(860, 35);
             this.fileNameTabs.TabIndex = 0;
+            // 
+            // glViewer
+            // 
+            this.glViewer.AccumBits = ((byte)(0));
+            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.glViewer.AutoCheckErrors = false;
+            this.glViewer.AutoFinish = false;
+            this.glViewer.AutoMakeCurrent = true;
+            this.glViewer.AutoSwapBuffers = true;
+            this.glViewer.BackColor = System.Drawing.Color.Black;
+            this.glViewer.ColorBits = ((byte)(32));
+            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
+            this.glViewer.DepthBits = ((byte)(16));
+            this.glViewer.Location = new System.Drawing.Point(170, 3);
+            this.glViewer.Name = "glViewer";
+            this.glViewer.Size = new System.Drawing.Size(693, 669);
+            this.glViewer.StencilBits = ((byte)(0));
+            this.glViewer.TabIndex = 3;
             // 
             // statistics
             // 
@@ -518,37 +550,75 @@
             this.toolboxPanel.Controls.Add(this.displayBox);
             this.toolboxPanel.Location = new System.Drawing.Point(3, 3);
             this.toolboxPanel.Name = "toolboxPanel";
-            this.toolboxPanel.Size = new System.Drawing.Size(165, 647);
+            this.toolboxPanel.Size = new System.Drawing.Size(165, 669);
             this.toolboxPanel.TabIndex = 2;
             // 
             // contourLabel
             // 
-            this.contourLabel.Controls.Add(this.showContourPoint);
+            this.contourLabel.Controls.Add(this.showSegApparentRidge);
+            this.contourLabel.Controls.Add(this.showSegSuggestiveContour);
+            this.contourLabel.Controls.Add(this.showSegSilhouette);
+            this.contourLabel.Controls.Add(this.showSegContour);
             this.contourLabel.Controls.Add(this.sharpEdge);
-            this.contourLabel.Controls.Add(this.contour);
-            this.contourLabel.Location = new System.Drawing.Point(3, 542);
+            this.contourLabel.Location = new System.Drawing.Point(3, 556);
             this.contourLabel.Name = "contourLabel";
-            this.contourLabel.Size = new System.Drawing.Size(156, 89);
+            this.contourLabel.Size = new System.Drawing.Size(156, 108);
             this.contourLabel.TabIndex = 40;
             this.contourLabel.TabStop = false;
             this.contourLabel.Text = "Contour";
             // 
-            // showContourPoint
+            // showSegApparentRidge
             // 
-            this.showContourPoint.AutoSize = true;
-            this.showContourPoint.Location = new System.Drawing.Point(6, 65);
-            this.showContourPoint.Name = "showContourPoint";
-            this.showContourPoint.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.showContourPoint.Size = new System.Drawing.Size(88, 17);
-            this.showContourPoint.TabIndex = 14;
-            this.showContourPoint.Text = "contour point";
-            this.showContourPoint.UseVisualStyleBackColor = true;
-            this.showContourPoint.CheckedChanged += new System.EventHandler(this.showContourPoint_CheckedChanged);
+            this.showSegApparentRidge.AutoSize = true;
+            this.showSegApparentRidge.Location = new System.Drawing.Point(5, 65);
+            this.showSegApparentRidge.Name = "showSegApparentRidge";
+            this.showSegApparentRidge.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showSegApparentRidge.Size = new System.Drawing.Size(94, 17);
+            this.showSegApparentRidge.TabIndex = 18;
+            this.showSegApparentRidge.Text = "apparent ridge";
+            this.showSegApparentRidge.UseVisualStyleBackColor = true;
+            this.showSegApparentRidge.CheckedChanged += new System.EventHandler(this.showSegApparentRidge_CheckedChanged);
+            // 
+            // showSegSuggestiveContour
+            // 
+            this.showSegSuggestiveContour.AutoSize = true;
+            this.showSegSuggestiveContour.Location = new System.Drawing.Point(5, 42);
+            this.showSegSuggestiveContour.Name = "showSegSuggestiveContour";
+            this.showSegSuggestiveContour.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showSegSuggestiveContour.Size = new System.Drawing.Size(116, 17);
+            this.showSegSuggestiveContour.TabIndex = 17;
+            this.showSegSuggestiveContour.Text = "suggestive contour";
+            this.showSegSuggestiveContour.UseVisualStyleBackColor = true;
+            this.showSegSuggestiveContour.CheckedChanged += new System.EventHandler(this.showSegSuggestiveContour_CheckedChanged);
+            // 
+            // showSegSilhouette
+            // 
+            this.showSegSilhouette.AutoSize = true;
+            this.showSegSilhouette.Location = new System.Drawing.Point(79, 19);
+            this.showSegSilhouette.Name = "showSegSilhouette";
+            this.showSegSilhouette.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showSegSilhouette.Size = new System.Drawing.Size(71, 17);
+            this.showSegSilhouette.TabIndex = 16;
+            this.showSegSilhouette.Text = "silhouette";
+            this.showSegSilhouette.UseVisualStyleBackColor = true;
+            this.showSegSilhouette.CheckedChanged += new System.EventHandler(this.showSegSilhouette_CheckedChanged);
+            // 
+            // showSegContour
+            // 
+            this.showSegContour.AutoSize = true;
+            this.showSegContour.Location = new System.Drawing.Point(5, 19);
+            this.showSegContour.Name = "showSegContour";
+            this.showSegContour.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showSegContour.Size = new System.Drawing.Size(62, 17);
+            this.showSegContour.TabIndex = 15;
+            this.showSegContour.Text = "contour";
+            this.showSegContour.UseVisualStyleBackColor = true;
+            this.showSegContour.CheckedChanged += new System.EventHandler(this.showSegContour_CheckedChanged);
             // 
             // sharpEdge
             // 
             this.sharpEdge.AutoSize = true;
-            this.sharpEdge.Location = new System.Drawing.Point(5, 42);
+            this.sharpEdge.Location = new System.Drawing.Point(4, 88);
             this.sharpEdge.Name = "sharpEdge";
             this.sharpEdge.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.sharpEdge.Size = new System.Drawing.Size(79, 17);
@@ -556,18 +626,6 @@
             this.sharpEdge.Text = "sharp edge";
             this.sharpEdge.UseVisualStyleBackColor = true;
             this.sharpEdge.CheckedChanged += new System.EventHandler(this.sharpEdge_CheckedChanged);
-            // 
-            // contour
-            // 
-            this.contour.AutoSize = true;
-            this.contour.Location = new System.Drawing.Point(4, 19);
-            this.contour.Name = "contour";
-            this.contour.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.contour.Size = new System.Drawing.Size(62, 17);
-            this.contour.TabIndex = 12;
-            this.contour.Text = "contour";
-            this.contour.UseVisualStyleBackColor = true;
-            this.contour.CheckedChanged += new System.EventHandler(this.contour_CheckedChanged);
             // 
             // vanishingBox
             // 
@@ -578,7 +636,7 @@
             this.vanishingBox.Controls.Add(this.vanishingPoint1);
             this.vanishingBox.Controls.Add(this.vanishingLineType);
             this.vanishingBox.Controls.Add(this.vlLabel);
-            this.vanishingBox.Location = new System.Drawing.Point(3, 395);
+            this.vanishingBox.Location = new System.Drawing.Point(3, 409);
             this.vanishingBox.Name = "vanishingBox";
             this.vanishingBox.Size = new System.Drawing.Size(156, 141);
             this.vanishingBox.TabIndex = 39;
@@ -687,7 +745,7 @@
             this.guideLineBox.Controls.Add(this.prevBoxButton);
             this.guideLineBox.Controls.Add(this.glLabel);
             this.guideLineBox.Controls.Add(this.boxesLabel);
-            this.guideLineBox.Location = new System.Drawing.Point(3, 264);
+            this.guideLineBox.Location = new System.Drawing.Point(4, 290);
             this.guideLineBox.Name = "guideLineBox";
             this.guideLineBox.Size = new System.Drawing.Size(156, 113);
             this.guideLineBox.TabIndex = 4;
@@ -777,6 +835,8 @@
             // 
             // adjustBox
             // 
+            this.adjustBox.Controls.Add(this.sketchyDegreeTrackBar);
+            this.adjustBox.Controls.Add(this.sketcyLable);
             this.adjustBox.Controls.Add(this.enableHiddenCheck);
             this.adjustBox.Controls.Add(this.depthType);
             this.adjustBox.Controls.Add(this.depthLabel);
@@ -786,17 +846,37 @@
             this.adjustBox.Controls.Add(this.strokeSizeBox);
             this.adjustBox.Location = new System.Drawing.Point(3, 124);
             this.adjustBox.Name = "adjustBox";
-            this.adjustBox.Size = new System.Drawing.Size(156, 134);
+            this.adjustBox.Size = new System.Drawing.Size(156, 160);
             this.adjustBox.TabIndex = 3;
             this.adjustBox.TabStop = false;
             this.adjustBox.Text = "Adjust";
+            // 
+            // sketchyDegreeTrackBar
+            // 
+            this.sketchyDegreeTrackBar.Location = new System.Drawing.Point(46, 130);
+            this.sketchyDegreeTrackBar.Name = "sketchyDegreeTrackBar";
+            this.sketchyDegreeTrackBar.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.sketchyDegreeTrackBar.Size = new System.Drawing.Size(94, 45);
+            this.sketchyDegreeTrackBar.TabIndex = 14;
+            this.sketchyDegreeTrackBar.Value = 5;
+            this.sketchyDegreeTrackBar.Scroll += new System.EventHandler(this.sketchyDegreeTrackBar_Scroll);
+            // 
+            // sketcyLable
+            // 
+            this.sketcyLable.AutoSize = true;
+            this.sketcyLable.Location = new System.Drawing.Point(3, 134);
+            this.sketcyLable.Name = "sketcyLable";
+            this.sketcyLable.Size = new System.Drawing.Size(44, 13);
+            this.sketcyLable.TabIndex = 13;
+            this.sketcyLable.Text = "sketchy";
+            this.sketcyLable.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // enableHiddenCheck
             // 
             this.enableHiddenCheck.AutoSize = true;
             this.enableHiddenCheck.Checked = true;
             this.enableHiddenCheck.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.enableHiddenCheck.Location = new System.Drawing.Point(5, 111);
+            this.enableHiddenCheck.Location = new System.Drawing.Point(1, 112);
             this.enableHiddenCheck.Name = "enableHiddenCheck";
             this.enableHiddenCheck.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.enableHiddenCheck.Size = new System.Drawing.Size(77, 17);
@@ -945,39 +1025,12 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
-            // glViewer
-            // 
-            this.glViewer.AccumBits = ((byte)(0));
-            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.glViewer.AutoCheckErrors = false;
-            this.glViewer.AutoFinish = false;
-            this.glViewer.AutoMakeCurrent = true;
-            this.glViewer.AutoSwapBuffers = true;
-            this.glViewer.BackColor = System.Drawing.Color.Black;
-            this.glViewer.ColorBits = ((byte)(32));
-            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
-            this.glViewer.DepthBits = ((byte)(16));
-            this.glViewer.Location = new System.Drawing.Point(170, 3);
-            this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(611, 647);
-            this.glViewer.StencilBits = ((byte)(0));
-            this.glViewer.TabIndex = 3;
-            // 
-            // loadTriMeshToolStripMenuItem
-            // 
-            this.loadTriMeshToolStripMenuItem.Name = "loadTriMeshToolStripMenuItem";
-            this.loadTriMeshToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.loadTriMeshToolStripMenuItem.Text = "Load tri mesh";
-            this.loadTriMeshToolStripMenuItem.Click += new System.EventHandler(this.loadTriMeshToolStripMenuItem_Click);
-            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.WhiteSmoke;
-            this.ClientSize = new System.Drawing.Size(784, 731);
+            this.ClientSize = new System.Drawing.Size(866, 754);
             this.Controls.Add(this.viewPanel);
             this.Controls.Add(this.menu);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -999,6 +1052,7 @@
             this.guideLineBox.PerformLayout();
             this.adjustBox.ResumeLayout(false);
             this.adjustBox.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.sketchyDegreeTrackBar)).EndInit();
             this.displayBox.ResumeLayout(false);
             this.displayBox.PerformLayout();
             this.ResumeLayout(false);
@@ -1085,11 +1139,15 @@
         private System.Windows.Forms.ToolStripMenuItem moveBoxToolStripMenuItem;
         private System.Windows.Forms.GroupBox contourLabel;
         private System.Windows.Forms.CheckBox sharpEdge;
-        private System.Windows.Forms.CheckBox contour;
-        private System.Windows.Forms.CheckBox showContourPoint;
         private System.Windows.Forms.ToolStripMenuItem showSpecificFacesToolStripMenuItem;
         private System.Windows.Forms.CheckBox enableHiddenCheck;
         private System.Windows.Forms.ToolStripMenuItem loadTriMeshToolStripMenuItem;
+        private System.Windows.Forms.CheckBox showSegSilhouette;
+        private System.Windows.Forms.CheckBox showSegContour;
+        private System.Windows.Forms.CheckBox showSegSuggestiveContour;
+        private System.Windows.Forms.CheckBox showSegApparentRidge;
+        private System.Windows.Forms.TrackBar sketchyDegreeTrackBar;
+        private System.Windows.Forms.Label sketcyLable;
 
 	}
 }

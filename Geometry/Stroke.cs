@@ -89,7 +89,7 @@ namespace Component
         }// setStrokeMeshPoints
 
 
-        public void setStrokeMeshPoints(Vector2d normal)
+        public void setStrokeMeshPoints2D(Vector2d normal)
         {
             this.meshVertices2d = new List<Vector2d>();
             double radius = this.size2 / 2;
@@ -522,6 +522,7 @@ namespace Component
         public bool isGuide = false;
         public Line3d[][] vanLines;
         public bool makeVisible = false;
+        public double strokeGap = 0.1;
 
         public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool isBoxEdge)
         {
@@ -576,8 +577,8 @@ namespace Component
             //    return;
             //}
             this.strokes = new List<Stroke>();
-            double gap = 0.08;
-            double len = gap * (v - u).Length();
+
+            double len = strokeGap * (v - u).Length();
             Vector3d lineDir = (v - u).normalize();
             if (!this.isBoxEdge)
             {
@@ -605,7 +606,7 @@ namespace Component
                     Vector3d step = this.getRandomDoubleInRange(rand, -len / 4, len / 4) * normal;
                     if (!this.isBoxEdge)
                     {
-                        dis = this.getRandomDoubleInRange(rand, 0, 0.05);
+                        dis = this.getRandomDoubleInRange(rand, 0, len/2);
                         step = new Vector3d();
                     }
                     if (j == 0)
@@ -636,8 +637,7 @@ namespace Component
             //    return;
             //}
             this.strokes = new List<Stroke>();
-            double gap = 0.2;
-            double len = gap *(v - u).Length();
+            double len = strokeGap *(v - u).Length();
             if (!this.isBoxEdge)
             {
                 len /= 2;

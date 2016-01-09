@@ -52,11 +52,10 @@ namespace SketchPlatform
             }
         }
 
-        MyTriMesh2 triMesh;
-      
+        MyTriMesh2 triMesh;      
         public List<Vector3d> loadTriMesh(string filename, Vector3d eye)
         {
-            this.mesh = new Mesh(filename, false);
+            this.mesh = new Mesh(filename, true);
             sbyte[] fn = new sbyte[0];
             ArrayConvCtoSB(ref fn, filename.ToCharArray());
             List<Vector3d> contourPoints = new List<Vector3d>();
@@ -85,20 +84,38 @@ namespace SketchPlatform
             return contourPoints;
         }
 
-        public List<Vector3d> computeContour(double[] verts, Vector3d eye)
+        public List<Vector3d> computeContour(double[] verts, Vector3d eye, int tag)
         {
             List<Vector3d> contourPoints = new List<Vector3d>();
-            double[] pos = eye.ToArray();
-            double[] contour = new double[25000];
+            double[] eyepos = eye.ToArray();
+            double[] contour = new double[30000];
+            if (tag == 3)
+                contour = new double[50000];
             int npoints = triMesh.vertextCount();
             fixed (double* verts_ = verts)
             {
                 triMesh.set_transformed_Vertices(verts_);
             }
-            fixed (double* eyepos = pos)
-            fixed (double* output = contour)
+            fixed (double* eyepos_ = eyepos)
+            fixed (double* contour_ = contour)
             {
-                int nps = triMesh.get_contour(eyepos, 0, output);
+                int nps = 0;
+                switch (tag)
+                {
+                    case 1:
+                        nps = triMesh.get_silhouette(eyepos_, 0, contour_);
+                        break;
+                    case 3:
+                        nps = triMesh.get_suggestive_contour(eyepos_, 0, contour_);
+                        break;
+                    case 4:
+                        nps = triMesh.get_apparent_ridges(eyepos_, 0, contour_);
+                        break;
+                    case 2:
+                        nps = triMesh.get_contour(eyepos_, 0, contour_);
+                        break;
+                }
+                
                 for (int i = 0; i < nps; i += 3)
                 {
                     Vector3d v = new Vector3d(contour[i], contour[i + 1], contour[i + 2]);

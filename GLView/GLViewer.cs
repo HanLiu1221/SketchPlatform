@@ -132,10 +132,13 @@ namespace SketchPlatform
         public bool lockView = false;
         public bool showFaceToDraw = true;
 
-        public bool showContourLine = false;
         public bool showSharpEdge = false;
-        public bool showContourPoint = false;
         public bool enableHiddencheck = true;
+
+        public bool showSegSilhouette = false;
+        public bool showSegContour = false;
+        public bool showSegSuggestiveContour = false;
+        public bool showSegApparentRidge = false;
 
         private bool inGuideMode = false;
         Vector3d eye = new Vector3d(0, 0, 1);
@@ -343,7 +346,7 @@ namespace SketchPlatform
             this.setRandomSegmentColor(sc);
             this.segmentClasses.Add(sc);
             this.currSegmentClass = sc;
-            this.calculateSketchMesh();
+            this.calculateSketchMesh2d();
             segStats = new int[2];
             segStats[0] = sc.segments.Count;
         }// loadSegments
@@ -375,7 +378,7 @@ namespace SketchPlatform
             this.setRandomSegmentColor(sc);
             this.currSegmentClass = sc;
             this.setGuideLineStyle((int)SegmentClass.GuideLineStyle);
-            this.calculateSketchMesh();
+            this.calculateSketchMesh2d();
 
             segStats = new int[2];
             segStats[0] = sc.segments.Count;
@@ -690,6 +693,7 @@ namespace SketchPlatform
             }
         }
 
+        private double sketchyRate = 0.1;
         public void setStrokeStylePerSeg(int size)
         {
             SegmentClass.StrokeSize = size;
@@ -763,6 +767,22 @@ namespace SketchPlatform
             }
         }// setGuideLineColor
 
+        public void setStrokeSketchyRate(double rate)
+        {
+            if (this.currSegmentClass == null) return;
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                Box box = seg.boundingbox;
+                foreach (GuideLine edge in box.edges)
+                {
+                    edge.strokeGap = rate;
+                }
+            }
+            this.currSegmentClass.ChangeGuidelineStyle((int)SegmentClass.GuideLineStyle);
+            this.calculateSketchMesh2d();
+            this.setHiddenLines();
+        }// setStrokeSketchyRate
+
         public void setSektchyEdgesColor(Color c)
         {
             foreach (Segment seg in this.currSegmentClass.segments)
@@ -792,7 +812,7 @@ namespace SketchPlatform
             if (this.currSegmentClass != null)
             {
                 this.currSegmentClass.ChangeGuidelineStyle(idx);
-                this.calculateSketchMesh();
+                this.calculateSketchMesh2d();
                 this.setGuideLineColor(GLViewer.GuideLineColor);
             }
             this.updateDepthVal();
@@ -1368,7 +1388,7 @@ namespace SketchPlatform
             }
         }
 
-        public void calculateSketchMesh()
+        public void calculateSketchMesh2d()
         {
             this.updateCamera();
             foreach (Segment seg in this.currSegmentClass.segments)
@@ -1386,8 +1406,7 @@ namespace SketchPlatform
                         Vector2d normal = new Vector2d(-dir.y, dir.x);
                         normal.normalize();
                         this.projectStrokePointsTo2d(stroke);
-                        stroke.setStrokeMeshPoints(normal);
-                        stroke.hostPlane = edge.hostPlane;                        
+                        stroke.hostPlane = edge.hostPlane;
                     }
                 }
             }
@@ -1397,7 +1416,7 @@ namespace SketchPlatform
             //m = this.modelTransformMatrix;
             this.currSegmentClass.ChangeStrokeStyle(this.modelTransformMatrix, camera);
 
-        }// calculateSketchMesh
+        }// calculateSketchMesh2d
 
         private void updateStrokeMesh()
         {
@@ -1494,8 +1513,46 @@ namespace SketchPlatform
 
         public void computeContours()
         {
+            if (this.currSegmentClass != null)
+            {
+                if (!this.isShowContour()) return;
+                Matrix4d T = this.currModelTransformMatrix;
+                Matrix4d Tv = T.Inverse();
+                foreach (Segment seg in this.currSegmentClass.segments)
+                {
+
+                        foreach (GuideLine line in seg.boundingbox.edges)
+                        {
+                            foreach (Stroke stroke in line.strokes)
+                            {
+                                stroke.strokeColor = SegmentClass.HiddenColor;
+                            }
+                        }
+                    
+                    if (!seg.active) continue;
+                    seg.updateVertex(T);
+                    if(this.showSegSilhouette)
+                    {
+                        seg.computeSihouette(Tv, this.eye);
+                    }
+                    if (this.showSegContour)
+                    {
+                        seg.computeContour(Tv, this.eye);
+                    }
+                    if (this.showSegSuggestiveContour)
+                    {
+                        seg.computeSuggestiveContour(Tv, this.eye);
+                    }
+                    if (this.showSegApparentRidge)
+                    {
+                        seg.computeApparentRidge(Tv, this.eye);
+                    }
+                }
+            }
             if (this.currMeshClass != null)
             {
+                if (!this.isShowContour()) return;
+                
                 Mesh mesh = this.currMeshClass.Mesh;
                 double[] vertexPos = new double[mesh.VertexPos.Length];
                 List<int> vidxs = new List<int>();
@@ -1509,15 +1566,56 @@ namespace SketchPlatform
                     vertexPos[j + 1] = v1.y;
                     vertexPos[j + 2] = v1.z;
                 }
-                this.contourPoints = this.currMeshClass.computeContour(vertexPos, this.eye);
-                for (int i = 0; i < this.contourPoints.Count; ++i )
+                this.silhouettePoints.Clear();
+                this.contourPoints.Clear();
+                this.suggestiveContourPoints.Clear();
+                this.apparentRidgePoints.Clear();
+                if (this.showSegSilhouette)
                 {
-                    Vector3d v = this.contourPoints[i];
-                    Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
-                    this.contourPoints[i] = vt;
+                    this.silhouettePoints = this.currMeshClass.computeContour(vertexPos, this.eye, 1);
+                    for (int i = 0; i < this.silhouettePoints.Count; ++i)
+                    {
+                        Vector3d v = this.silhouettePoints[i];
+                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+                        this.silhouettePoints[i] = vt;
+                    }
                 }
+                if (this.showSegContour)
+                {
+                    this.contourPoints = this.currMeshClass.computeContour(vertexPos, this.eye, 2);
+                    for (int i = 0; i < this.contourPoints.Count; ++i)
+                    {
+                        Vector3d v = this.contourPoints[i];
+                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+                        this.contourPoints[i] = vt;
+                    }
+                }
+                if (this.showSegSuggestiveContour)
+                {
+                    this.suggestiveContourPoints = this.currMeshClass.computeContour(vertexPos, this.eye, 3);
+                    for (int i = 0; i < this.suggestiveContourPoints.Count; ++i)
+                    {
+                        Vector3d v = this.suggestiveContourPoints[i];
+                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+                        this.suggestiveContourPoints[i] = vt;
+                    }
+                }
+                if (this.showSegApparentRidge)
+                {
+                    this.apparentRidgePoints = this.currMeshClass.computeContour(vertexPos, this.eye, 4);
+                    for (int i = 0; i < this.apparentRidgePoints.Count; ++i)
+                    {
+                        Vector3d v = this.apparentRidgePoints[i];
+                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+                        this.apparentRidgePoints[i] = vt;
+                    }
+                }
+              
             }
             return;
+
+            #region
+            //// my implementation
             if (this.currSegmentClass == null && this.meshClasses == null) return;
             this.contourPoints = new List<Vector3d>();
             this.sharpEdges = new List<Vector3d>();
@@ -1537,9 +1635,13 @@ namespace SketchPlatform
             {
                 this.drawEdge = false;
             }
+            #endregion
         }//computeContours
 
-        private List<Vector3d> contourPoints;
+        private List<Vector3d> contourPoints = new List<Vector3d>(), 
+            silhouettePoints = new List<Vector3d>(), 
+            apparentRidgePoints = new List<Vector3d>(),
+            suggestiveContourPoints = new List<Vector3d>();
         private List<Vector3d> sharpEdges;
         private List<List<Vector3d>> contourLines;
 
@@ -2096,6 +2198,7 @@ namespace SketchPlatform
                     }
                 }
             }
+            //this.Refresh();
         }// setHiddenLines
 
         int[] visibleTriangleVertices;
@@ -3100,7 +3203,6 @@ namespace SketchPlatform
 
             // for visibility rendering, the order is computed from
             // setHiddenLines()
-            
 
             Gl.glEnable(Gl.GL_POLYGON_OFFSET_FILL);
 
@@ -3113,7 +3215,7 @@ namespace SketchPlatform
                 if (this.drawFace)
                 {
                     //this.currMeshClass.renderShaded();
-                    if (this.showContourPoint && this.contourPoints != null && this.contourPoints.Count > 0)
+                    if (this.isShowContour())
                     {
                         this.drawMeshFace(this.currMeshClass.Mesh, Color.White, false);
                     }
@@ -3148,39 +3250,16 @@ namespace SketchPlatform
             }
             this.drawAllActiveBoxes();
 
-            if (this.showContourLine)
-            {
-                this.drawContourLine();
-            }
-            if (this.showContourPoint)
-            {
-                this.drawContourPoints();
-            }
-            if (this.showSharpEdge)
-            {
-                this.drawSharpEdges();
-            }
+            this.drawContours();
+            
 
             this.DrawHighlight3D();
-
-            //if (this.vanishingPoints != null)
-            //{
-            //    this.drawSphere();
-            //    //this.drawPoints3d(this.vanishingPoints, Color.Red, 4.0f);
-            //}
-
-            //this.drawTest3D();
-            //if (this.paperPos != null)
-            //{
-            //    this.drawPaperBoundary3d();
-            //}
 
             if (this.enableDepthTest)
             {
                 Gl.glDisable(Gl.GL_DEPTH_TEST);
             }
-
-
+            
             Gl.glDisable(Gl.GL_POLYGON_OFFSET_FILL);
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
@@ -3191,7 +3270,49 @@ namespace SketchPlatform
             }
 
             this.SwapBuffers();
-        }// Draw3D        
+        }// Draw3D     
+   
+        private void drawContours()
+        {
+            // for mesh
+            if (this.isShowContour())
+            {
+                this.drawContourPoints();
+            }
+
+            if (this.showSharpEdge)
+            {
+                this.drawSharpEdges();
+            }
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+            Gl.glDepthFunc(Gl.GL_ADD);
+            // for segment
+            if (this.showSegSilhouette)
+            {
+                this.drawSegmentSilhouette(Color.FromArgb(252,141,98) , 4.0f);
+            }
+
+            if (this.showSegContour)
+            {
+                this.drawSegmentContour(Color.FromArgb(0, 15, 85) , 4.0f);
+            }
+
+            if (this.showSegSuggestiveContour)
+            {
+                this.drawSegmentSuggestiveContour(Color.FromArgb(231,138,195), 2.0f);
+            }
+
+            if (this.showSegApparentRidge)
+            {
+                this.drawSegmentApparentRige(SegmentClass.StrokeColor, 2.0f);
+            }
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+        }//drawContours
+
+        private bool isShowContour()
+        {
+            return this.showSegSilhouette || this.showSegContour || this.showSegSuggestiveContour || this.showSegApparentRidge;
+        }
 
         private void drawSegments()
         {
@@ -3207,7 +3328,7 @@ namespace SketchPlatform
                 {
                     if (this.drawFace)
                     {
-                        if (this.showContourPoint && this.contourPoints != null && this.contourPoints.Count > 0)
+                        if (this.isShowContour())
                         {
                             this.drawMeshFace(seg.mesh, Color.White, false);
                         }
@@ -3606,6 +3727,11 @@ namespace SketchPlatform
 
         private void drawPoints2d(Vector2d[] points, Color c, float pointSize)
         {
+            Gl.glEnable(Gl.GL_POINT_SMOOTH);
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
+
             Gl.glColor3ub(c.R, c.G, c.B);
             Gl.glPointSize(pointSize);
             Gl.glBegin(Gl.GL_POINTS);
@@ -3614,10 +3740,16 @@ namespace SketchPlatform
                 Gl.glVertex2dv(v.ToArray());
             }
             Gl.glEnd();
+            Gl.glDisable(Gl.GL_POINT_SMOOTH);
         }
 
         private void drawPoints3d(Vector3d[] points, Color c, float pointSize)
         {
+            Gl.glEnable(Gl.GL_POINT_SMOOTH);
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
+
             Gl.glColor3ub(c.R, c.G, c.B);
             Gl.glPointSize(pointSize);
             Gl.glBegin(Gl.GL_POINTS);
@@ -3626,6 +3758,8 @@ namespace SketchPlatform
                 Gl.glVertex3dv(v.ToArray());
             }
             Gl.glEnd();
+
+            Gl.glDisable(Gl.GL_POINT_SMOOTH);
         }
 
         public void drawStrokeMesh3d(Stroke stroke)
@@ -4550,8 +4684,96 @@ namespace SketchPlatform
             Gl.glTranslated(-this.vanishingPoints[1].pos3.x, -this.vanishingPoints[1].pos3.y, -this.vanishingPoints[1].pos3.z);
         }
 
+        public void drawSegmentContour(Color c, float width)
+        {
+            if (this.currSegmentClass == null) return;
+
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active || seg.contourPoints == null) continue;
+                for (int i = 0; i < seg.contourPoints.Count - 2; i += 2)
+                {
+                    Vector3d p1 = seg.contourPoints[i];
+                    Vector3d p2 = seg.contourPoints[i + 1];
+                    this.drawLines3D(p1, p2, c, width);
+                }
+            }
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active || seg.contourPoints == null) continue;
+                this.drawPoints3d(seg.contourPoints.ToArray(), c, width);
+            }
+        }//drawSegmentContour
+
+        public void drawSegmentSilhouette(Color c, float width)
+        {
+            if (this.currSegmentClass == null) return;
+            
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active || seg.silhouettePoints == null) continue;
+                for (int i = 0; i < seg.silhouettePoints.Count - 2; i += 2)
+                {
+                    Vector3d p1 = seg.silhouettePoints[i];
+                    Vector3d p2 = seg.silhouettePoints[i + 1];
+                    this.drawLines3D(p1, p2, c, width);
+                }
+            }
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active || seg.silhouettePoints == null) continue;
+                this.drawPoints3d(seg.silhouettePoints.ToArray(),c, width);
+            }
+        }//drawSegmentSilhouette
+
+        public void drawSegmentSuggestiveContour(Color c, float width)
+        {
+            if (this.currSegmentClass == null) return;
+
+            
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active || seg.suggestiveContourPoints == null) continue;
+                for (int i = 0; i < seg.suggestiveContourPoints.Count - 2; i += 2)
+                {
+                    Vector3d p1 = seg.suggestiveContourPoints[i];
+                    Vector3d p2 = seg.suggestiveContourPoints[i + 1];
+                    this.drawLines3D(p1, p2, c, width);
+                }
+            }
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active || seg.suggestiveContourPoints == null) continue;
+                this.drawPoints3d(seg.suggestiveContourPoints.ToArray(), c, width);
+            }
+            
+        }//drawSegmentSuggestiveContour
+
+        public void drawSegmentApparentRige(Color c, float width)
+        {
+            if (this.currSegmentClass == null) return;
+
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active || seg.ridgePoints == null) continue;
+                for (int i = 0; i < seg.ridgePoints.Count - 2; i += 2)
+                {
+                    Vector3d p1 = seg.ridgePoints[i];
+                    Vector3d p2 = seg.ridgePoints[i + 1];
+                    this.drawLines3D(p1, p2, c, width);
+                }
+            }
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (!seg.active || seg.ridgePoints == null) continue;
+                this.drawPoints3d(seg.ridgePoints.ToArray(), c, width);
+            }
+        }//drawSegmentApparentRige
+
         public void drawContourPoints()
         {
+            if (this.contourPoints == null) return;
+
             Gl.glEnable(Gl.GL_DEPTH_TEST);
             //Color c = SegmentClass.StrokeColor;
             //Gl.glColor3ub(c.R, c.G, c.B);
@@ -4569,25 +4791,35 @@ namespace SketchPlatform
                 Vector3d p2 = this.contourPoints[i + 1];
                 this.drawLines3D(p1, p2, Color.Black, 10.0f);
             }
-            //for (int i = 0; i < this.contourPoints.Count - 1; ++i)
-            //{
-            //    Vector3d p1 = this.contourPoints[i];
-            //    Vector3d p2 = this.contourPoints[i + 1];
-            //    this.drawLines3D(p1, p2, Color.Blue, 10.0f);
-            //}
+
+
+            for (int i = 0; i < this.suggestiveContourPoints.Count - 2; i += 2)
+            {
+                Vector3d p1 = this.suggestiveContourPoints[i];
+                Vector3d p2 = this.suggestiveContourPoints[i + 1];
+                this.drawLines3D(p1, p2, Color.Black, 10.0f);
+            }
+
+            for (int i = 0; i < this.silhouettePoints.Count - 2; i += 2)
+            {
+                Vector3d p1 = this.silhouettePoints[i];
+                Vector3d p2 = this.silhouettePoints[i + 1];
+                this.drawLines3D(p1, p2, Color.Black, 10.0f);
+            }
+
+            for (int i = 0; i < this.apparentRidgePoints.Count - 2; i += 2)
+            {
+                Vector3d p1 = this.apparentRidgePoints[i];
+                Vector3d p2 = this.apparentRidgePoints[i + 1];
+                this.drawLines3D(p1, p2, Color.Black, 10.0f);
+            }
+
             Gl.glDisable(Gl.GL_DEPTH_TEST);
         }
+
         public void drawContourLine()
         {
             Gl.glEnable(Gl.GL_DEPTH_TEST);
-            //Gl.glColor3ub(0, 0, 255);
-            //Gl.glPointSize(4.0f);
-            //Gl.glBegin(Gl.GL_POINTS);
-            //for (int i = 0; i < this.contourPoints.Count; i += 2)
-            //{
-            //    Gl.glVertex3dv(this.contourPoints[i].ToArray());
-            //}
-            //Gl.glEnd();
 
             if (this.currSegmentClass != null)
             {

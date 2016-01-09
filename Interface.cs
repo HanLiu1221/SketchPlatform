@@ -421,21 +421,9 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
-        private void contour_CheckedChanged(object sender, EventArgs e)
-        {
-            this.glViewer.showContourLine = this.contour.Checked;
-            this.glViewer.Refresh();
-        }
-
         private void sharpEdge_CheckedChanged(object sender, EventArgs e)
         {
             this.glViewer.showSharpEdge = this.sharpEdge.Checked;
-            this.glViewer.Refresh();
-        }
-
-        private void showContourPoint_CheckedChanged(object sender, EventArgs e)
-        {
-            this.glViewer.showContourPoint = this.showContourPoint.Checked;
             this.glViewer.Refresh();
         }
 
@@ -464,6 +452,43 @@ namespace SketchPlatform
                 this.fileNameTabs.TabPages.Add(tp);
                 this.fileNameTabs.SelectedTab = tp;
             }
+            this.glViewer.Refresh();
+        }
+
+        private void showSegContour_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showSegContour = this.showSegContour.Checked;
+            this.glViewer.computeContours();
+            this.glViewer.Refresh();
+        }
+
+        private void showSegSilhouette_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showSegSilhouette = this.showSegSilhouette.Checked;
+            this.glViewer.computeContours();
+            this.glViewer.Refresh();
+        }
+
+        private void showSegSuggestiveContour_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showSegSuggestiveContour = this.showSegSuggestiveContour.Checked;
+            this.glViewer.computeContours();
+            this.glViewer.Refresh();
+        }
+
+        private void showSegApparentRidge_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showSegApparentRidge = this.showSegApparentRidge.Checked;
+            this.glViewer.computeContours();
+            this.glViewer.Refresh();
+        }
+
+        private void sketchyDegreeTrackBar_Scroll(object sender, EventArgs e)
+        {
+            
+            double rate = (double)this.sketchyDegreeTrackBar.Value / this.sketchyDegreeTrackBar.Maximum;
+            rate /= 5;
+            this.glViewer.setStrokeSketchyRate(rate);
             this.glViewer.Refresh();
         }
 
