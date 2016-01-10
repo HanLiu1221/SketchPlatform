@@ -28,25 +28,27 @@ namespace Component
 
         public static StrokeStyle strokeStyle = StrokeStyle.Pencil;
         public static GuideLineType GuideLineStyle = GuideLineType.Random;
-        public static int StrokeSize = 2;
-        public static int GuideLineSize = 2;
-        public static Color StrokeColor = Color.FromArgb(60, 60, 60);//(54, 69, 79);
-        public static Color sideStrokeColor = Color.FromArgb(90, 90, 90);//(54, 69, 79);
-        public static Color VanLineColor = Color.FromArgb(220, 220, 220);
-        public static Color HiddenColor = Color.LightGray;
+        public static double StrokeSize = 2;
+        public static double GuideLineSize = 2;
+        public static Color StrokeColor = Color.FromArgb(110, 110, 110);//(54, 69, 79);
+        public static Color sideStrokeColor = Color.FromArgb(120, 120, 120);//(54, 69, 79);
+        public static Color VanLineColor = Color.FromArgb(210, 210, 210);
+        public static Color HiddenColor = Color.FromArgb(170, 170, 170);
         public static Color HighlightColor = Color.FromArgb(222, 45, 38);
         public static Color FaceColor = Color.FromArgb(253, 205, 172);
         public static Color AnimColor = Color.FromArgb(251, 128, 114);
         public static Color HiddenLineColor = Color.FromArgb(120, 120, 120);
-        public static Color HiddenGuideLinecolor = Color.FromArgb(5, 112, 176);
+        public static Color HiddenGuideLinecolor = Color.FromArgb(116, 169, 207);
         public static Color HiddenHighlightcolor = Color.FromArgb(251, 106, 74);
         
         // guide line colors
         public static Color OneHafColor = Color.FromArgb(77, 175, 74);
-        public static Color OneThirdColor = Color.FromArgb(152, 78, 163);
+        public static Color OneThirdColor = Color.FromArgb(231, 41, 138);
         public static Color OnequarterColor = Color.FromArgb(56, 108, 176);
         public static Color OneSixthColor = Color.FromArgb(166, 216, 84);
         public static Color ReflectionColor = Color.FromArgb(228, 26, 28);
+
+        public static Color GuideLineWithTypeColor = Color.FromArgb(252, 141, 89);
 
 
         private string[] sequences;
@@ -307,15 +309,16 @@ namespace Component
                 }
 
                 Box box = seg.boundingbox;
-                if (boxSequences[i].hasGuides != null)
+                if (boxSequences[i].hasGuides != null && boxSequences[i].hasGuides.Count > 0)
                 {
-                    box.hasGuides = new List<int>();
+                    box.guideBoxSeqenceIdx = new List<int>();
                     char[] ss = { ',' };
-                    string[] tokens = boxSequences[i].hasGuides.Split(ss);
-                    for (int t = 0; t < tokens.Length; ++t)
+                    box.guideBoxIdx = Int32.Parse(boxSequences[i].hasGuides[0]);
+                    box.guideBoxSeqGroupIdx = Int32.Parse(boxSequences[i].hasGuides[1]);
+                    for (int t = 2; t < boxSequences[i].hasGuides.Count; ++t)
                     {
-                        int id = Int32.Parse(tokens[t]);
-                        box.hasGuides.Add(id);
+                        int id = Int32.Parse(boxSequences[i].hasGuides[t]);
+                        box.guideBoxSeqenceIdx.Add(id);
                     }
                 }
 
@@ -414,7 +417,11 @@ namespace Component
                             double.Parse(boxSequences[i].face_to_highlight[k].z));
                     }
                     Plane face = new Plane(points);
-                    curGuides[0] += " highlightFace " + box.facesToHighlight.Count.ToString();
+                    for (int k = 0; k < curGuides.Count; ++k)
+                    {
+                        curGuides[k] += " highlightFace " + box.facesToHighlight.Count.ToString();
+                    }
+                    curGuides[0] += " blinking ";
                     box.facesToHighlight.Add(face);
                     faceToHighlight = face;
                 }
@@ -429,7 +436,10 @@ namespace Component
                             double.Parse(boxSequences[i].face_to_draw[k].y),
                             double.Parse(boxSequences[i].face_to_draw[k].z));
                     }
-                    curGuides[0] += " faceToDraw " + box.facesToDraw.Count.ToString();
+                    for (int k = 0; k < curGuides.Count; ++k)
+                    {
+                        curGuides[k] += " faceToDraw " + box.facesToDraw.Count.ToString();
+                    }
                     Plane face = new Plane(points);
                     box.facesToDraw.Add(face);
                 }
@@ -509,7 +519,7 @@ namespace Component
         }
 
         public void parseASequence(int idx, out int segIdx, out int guidelineGroupIndex, out List<int> guideLineIndexs, 
-            out int nextBox, out int highlightFaceIndex, out int drawFaceIndex)
+            out int nextBox, out int highlightFaceIndex, out int drawFaceIndex, out bool showBlinking)
         {
             string seq = this.sequences[idx];
             char[] separator = { '\n', ' ', ':', ';'};
@@ -521,6 +531,7 @@ namespace Component
             guidelineGroupIndex = -1;
             drawFaceIndex = -1;
             highlightFaceIndex = -1;
+            showBlinking = false;
             while (++i < tokens.Length)
             {
                 if (tokens[i] == "box")
@@ -547,6 +558,10 @@ namespace Component
                 if (i < tokens.Length && tokens[i] == "highlightFace")
                 {
                     highlightFaceIndex = Int32.Parse(tokens[++i]);
+                }
+                if (i < tokens.Length && tokens[i] == "blinking")
+                {
+                    showBlinking = true;
                 }
             }
             segIdx = boxIdx;

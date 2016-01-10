@@ -599,9 +599,13 @@ namespace Component
             }
             // now the first one is always the correct one without errors
             double dis = this.getRandomDoubleInRange(rand, -len/4, len);
+            if (!this.isBoxEdge)
+            {
+                dis = this.getRandomDoubleInRange(rand, 0, len / 2);
+            }
             Stroke line = new Stroke(u - dis * lineDir, v + dis * lineDir, this.isBoxEdge);
             this.strokes.Add(line);
-            double dirfloating = strokeLen / 40;
+            double dirfloating = 0.008;
             for (int i = 1; i < this.nSketch; ++i)
             {
                 Vector3d[] endpoints = new Vector3d[2];
@@ -610,19 +614,28 @@ namespace Component
                     // find an arbitrary point
                     dis = this.getRandomDoubleInRange(rand, -len, len);
                     // find a random normal
-                    Vector3d normal = new Vector3d();
+                    Vector3d normal1 = new Vector3d();
                     for (int k = 0; k < 3; ++k)
                     {
-                        normal[k] = this.getRandomDoubleInRange(rand, -1, 1);
+                        normal1[k] = this.getRandomDoubleInRange(rand, -1, 1);
                     }
-                    normal.normalize();
-                    Vector3d step1 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal;
+                    normal1.normalize();
+                    Vector3d step1 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal1;
+                    Vector3d normal2 = new Vector3d();
                     for (int k = 0; k < 3; ++k)
                     {
-                        normal[k] = this.getRandomDoubleInRange(rand, -1, 1);
+                        normal2[k] = this.getRandomDoubleInRange(rand, -1, 1);
                     }
-                    normal.normalize();
-                    Vector3d step2 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal;
+                    normal2.normalize();
+                    //Vector3d step2 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal2;
+                    //double checkDir = step1.normalize().Dot(step2.normalize());
+                    //if (checkDir > 0)
+                    //{
+                    //    // different dir
+                    //    step2 = new Vector3d() - step2;
+                    //}    
+                    Vector3d step2 = new Vector3d() - step1;
+
                     if (!this.isBoxEdge)
                     {
                         dis = this.getRandomDoubleInRange(rand, 0, len/2);
@@ -662,7 +675,7 @@ namespace Component
             double len = strokeGap *(v - u).Length();
             if (!this.isBoxEdge)
             {
-                len /= 2;
+                len /= 3;
             }
             Vector3d lineDir = (v - u).normalize();
             this.nSketch = 1;
@@ -741,7 +754,9 @@ namespace Component
         public List<Plane> facesToHighlight;
         public int activeFaceIndex = -1;
         public int highlightFaceIndex = -1;
-        public List<int> hasGuides;
+        public int guideBoxIdx = -1;
+        public int guideBoxSeqGroupIdx = -1;
+        public List<int> guideBoxSeqenceIdx;
 
         public Box()
         { }

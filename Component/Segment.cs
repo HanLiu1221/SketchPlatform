@@ -15,6 +15,7 @@ namespace Component
         public Box boundingbox = null;
         public Color color = Color.Black;
         public bool active = true;
+        public bool drawn = false;
         public List<List<int>> contours;
         private MyTriMesh2 triMesh;
         public List<Vector3d> contourPoints;
