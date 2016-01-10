@@ -506,6 +506,11 @@ namespace SketchPlatform
             this.glViewer.Refresh();
         }
 
+        private void exportSequenceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.exportSequenceDiv();
+        }
+
 
 	}
 }

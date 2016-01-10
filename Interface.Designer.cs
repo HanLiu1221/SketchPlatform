@@ -116,6 +116,7 @@
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
             this.glViewer = new SketchPlatform.GLViewer();
+            this.exportSequenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -156,7 +157,8 @@
             this.loadSegmentsToolStripMenuItem,
             this.loadJSONFileToolStripMenuItem,
             this.outputSeqToolStripMenuItem,
-            this.loadTriMeshToolStripMenuItem});
+            this.loadTriMeshToolStripMenuItem,
+            this.exportSequenceToolStripMenuItem});
             this.ModelFile.Image = ((System.Drawing.Image)(resources.GetObject("ModelFile.Image")));
             this.ModelFile.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.ModelFile.Name = "ModelFile";
@@ -167,48 +169,48 @@
             // open3D
             // 
             this.open3D.Name = "open3D";
-            this.open3D.Size = new System.Drawing.Size(155, 22);
+            this.open3D.Size = new System.Drawing.Size(160, 22);
             this.open3D.Text = "Open 3D file";
             this.open3D.Click += new System.EventHandler(this.open3D_Click);
             // 
             // import3D
             // 
             this.import3D.Name = "import3D";
-            this.import3D.Size = new System.Drawing.Size(155, 22);
+            this.import3D.Size = new System.Drawing.Size(160, 22);
             this.import3D.Text = "Import 3D file";
             // 
             // saveAs3D
             // 
             this.saveAs3D.Name = "saveAs3D";
-            this.saveAs3D.Size = new System.Drawing.Size(155, 22);
+            this.saveAs3D.Size = new System.Drawing.Size(160, 22);
             this.saveAs3D.Text = "Save As 3D file";
             this.saveAs3D.Click += new System.EventHandler(this.saveAs3D_Click);
             // 
             // loadSegmentsToolStripMenuItem
             // 
             this.loadSegmentsToolStripMenuItem.Name = "loadSegmentsToolStripMenuItem";
-            this.loadSegmentsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadSegmentsToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
             this.loadSegmentsToolStripMenuItem.Text = "Load Segments";
             this.loadSegmentsToolStripMenuItem.Click += new System.EventHandler(this.loadSegmentsToolStripMenuItem_Click);
             // 
             // loadJSONFileToolStripMenuItem
             // 
             this.loadJSONFileToolStripMenuItem.Name = "loadJSONFileToolStripMenuItem";
-            this.loadJSONFileToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadJSONFileToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
             this.loadJSONFileToolStripMenuItem.Text = "Load JSON file";
             this.loadJSONFileToolStripMenuItem.Click += new System.EventHandler(this.loadJSONFileToolStripMenuItem_Click);
             // 
             // outputSeqToolStripMenuItem
             // 
             this.outputSeqToolStripMenuItem.Name = "outputSeqToolStripMenuItem";
-            this.outputSeqToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.outputSeqToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
             this.outputSeqToolStripMenuItem.Text = "Output Box seq";
             this.outputSeqToolStripMenuItem.Click += new System.EventHandler(this.outputSeqToolStripMenuItem_Click);
             // 
             // loadTriMeshToolStripMenuItem
             // 
             this.loadTriMeshToolStripMenuItem.Name = "loadTriMeshToolStripMenuItem";
-            this.loadTriMeshToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.loadTriMeshToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
             this.loadTriMeshToolStripMenuItem.Text = "Load tri mesh";
             this.loadTriMeshToolStripMenuItem.Click += new System.EventHandler(this.loadTriMeshToolStripMenuItem_Click);
             // 
@@ -1053,6 +1055,13 @@
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 3;
             // 
+            // exportSequenceToolStripMenuItem
+            // 
+            this.exportSequenceToolStripMenuItem.Name = "exportSequenceToolStripMenuItem";
+            this.exportSequenceToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
+            this.exportSequenceToolStripMenuItem.Text = "Export sequence";
+            this.exportSequenceToolStripMenuItem.Click += new System.EventHandler(this.exportSequenceToolStripMenuItem_Click);
+            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1178,6 +1187,7 @@
         private System.Windows.Forms.Label sketcyLable;
         private System.Windows.Forms.ComboBox lineOrMesh;
         private System.Windows.Forms.Label meshorlineLabel;
+        private System.Windows.Forms.ToolStripMenuItem exportSequenceToolStripMenuItem;
 
 	}
 }

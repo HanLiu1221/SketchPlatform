@@ -289,10 +289,6 @@ namespace Component
                     Segment newSeg = new Segment(mesh, newBox);
                     newSeg.idx = idx++;
                     this.segments.Add(newSeg);
-                    foreach (Segment tests in this.segments)
-                    {
-                        int nv = tests.getTriMeshVertexCount();
-                    }
                     seg = newSeg;
                 }
                 else
@@ -320,6 +316,10 @@ namespace Component
                         int id = Int32.Parse(boxSequences[i].hasGuides[t]);
                         box.guideBoxSeqenceIdx.Add(id);
                     }
+                    // add one sequence to just show the guide face
+                    string s = "box " + boxIndex.ToString();
+                    s += " drawOnlyguides";
+                    render_sequence.Add(s);
                 }
 
                 // guides
@@ -376,19 +376,20 @@ namespace Component
                 string boxIndexString = "box " + boxIndex.ToString();
                 string cur = boxIndexString + " ";
                 List<string> curGuides = new List<string>();
+                string separateGuideLineIndx = "";
                 if (boxSequences[i].guide_sequence != null && boxSequences[i].guide_sequence.Count > 0)
                 {
                     cur += "guideGroup " + (box.guideLines.Count - 1).ToString();
                     cur += " guide ";
                     string cur_backup = new string(cur.ToArray());
                     foreach (GuideSequenceJson seq in boxSequences[i].guide_sequence)
-                    {
-                        
+                    {                        
                         if (seq.guide_indexes != null)
                         {
                             foreach (string s in seq.guide_indexes)
                             {
                                 cur += s + " ";
+                                separateGuideLineIndx += s + " ";
                             }
                         }
                         int last = Int32.Parse(seq.guide_indexes[seq.guide_indexes.Count-1]);
@@ -519,7 +520,7 @@ namespace Component
         }
 
         public void parseASequence(int idx, out int segIdx, out int guidelineGroupIndex, out List<int> guideLineIndexs, 
-            out int nextBox, out int highlightFaceIndex, out int drawFaceIndex, out bool showBlinking)
+            out int nextBox, out int highlightFaceIndex, out int drawFaceIndex, out bool showBlinking, out bool drawOnlyGuides)
         {
             string seq = this.sequences[idx];
             char[] separator = { '\n', ' ', ':', ';'};
@@ -532,6 +533,7 @@ namespace Component
             drawFaceIndex = -1;
             highlightFaceIndex = -1;
             showBlinking = false;
+            drawOnlyGuides = false;
             while (++i < tokens.Length)
             {
                 if (tokens[i] == "box")
@@ -562,6 +564,11 @@ namespace Component
                 if (i < tokens.Length && tokens[i] == "blinking")
                 {
                     showBlinking = true;
+                }
+                if (i < tokens.Length && tokens[i] == "drawOnlyguides")
+                {
+                    drawOnlyGuides = true;
+                    break;
                 }
             }
             segIdx = boxIdx;
