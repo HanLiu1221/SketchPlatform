@@ -28,10 +28,11 @@ namespace Component
 
         public static StrokeStyle strokeStyle = StrokeStyle.Pencil;
         public static GuideLineType GuideLineStyle = GuideLineType.Random;
-        public static int StrokeSize = 4;
-        public static int GuideLineSize = 4;
+        public static int StrokeSize = 2;
+        public static int GuideLineSize = 2;
         public static Color StrokeColor = Color.FromArgb(60, 60, 60);//(54, 69, 79);
-        public static Color VanLineColor = Color.FromArgb(200,200,200);
+        public static Color sideStrokeColor = Color.FromArgb(90, 90, 90);//(54, 69, 79);
+        public static Color VanLineColor = Color.FromArgb(220, 220, 220);
         public static Color HiddenColor = Color.LightGray;
         public static Color HighlightColor = Color.FromArgb(222, 45, 38);
         public static Color FaceColor = Color.FromArgb(253, 205, 172);
@@ -39,6 +40,15 @@ namespace Component
         public static Color HiddenLineColor = Color.FromArgb(120, 120, 120);
         public static Color HiddenGuideLinecolor = Color.FromArgb(5, 112, 176);
         public static Color HiddenHighlightcolor = Color.FromArgb(251, 106, 74);
+        
+        // guide line colors
+        public static Color OneHafColor = Color.FromArgb(77, 175, 74);
+        public static Color OneThirdColor = Color.FromArgb(152, 78, 163);
+        public static Color OnequarterColor = Color.FromArgb(56, 108, 176);
+        public static Color OneSixthColor = Color.FromArgb(166, 216, 84);
+        public static Color ReflectionColor = Color.FromArgb(228, 26, 28);
+
+
         private string[] sequences;
         
 
@@ -275,10 +285,6 @@ namespace Component
                     boxNames.Add(boxSequences[i].box);
                     Box newBox = new Box(bbox);
                     Segment newSeg = new Segment(mesh, newBox);
-                    if (meshfileName != "")
-                    {
-                        newSeg.loadTrieMesh(meshfileName);
-                    }
                     newSeg.idx = idx++;
                     this.segments.Add(newSeg);
                     foreach (Segment tests in this.segments)
@@ -290,9 +296,29 @@ namespace Component
                 else
                 {
                     seg = this.segments[boxIndex];
+                    if (mesh != null && seg.mesh == null)
+                    {
+                        seg.mesh = mesh;
+                    }
                 }
+                if (meshfileName != "")
+                {
+                    seg.loadTrieMesh(meshfileName);
+                }
+
                 Box box = seg.boundingbox;
-                
+                if (boxSequences[i].hasGuides != null)
+                {
+                    box.hasGuides = new List<int>();
+                    char[] ss = { ',' };
+                    string[] tokens = boxSequences[i].hasGuides.Split(ss);
+                    for (int t = 0; t < tokens.Length; ++t)
+                    {
+                        int id = Int32.Parse(tokens[t]);
+                        box.hasGuides.Add(id);
+                    }
+                }
+
                 // guides
                 if (boxSequences[i].guides != null)
                 {
@@ -354,6 +380,7 @@ namespace Component
                     string cur_backup = new string(cur.ToArray());
                     foreach (GuideSequenceJson seq in boxSequences[i].guide_sequence)
                     {
+                        
                         if (seq.guide_indexes != null)
                         {
                             foreach (string s in seq.guide_indexes)
@@ -363,6 +390,10 @@ namespace Component
                         }
                         int last = Int32.Parse(seq.guide_indexes[seq.guide_indexes.Count-1]);
                         box.guideLines[box.guideLines.Count - 1][last].isGuide = true;
+                        if (seq.type != null)
+                        {
+                            box.guideLines[box.guideLines.Count - 1][last].type = Int32.Parse(seq.type);
+                        }
                         curGuides.Add(cur);
                         cur = new string(cur_backup.ToArray());
                     }
@@ -454,6 +485,28 @@ namespace Component
             }
             return center;
         }// NormalizeSegmentsToBox
+
+        public List<int> parseBoxSeqIndex()
+        {
+            char[] separator = { '\n', ' ', ':', ';' };
+            List<int> seqIdx = new List<int>();
+            for (int i = 0; i < this.sequences.Length; ++i)
+            {
+                string[] tokens = this.sequences[i].Split(separator);
+                int j = 0;  
+                while (j < tokens.Length)
+                {
+                    if (tokens[j] == "box")
+                    {
+                        int boxIdx = Int32.Parse(tokens[j+1]);
+                        seqIdx.Add(boxIdx);
+                        break;
+                    }
+                    ++j;
+                }
+            }
+            return seqIdx;
+        }
 
         public void parseASequence(int idx, out int segIdx, out int guidelineGroupIndex, out List<int> guideLineIndexs, 
             out int nextBox, out int highlightFaceIndex, out int drawFaceIndex)

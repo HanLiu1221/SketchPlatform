@@ -72,7 +72,6 @@
             this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
-            this.glViewer = new SketchPlatform.GLViewer();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.contourLabel = new System.Windows.Forms.GroupBox();
@@ -99,6 +98,8 @@
             this.glLabel = new System.Windows.Forms.Label();
             this.boxesLabel = new System.Windows.Forms.Label();
             this.adjustBox = new System.Windows.Forms.GroupBox();
+            this.lineOrMesh = new System.Windows.Forms.ComboBox();
+            this.meshorlineLabel = new System.Windows.Forms.Label();
             this.sketchyDegreeTrackBar = new System.Windows.Forms.TrackBar();
             this.sketcyLable = new System.Windows.Forms.Label();
             this.enableHiddenCheck = new System.Windows.Forms.CheckBox();
@@ -114,6 +115,7 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
+            this.glViewer = new SketchPlatform.GLViewer();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -510,26 +512,6 @@
             this.fileNameTabs.Size = new System.Drawing.Size(860, 35);
             this.fileNameTabs.TabIndex = 0;
             // 
-            // glViewer
-            // 
-            this.glViewer.AccumBits = ((byte)(0));
-            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.glViewer.AutoCheckErrors = false;
-            this.glViewer.AutoFinish = false;
-            this.glViewer.AutoMakeCurrent = true;
-            this.glViewer.AutoSwapBuffers = true;
-            this.glViewer.BackColor = System.Drawing.Color.Black;
-            this.glViewer.ColorBits = ((byte)(32));
-            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
-            this.glViewer.DepthBits = ((byte)(16));
-            this.glViewer.Location = new System.Drawing.Point(170, 3);
-            this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(693, 669);
-            this.glViewer.StencilBits = ((byte)(0));
-            this.glViewer.TabIndex = 3;
-            // 
             // statistics
             // 
             this.statistics.AutoSize = true;
@@ -745,9 +727,9 @@
             this.guideLineBox.Controls.Add(this.prevBoxButton);
             this.guideLineBox.Controls.Add(this.glLabel);
             this.guideLineBox.Controls.Add(this.boxesLabel);
-            this.guideLineBox.Location = new System.Drawing.Point(4, 290);
+            this.guideLineBox.Location = new System.Drawing.Point(4, 305);
             this.guideLineBox.Name = "guideLineBox";
-            this.guideLineBox.Size = new System.Drawing.Size(156, 113);
+            this.guideLineBox.Size = new System.Drawing.Size(156, 98);
             this.guideLineBox.TabIndex = 4;
             this.guideLineBox.TabStop = false;
             this.guideLineBox.Text = "Guides";
@@ -755,7 +737,7 @@
             // lockView
             // 
             this.lockView.AutoSize = true;
-            this.lockView.Location = new System.Drawing.Point(5, 90);
+            this.lockView.Location = new System.Drawing.Point(6, 77);
             this.lockView.Name = "lockView";
             this.lockView.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.lockView.Size = new System.Drawing.Size(71, 17);
@@ -767,7 +749,7 @@
             // redoSequence
             // 
             this.redoSequence.Image = ((System.Drawing.Image)(resources.GetObject("redoSequence.Image")));
-            this.redoSequence.Location = new System.Drawing.Point(124, 56);
+            this.redoSequence.Location = new System.Drawing.Point(127, 45);
             this.redoSequence.Name = "redoSequence";
             this.redoSequence.Size = new System.Drawing.Size(26, 23);
             this.redoSequence.TabIndex = 37;
@@ -777,7 +759,7 @@
             // sequencePrevButton
             // 
             this.sequencePrevButton.Image = ((System.Drawing.Image)(resources.GetObject("sequencePrevButton.Image")));
-            this.sequencePrevButton.Location = new System.Drawing.Point(51, 56);
+            this.sequencePrevButton.Location = new System.Drawing.Point(54, 45);
             this.sequencePrevButton.Name = "sequencePrevButton";
             this.sequencePrevButton.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.sequencePrevButton.Size = new System.Drawing.Size(26, 23);
@@ -788,7 +770,7 @@
             // sequenceNextButton
             // 
             this.sequenceNextButton.Image = ((System.Drawing.Image)(resources.GetObject("sequenceNextButton.Image")));
-            this.sequenceNextButton.Location = new System.Drawing.Point(87, 56);
+            this.sequenceNextButton.Location = new System.Drawing.Point(90, 45);
             this.sequenceNextButton.Name = "sequenceNextButton";
             this.sequenceNextButton.Size = new System.Drawing.Size(26, 23);
             this.sequenceNextButton.TabIndex = 35;
@@ -798,7 +780,7 @@
             // nextBoxButton
             // 
             this.nextBoxButton.Image = ((System.Drawing.Image)(resources.GetObject("nextBoxButton.Image")));
-            this.nextBoxButton.Location = new System.Drawing.Point(87, 25);
+            this.nextBoxButton.Location = new System.Drawing.Point(89, 18);
             this.nextBoxButton.Name = "nextBoxButton";
             this.nextBoxButton.Size = new System.Drawing.Size(26, 23);
             this.nextBoxButton.TabIndex = 34;
@@ -808,7 +790,7 @@
             // prevBoxButton
             // 
             this.prevBoxButton.Image = ((System.Drawing.Image)(resources.GetObject("prevBoxButton.Image")));
-            this.prevBoxButton.Location = new System.Drawing.Point(51, 25);
+            this.prevBoxButton.Location = new System.Drawing.Point(53, 18);
             this.prevBoxButton.Name = "prevBoxButton";
             this.prevBoxButton.Size = new System.Drawing.Size(26, 23);
             this.prevBoxButton.TabIndex = 33;
@@ -818,7 +800,7 @@
             // glLabel
             // 
             this.glLabel.AutoSize = true;
-            this.glLabel.Location = new System.Drawing.Point(3, 61);
+            this.glLabel.Location = new System.Drawing.Point(6, 50);
             this.glLabel.Name = "glLabel";
             this.glLabel.Size = new System.Drawing.Size(36, 13);
             this.glLabel.TabIndex = 5;
@@ -827,7 +809,7 @@
             // boxesLabel
             // 
             this.boxesLabel.AutoSize = true;
-            this.boxesLabel.Location = new System.Drawing.Point(3, 30);
+            this.boxesLabel.Location = new System.Drawing.Point(5, 23);
             this.boxesLabel.Name = "boxesLabel";
             this.boxesLabel.Size = new System.Drawing.Size(27, 13);
             this.boxesLabel.TabIndex = 0;
@@ -835,6 +817,8 @@
             // 
             // adjustBox
             // 
+            this.adjustBox.Controls.Add(this.lineOrMesh);
+            this.adjustBox.Controls.Add(this.meshorlineLabel);
             this.adjustBox.Controls.Add(this.sketchyDegreeTrackBar);
             this.adjustBox.Controls.Add(this.sketcyLable);
             this.adjustBox.Controls.Add(this.enableHiddenCheck);
@@ -846,25 +830,49 @@
             this.adjustBox.Controls.Add(this.strokeSizeBox);
             this.adjustBox.Location = new System.Drawing.Point(3, 124);
             this.adjustBox.Name = "adjustBox";
-            this.adjustBox.Size = new System.Drawing.Size(156, 160);
+            this.adjustBox.Size = new System.Drawing.Size(156, 175);
             this.adjustBox.TabIndex = 3;
             this.adjustBox.TabStop = false;
             this.adjustBox.Text = "Adjust";
             // 
+            // lineOrMesh
+            // 
+            this.lineOrMesh.AllowDrop = true;
+            this.lineOrMesh.FormattingEnabled = true;
+            this.lineOrMesh.Items.AddRange(new object[] {
+            "line",
+            "mesh"});
+            this.lineOrMesh.Location = new System.Drawing.Point(65, 142);
+            this.lineOrMesh.Name = "lineOrMesh";
+            this.lineOrMesh.Size = new System.Drawing.Size(48, 21);
+            this.lineOrMesh.TabIndex = 16;
+            this.lineOrMesh.Text = "lineOrMesh";
+            this.lineOrMesh.SelectedIndexChanged += new System.EventHandler(this.lineOrMesh_SelectedIndexChanged);
+            // 
+            // meshorlineLabel
+            // 
+            this.meshorlineLabel.AutoSize = true;
+            this.meshorlineLabel.Location = new System.Drawing.Point(2, 145);
+            this.meshorlineLabel.Name = "meshorlineLabel";
+            this.meshorlineLabel.Size = new System.Drawing.Size(57, 13);
+            this.meshorlineLabel.TabIndex = 15;
+            this.meshorlineLabel.Text = "mesOrLine";
+            this.meshorlineLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // sketchyDegreeTrackBar
             // 
-            this.sketchyDegreeTrackBar.Location = new System.Drawing.Point(46, 130);
+            this.sketchyDegreeTrackBar.Location = new System.Drawing.Point(46, 113);
             this.sketchyDegreeTrackBar.Name = "sketchyDegreeTrackBar";
             this.sketchyDegreeTrackBar.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.sketchyDegreeTrackBar.Size = new System.Drawing.Size(94, 45);
             this.sketchyDegreeTrackBar.TabIndex = 14;
-            this.sketchyDegreeTrackBar.Value = 5;
+            this.sketchyDegreeTrackBar.Value = 3;
             this.sketchyDegreeTrackBar.Scroll += new System.EventHandler(this.sketchyDegreeTrackBar_Scroll);
             // 
             // sketcyLable
             // 
             this.sketcyLable.AutoSize = true;
-            this.sketcyLable.Location = new System.Drawing.Point(3, 134);
+            this.sketcyLable.Location = new System.Drawing.Point(3, 117);
             this.sketcyLable.Name = "sketcyLable";
             this.sketcyLable.Size = new System.Drawing.Size(44, 13);
             this.sketcyLable.TabIndex = 13;
@@ -876,7 +884,7 @@
             this.enableHiddenCheck.AutoSize = true;
             this.enableHiddenCheck.Checked = true;
             this.enableHiddenCheck.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.enableHiddenCheck.Location = new System.Drawing.Point(1, 112);
+            this.enableHiddenCheck.Location = new System.Drawing.Point(1, 96);
             this.enableHiddenCheck.Name = "enableHiddenCheck";
             this.enableHiddenCheck.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.enableHiddenCheck.Size = new System.Drawing.Size(77, 17);
@@ -894,7 +902,7 @@
             "OpenGL_DetphTest",
             "none",
             "ray trace"});
-            this.depthType.Location = new System.Drawing.Point(66, 85);
+            this.depthType.Location = new System.Drawing.Point(66, 71);
             this.depthType.Name = "depthType";
             this.depthType.Size = new System.Drawing.Size(62, 21);
             this.depthType.TabIndex = 5;
@@ -904,7 +912,7 @@
             // depthLabel
             // 
             this.depthLabel.AutoSize = true;
-            this.depthLabel.Location = new System.Drawing.Point(3, 88);
+            this.depthLabel.Location = new System.Drawing.Point(3, 74);
             this.depthLabel.Name = "depthLabel";
             this.depthLabel.Size = new System.Drawing.Size(37, 13);
             this.depthLabel.TabIndex = 4;
@@ -917,7 +925,7 @@
             this.guidelineType.Items.AddRange(new object[] {
             "random",
             "cross"});
-            this.guidelineType.Location = new System.Drawing.Point(66, 55);
+            this.guidelineType.Location = new System.Drawing.Point(66, 47);
             this.guidelineType.Name = "guidelineType";
             this.guidelineType.Size = new System.Drawing.Size(66, 21);
             this.guidelineType.TabIndex = 3;
@@ -927,7 +935,7 @@
             // guidelineLabel
             // 
             this.guidelineLabel.AutoSize = true;
-            this.guidelineLabel.Location = new System.Drawing.Point(3, 58);
+            this.guidelineLabel.Location = new System.Drawing.Point(3, 50);
             this.guidelineLabel.Name = "guidelineLabel";
             this.guidelineLabel.Size = new System.Drawing.Size(55, 13);
             this.guidelineLabel.TabIndex = 2;
@@ -937,7 +945,7 @@
             // strokeSizeLabel
             // 
             this.strokeSizeLabel.AutoSize = true;
-            this.strokeSizeLabel.Location = new System.Drawing.Point(3, 27);
+            this.strokeSizeLabel.Location = new System.Drawing.Point(3, 24);
             this.strokeSizeLabel.Name = "strokeSizeLabel";
             this.strokeSizeLabel.Size = new System.Drawing.Size(60, 13);
             this.strokeSizeLabel.TabIndex = 1;
@@ -955,11 +963,11 @@
             "8",
             "10",
             "12"});
-            this.strokeSizeBox.Location = new System.Drawing.Point(66, 24);
+            this.strokeSizeBox.Location = new System.Drawing.Point(66, 21);
             this.strokeSizeBox.Name = "strokeSizeBox";
             this.strokeSizeBox.Size = new System.Drawing.Size(48, 21);
             this.strokeSizeBox.TabIndex = 0;
-            this.strokeSizeBox.Text = "4";
+            this.strokeSizeBox.Text = "2";
             this.strokeSizeBox.TextChanged += new System.EventHandler(this.strokeSizeBox_TextChanged);
             // 
             // displayBox
@@ -1024,6 +1032,26 @@
             this.showBBox.Text = "bounding box";
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
+            // 
+            // glViewer
+            // 
+            this.glViewer.AccumBits = ((byte)(0));
+            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.glViewer.AutoCheckErrors = false;
+            this.glViewer.AutoFinish = false;
+            this.glViewer.AutoMakeCurrent = true;
+            this.glViewer.AutoSwapBuffers = true;
+            this.glViewer.BackColor = System.Drawing.Color.Black;
+            this.glViewer.ColorBits = ((byte)(32));
+            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
+            this.glViewer.DepthBits = ((byte)(16));
+            this.glViewer.Location = new System.Drawing.Point(170, 3);
+            this.glViewer.Name = "glViewer";
+            this.glViewer.Size = new System.Drawing.Size(693, 669);
+            this.glViewer.StencilBits = ((byte)(0));
+            this.glViewer.TabIndex = 3;
             // 
             // Interface
             // 
@@ -1148,6 +1176,8 @@
         private System.Windows.Forms.CheckBox showSegApparentRidge;
         private System.Windows.Forms.TrackBar sketchyDegreeTrackBar;
         private System.Windows.Forms.Label sketcyLable;
+        private System.Windows.Forms.ComboBox lineOrMesh;
+        private System.Windows.Forms.Label meshorlineLabel;
 
 	}
 }

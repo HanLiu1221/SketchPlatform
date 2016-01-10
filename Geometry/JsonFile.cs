@@ -41,6 +41,7 @@ namespace Component
     {
         public string box { get; set; }
         public string segment { get; set; }
+        public string hasGuides { get; set; }
         //public GuideSequenceJson guide_sequence;
         public List<GuideSequenceJson> guide_sequence;
         public List<GuideJson> guides;
@@ -50,6 +51,7 @@ namespace Component
 
     public class GuideSequenceJson
     {
+        public string type { get; set; }
         public List<string> guide_indexes { get; set; }
     }
 

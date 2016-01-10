@@ -103,7 +103,7 @@ namespace Component
         {
             if (this.mesh == null || this.triMesh == null) return;
             double[] eyepos = eye.ToArray();
-            double[] contour = new double[40000];
+            double[] contour = new double[80000];
             this.silhouettePoints = new List<Vector3d>();
             fixed (double* eyepos_ = eyepos)
             fixed (double* contour_ = contour)

@@ -33,6 +33,7 @@ namespace Component
         public int ncapoints = 5;
         private static readonly Random rand = new Random();
         private bool isBoxEdge = true;
+        public double weight = SegmentClass.StrokeSize; // for line drawing
 
         public Stroke(Vector3d v1, Vector3d v2, bool isBoxEdge)
         {
@@ -56,6 +57,7 @@ namespace Component
         {
             this.size2 = s;
             this.size3 = s / 500;
+            this.weight = s;
         }
 
 
@@ -522,7 +524,14 @@ namespace Component
         public bool isGuide = false;
         public Line3d[][] vanLines;
         public bool makeVisible = false;
-        public double strokeGap = 0.1;
+        public double strokeGap = 0.1; // for overshotting
+        // 1: normal 
+        // 2: 1/2
+        // 3: 1/3
+        // 4: 1/4
+        // 5: reflection
+        public int type = 1;
+        public double weight = SegmentClass.StrokeSize;
 
         public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool isBoxEdge)
         {
@@ -577,8 +586,8 @@ namespace Component
             //    return;
             //}
             this.strokes = new List<Stroke>();
-
-            double len = strokeGap * (v - u).Length();
+            double strokeLen = (v - u).Length();
+            double len = strokeGap * strokeLen;
             Vector3d lineDir = (v - u).normalize();
             if (!this.isBoxEdge)
             {
@@ -586,16 +595,20 @@ namespace Component
             }
             else
             {
-                this.nSketch = rand.Next(1, 3);
+                this.nSketch = rand.Next(1, 4);
             }
-
-            for (int i = 0; i < this.nSketch; ++i)
+            // now the first one is always the correct one without errors
+            double dis = this.getRandomDoubleInRange(rand, -len/4, len);
+            Stroke line = new Stroke(u - dis * lineDir, v + dis * lineDir, this.isBoxEdge);
+            this.strokes.Add(line);
+            double dirfloating = strokeLen / 40;
+            for (int i = 1; i < this.nSketch; ++i)
             {
                 Vector3d[] endpoints = new Vector3d[2];
                 for (int j = 0; j < 2; ++j)
                 {
                     // find an arbitrary point
-                    double dis = this.getRandomDoubleInRange(rand, -len, len);
+                    dis = this.getRandomDoubleInRange(rand, -len, len);
                     // find a random normal
                     Vector3d normal = new Vector3d();
                     for (int k = 0; k < 3; ++k)
@@ -603,16 +616,23 @@ namespace Component
                         normal[k] = this.getRandomDoubleInRange(rand, -1, 1);
                     }
                     normal.normalize();
-                    Vector3d step = this.getRandomDoubleInRange(rand, -len / 4, len / 4) * normal;
+                    Vector3d step1 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal;
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        normal[k] = this.getRandomDoubleInRange(rand, -1, 1);
+                    }
+                    normal.normalize();
+                    Vector3d step2 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal;
                     if (!this.isBoxEdge)
                     {
                         dis = this.getRandomDoubleInRange(rand, 0, len/2);
-                        step = new Vector3d();
+                        step1 = new Vector3d();
+                        step2 = new Vector3d();
                     }
                     if (j == 0)
                     {
                         endpoints[j] = u + dis * lineDir;
-                        endpoints[j] += step;
+                        endpoints[j] += step1;
                         if (!this.isBoxEdge)
                         {
                             endpoints[j] = u - dis * lineDir;
@@ -621,10 +641,12 @@ namespace Component
                     else
                     {
                         endpoints[j] = v + dis * lineDir;
-                        endpoints[j] += step;
+                        endpoints[j] += step2;
                     }
                 }
-                Stroke line = new Stroke(endpoints[0], endpoints[1], this.isBoxEdge);
+                line = new Stroke(endpoints[0], endpoints[1], this.isBoxEdge);
+                line.weight *= 0.7;
+                line.strokeColor = SegmentClass.sideStrokeColor;
                 this.strokes.Add(line);
             }
         }//DefineRandomStrokes
@@ -719,6 +741,7 @@ namespace Component
         public List<Plane> facesToHighlight;
         public int activeFaceIndex = -1;
         public int highlightFaceIndex = -1;
+        public List<int> hasGuides;
 
         public Box()
         { }

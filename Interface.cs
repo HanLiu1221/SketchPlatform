@@ -185,7 +185,7 @@ namespace SketchPlatform
         //    if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
         //        return;
         //    int size = Int32.Parse(this.strokeSizeBox.Text);
-        //    this.glViewer.setStrokeStylePerSeg(size);
+        //    this.glViewer.setStrokeSizePerSeg(size);
         //    this.glViewer.Refresh();
         //}
 
@@ -194,7 +194,7 @@ namespace SketchPlatform
             if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
                 return;
             int size = Int32.Parse(this.strokeSizeBox.Text);
-            this.glViewer.setStrokeStylePerSeg(size);
+            this.glViewer.setStrokeSizePerSeg(size);
             this.glViewer.Refresh();
         }
 
@@ -487,8 +487,22 @@ namespace SketchPlatform
         {
             
             double rate = (double)this.sketchyDegreeTrackBar.Value / this.sketchyDegreeTrackBar.Maximum;
-            rate /= 5;
+            rate /= 3;
             this.glViewer.setStrokeSketchyRate(rate);
+            this.glViewer.Refresh();
+        }
+
+        private void lineOrMesh_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (this.lineOrMesh.SelectedIndex == 0)
+            {
+                this.glViewer.showLineOrMesh = true;
+
+            }
+            else
+            {
+                this.glViewer.showLineOrMesh = false;
+            }
             this.glViewer.Refresh();
         }
 
