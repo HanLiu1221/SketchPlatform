@@ -49,7 +49,7 @@ namespace Component
         public static Color ReflectionColor = Color.FromArgb(228, 26, 28);
 
         public static Color GuideLineWithTypeColor = Color.FromArgb(252, 141, 89);
-        public static Color ArrowColor = Color.FromArgb(222, 45, 38);
+        public static Color ArrowColor = Color.FromArgb(116, 196, 118);
 
         private string[] sequences;
         
@@ -302,10 +302,10 @@ namespace Component
                         seg.mesh = mesh;
                     }
                 }
-                //if (meshfileName != "")
-                //{
-                //    seg.loadTrieMesh(meshfileName);
-                //}
+                if (meshfileName != "")
+                {
+                    seg.loadTrieMesh(meshfileName);
+                }
 
                 Box box = seg.boundingbox;
                 if (boxSequences[i].hasGuides != null && boxSequences[i].hasGuides.Count > 0)
@@ -509,11 +509,15 @@ namespace Component
                     box.facesToDraw.Add(face);
                 }
 
-                if (boxSequences[i].previous_guides != null)
+                if (boxSequences[i].previous_guides != null && boxSequences[i].previous_guides.Count > 0)
                 {
                     for (int k = 0; k < curGuides.Count; ++k)
                     {
-                        curGuides[k] += " previous_guide_group_id " + boxSequences[i].previous_guides;
+                        curGuides[k] += " previous_guide_group_id " + boxSequences[i].previous_guides[0];
+                        for (int j = 1; j < boxSequences[i].previous_guides.Count; ++j)
+                        {
+                            curGuides[k] += " " + boxSequences[i].previous_guides[j];
+                        }
                     }
                 }
                 foreach (string s in curGuides)
@@ -596,7 +600,7 @@ namespace Component
 
         public void parseASequence(int idx, out int segIdx, out int guidelineGroupIndex, out List<int> guideLineIndexs, 
             out int nextBox, out int highlightFaceIndex, out int drawFaceIndex, out bool showBlinking, 
-            out bool showOnlyGuides, out bool drawArrow, out int previousGuideGroupId)
+            out bool showOnlyGuides, out bool drawArrow, out List<int> previousGuideGroupIds)
         {
             string seq = this.sequences[idx];
             char[] separator = { '\n', ' ', ':', ';'};
@@ -611,7 +615,7 @@ namespace Component
             showBlinking = false;
             showOnlyGuides = false;
             drawArrow = false;
-            previousGuideGroupId = -1;
+            previousGuideGroupIds = new List<int>();
             while (++i < tokens.Length)
             {
                 if (tokens[i] == "box")
@@ -655,7 +659,10 @@ namespace Component
                 }
                 if (i < tokens.Length && tokens[i] == "previous_guide_group_id")
                 {
-                    previousGuideGroupId = Int32.Parse(tokens[i++]);
+                    while (++i < tokens.Length && tokens[i] != "")
+                    {
+                        previousGuideGroupIds.Add(Int32.Parse(tokens[i]));
+                    }
                 }
             }
             segIdx = boxIdx;

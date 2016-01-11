@@ -1344,27 +1344,24 @@ namespace SketchPlatform
         {        
             //this.showFaceToDraw = false;
             // parse sequence
-            List<int> guideLinesIndex;
+            List<int> guideLinesIds;
             int guideGroupIndex;
             int drawFaceIndex;
             int highlightFaceIndex = -1;
             this.showBlinking = false;
             this.showOnlyGuides = false;
+            bool lastShowArrow = this.showArrows;
             this.showArrows = false;
-            int prevGuideGroupId = -1;
-            this.currSegmentClass.parseASequence(this.sequenceIdx, out this.currBoxIdx, out guideGroupIndex, out guideLinesIndex,
+            List<int> prevGuideGroupIds = new List<int>();
+            this.currSegmentClass.parseASequence(this.sequenceIdx, out this.currBoxIdx, out guideGroupIndex, out guideLinesIds,
                 out this.nextBoxIdx, out highlightFaceIndex, out drawFaceIndex, out this.showBlinking, out this.showOnlyGuides,
-                out this.showArrows, out prevGuideGroupId);
+                out this.showArrows, out prevGuideGroupIds);
 
             this.activateDrawnBoxes();
-
-            if (guideLinesIndex.Count == 0)
+            this.drawPrevBoxGuideLines = false;
+            if (guideLinesIds.Count == 0 && (highlightFaceIndex == -1 && !lastShowArrow) && this.sequenceIdx > 0)
             {
                 this.drawPrevBoxGuideLines = true; // draw previou guide lines
-            }
-            else
-            {
-                this.drawPrevBoxGuideLines = false; // draw current guide lines for next boxes
             }
 
             if (this.showOnlyGuides)
@@ -1389,7 +1386,7 @@ namespace SketchPlatform
                 this.updateDepthVal();
             }
 
-            this.showAnimatedGuideLines(this.activeSegment, guideGroupIndex, guideLinesIndex, highlightFaceIndex, drawFaceIndex);
+            this.showAnimatedGuideLines(this.activeSegment, guideGroupIndex, guideLinesIds, highlightFaceIndex, drawFaceIndex, prevGuideGroupIds);
             this.readyForGuideArrow = true;
             
             this.currGroupIdx = guideGroupIndex;
@@ -1489,6 +1486,13 @@ namespace SketchPlatform
                     stroke.changeStyle((int)SegmentClass.strokeStyle);
                 }
             }
+            if (activeSeg.boundingbox.arrows != null)
+            {
+                foreach (Arrow3D arrow in activeSeg.boundingbox.arrows)
+                {
+                    arrow.active = false;
+                }
+            }
             activeSeg.boundingbox.activeFaceIndex = -1;
             activeSeg.boundingbox.highlightFaceIndex = -1;
         }// deActivateBoxAndGuideLines
@@ -1524,16 +1528,15 @@ namespace SketchPlatform
         }
 
         public int sleepTime = 200;
-        private void showAnimatedGuideLines(Segment seg, int guideGroupIndex, List<int> guideLinesIndex, int highlightFaceIndex, int drawFaceIndex)
+        private void showAnimatedGuideLines(Segment seg, int guideGroupIndex, List<int> guideLinesIds, int highlightFaceIndex, 
+            int drawFaceIndex, List<int> prevGuideGroupIds)
         {
             Box box = seg.boundingbox;
-            // draw arrows
             // draw previous guidelines
-            bool meetGuide = false;
-            if (guideLinesIndex.Count > 0 && guideLinesIndex[0] != 0)
+            if (guideLinesIds.Count > 0)
             {
                 // fixe to the format
-                for (int i = 0; i < guideLinesIndex[0]; ++i)
+                for (int i = 0; i < guideLinesIds[0]; ++i)
                 {
                     GuideLine line = box.guideLines[guideGroupIndex][i];
                     //line.active = true;                    
@@ -1551,6 +1554,17 @@ namespace SketchPlatform
                     }
                 }
             }
+                for (int i = 0; i < prevGuideGroupIds.Count; ++i)
+                {
+                    foreach (GuideLine line in box.guideLines[prevGuideGroupIds[i]])
+                    {
+                        if (line.isGuide)
+                        {
+                            line.active = true;
+                            this.setStrokeStylePerLine(line, SegmentClass.GuideLineSize, SegmentClass.StrokeColor);
+                        }
+                    }
+                }
             if (this.enableDepthTest)
                 Gl.glDisable(Gl.GL_DEPTH_TEST);
             
@@ -1580,9 +1594,9 @@ namespace SketchPlatform
             
             // 2. draw guidelines
             // 3. show the target guide line (previous guidelines are computed for it)
-            for (int i = 0; i < guideLinesIndex.Count; ++i)
+            for (int i = 0; i < guideLinesIds.Count; ++i)
             {
-                int idx = guideLinesIndex[i];
+                int idx = guideLinesIds[i];
                 GuideLine line = box.guideLines[guideGroupIndex][idx];
                 line.active = true; 
                 if (line.isGuide)
@@ -1598,11 +1612,10 @@ namespace SketchPlatform
                 //System.Threading.Thread.Sleep(this.sleepTime);
                 if (line.isGuide)
                 {
-                    meetGuide = true;
                     // deactivate previous lines
                     for (int j = 0; j <= i; ++j)
                     {
-                        GuideLine jline = box.guideLines[guideGroupIndex][guideLinesIndex[j]];
+                        GuideLine jline = box.guideLines[guideGroupIndex][guideLinesIds[j]];
                         if (jline.isGuide)
                         {
                             //this.setStrokeStylePerLine(jline, (int)(SegmentClass.GuideLineSize), SegmentClass.StrokeColor);
@@ -1621,9 +1634,9 @@ namespace SketchPlatform
                 this.setStrokeStylePerLine(line, SegmentClass.GuideLineSize * 0.6, SegmentClass.HiddenGuideLinecolor);
             }
             // the last one is now the current one to highlight
-            if (guideLinesIndex.Count > 0)
+            if (guideLinesIds.Count > 0)
             {
-                GuideLine last = box.guideLines[guideGroupIndex][guideLinesIndex[guideLinesIndex.Count - 1]];
+                GuideLine last = box.guideLines[guideGroupIndex][guideLinesIds[guideLinesIds.Count - 1]];
                 if (last.isGuide)
                 {
                     this.setStrokeStylePerLine(last, SegmentClass.GuideLineSize, SegmentClass.GuideLineWithTypeColor);
@@ -3463,6 +3476,8 @@ namespace SketchPlatform
             /*****TEST*****/
             //this.drawTest2D();
 
+            this.DrawLight();
+
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
             //Gl.glPopMatrix();
@@ -3567,6 +3582,9 @@ namespace SketchPlatform
         private int visibilityIdx = 0;
         private void Draw3D()
         {
+
+            InitGlMaterialLights();
+
             this.setViewMatrix();
 
             /***** Draw *****/
@@ -3590,15 +3608,15 @@ namespace SketchPlatform
             {
                 if (this.drawFace)
                 {
-                    //this.currMeshClass.renderShaded();
-                    if (this.isShowContour())
-                    {
-                        this.drawMeshFace(this.currMeshClass.Mesh, Color.White, false);
-                    }
-                    else
-                    {
-                        this.drawMeshFace(this.currMeshClass.Mesh, Color.Blue, true);
-                    }
+                    this.currMeshClass.renderShaded();
+                    //if (this.isShowContour())
+                    //{
+                    //    this.drawMeshFace(this.currMeshClass.Mesh, Color.Blue, false);
+                    //}
+                    //else
+                    //{
+                    //    this.drawMeshFace(this.currMeshClass.Mesh, Color.Blue, true);
+                    //}
                 }
                 if (this.drawEdge)
                 {
@@ -3718,14 +3736,14 @@ namespace SketchPlatform
                     {
                         if (this.isShowContour())
                         {
-                            this.drawMeshFace(seg.mesh, Color.White, false);
+                            //this.drawMeshFace(seg.mesh, Color.Blue, false);
+                            this.drawMeshFace(seg.mesh, seg.color, false);
                         }
                         else
                         {
-                            //this.drawMeshFace(seg.mesh, seg.color, false);
-                            this.drawMeshFace(seg.mesh, Color.WhiteSmoke, false);
-                        }
-                        
+                            this.drawMeshFace(seg.mesh, seg.color, false);
+                            //this.drawMeshFace(seg.mesh, Color.WhiteSmoke, false);
+                        }                        
                     }
                     if (this.drawEdge)
                     {
@@ -4090,7 +4108,7 @@ namespace SketchPlatform
                 foreach (Arrow3D arrow in box.arrows)
                 {
                     if (!arrow.active) continue;
-                    this.drawGuideArrow(arrow, SegmentClass.ArrowColor, 3.0f);
+                    this.drawGuideArrow(arrow, SegmentClass.ArrowColor, 2.0f);
                 }
             }
             
@@ -4217,7 +4235,7 @@ namespace SketchPlatform
                     }
                 }
             }
-            
+            this.drawTheFormationGuidLines();
         }// drawActiveGuideLines
 
         private void drawActiveGuideLines_line(Segment seg)
@@ -4801,24 +4819,181 @@ namespace SketchPlatform
             }
         }
 
+        public static float[] matAmbient = { 0.1f, 0.1f, 0.1f, 1.0f };
+        public static float[] matDiffuse = { 0.4f, 0.4f, 0.4f, 1.0f };
+        public static float[] matSpecular = { 0.5f, 0.5f, 0.5f, 1.0f };
+        public static float[] shine = { 7.0f };
+
+        private static void SetDefaultLight()
+        {
+            float[] pos1 = new float[4] { 0.1f, 0.1f, -0.02f, 0.0f };
+            float[] pos2 = new float[4] { -0.1f, 0.1f, -0.02f, 0.0f };
+            float[] pos3 = new float[4] { 0.0f, 0.0f, 0.1f, 0.0f };
+            float[] col1 = new float[4] { 0.7f, 0.7f, 0.8f, 1.0f };
+            float[] col2 = new float[4] { 0.8f, 0.7f, 0.7f, 1.0f };
+            float[] col3 = new float[4] { 1.0f, 1.0f, 1.0f, 1.0f };
+
+            Gl.glEnable(Gl.GL_LIGHT0);
+            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, pos1);
+            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, col1);
+            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, col1);
+
+            Gl.glEnable(Gl.GL_LIGHT1);
+            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_POSITION, pos2);
+            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_DIFFUSE, col2);
+            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_SPECULAR, col2);
+
+            Gl.glEnable(Gl.GL_LIGHT2);
+            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_POSITION, pos3);
+            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_DIFFUSE, col3);
+            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_SPECULAR, col3);
+
+        }
+        public void AddLight(Vector3d pos, Color col)
+        {
+            int lightID = lightPositions.Count + 16387;
+            float[] posA = new float[4] { (float)pos.x, (float)pos.y, (float)pos.z, 0.0f };
+            lightPositions.Add(posA);
+            float[] colA = new float[4] { col.R / 255.0f, col.G / 255.0f, col.B / 255.0f, 1.0f };
+            lightcolors.Add(colA);
+            lightIDs.Add(lightID);
+        }
+        private static void SetDefaultMaterial()
+        {
+            Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT, matAmbient);
+            Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_DIFFUSE, matDiffuse);
+            Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_SPECULAR, matSpecular);
+            Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_SHININESS, shine);
+
+        }
+        public static List<float[]> lightPositions = new List<float[]>();
+        public static List<float[]> lightcolors = new List<float[]>();
+        public static List<int> lightIDs = new List<int>();
+        private static void SetAdditionalLight()
+        {
+            if (lightPositions.Count == 0)
+            {
+                return;
+            }
+            for (int i = 0; i < lightPositions.Count; ++i)
+            {
+                Gl.glEnable(lightIDs[i]);
+                Gl.glLightfv(lightIDs[i], Gl.GL_POSITION, lightPositions[i]);
+                Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, lightcolors[i]);
+                Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, lightcolors[i]);
+            }
+        }
+        public static void DrawCircle2(Vector2d p, Color c, float radius)
+        {
+            Gl.glEnable(Gl.GL_BLEND);
+            //	Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+
+            Gl.glColor4ub(c.R, c.G, c.B, 50);
+
+            int nsample = 50;
+            double delta = Math.PI * 2 / nsample;
+
+            Gl.glLineWidth(1.0f);
+            Gl.glBegin(Gl.GL_LINES);
+            for (int i = 0; i < nsample; ++i)
+            {
+                double theta1 = i * delta;
+                double x1 = p.x + radius * Math.Cos(theta1), y1 = p.y + radius * Math.Sin(theta1);
+                double theta2 = (i + 1) * delta;
+                double x2 = p.x + radius * Math.Cos(theta2), y2 = p.y + radius * Math.Sin(theta2);
+                Gl.glVertex2d(x1, y1);
+                Gl.glVertex2d(x2, y2);
+            }
+            Gl.glEnd();
+            Gl.glLineWidth(1.0f);
+
+            Gl.glBegin(Gl.GL_POLYGON);
+            for (int i = 0; i < nsample; ++i)
+            {
+                double theta1 = i * delta;
+                double x1 = p.x + radius * Math.Cos(theta1), y1 = p.y + radius * Math.Sin(theta1);
+                Gl.glVertex2d(x1, y1);
+            }
+            Gl.glEnd();
+
+            //	Gl.glDisable(Gl.GL_BLEND);
+        }
+
+        private void DrawLight()
+        {
+            for (int i = 0; i < lightPositions.Count; ++i)
+            {
+                Vector3d pos3 = new Vector3d(lightPositions[i][0],
+                    lightPositions[i][1],
+                    lightPositions[i][2]);
+                Vector3d pos2 = this.camera.Project(pos3.x, pos3.y, pos3.z);
+                DrawCircle2(new Vector2d(pos2.x, pos2.y), Color.Yellow, 0.2f);
+            }
+        }
+
+        public static void InitGlMaterialLights()
+        {
+            // Material
+            SetDefaultMaterial();
+
+            // Lighting
+            SetDefaultLight();
+
+            SetAdditionalLight();
+
+            //// Fog
+            //float[] fogColor = new float[] { 0.3f, 0.3f, 0.4f, 1.0f };
+            //Gl.glFogi(Gl.GL_FOG_MODE, Gl.GL_LINEAR);
+            //Gl.glFogfv(Gl.GL_FOG_COLOR, fogColor);
+            //Gl.glFogf(Gl.GL_FOG_DENSITY, 0.35f);
+            //Gl.glHint(Gl.GL_FOG_HINT, Gl.GL_DONT_CARE);
+            //Gl.glFogf(Gl.GL_FOG_START, 5.0f);
+            //Gl.glFogf(Gl.GL_FOG_END, 25.0f);
+
+            //	Glut.glutInit();
+            //Glut.glutInitDisplayMode(Glut.GLUT_DOUBLE | Glut.GLUT_RGB | Glut.GLUT_DEPTH | Glut.GLUT_MULTISAMPLE);
+            //	Glut.glutInitDisplayMode(Glut.GLUT_DOUBLE | Glut.GLUT_MULTISAMPLE);
+
+        }
+
         // draw mesh
         public void drawMeshFace(Mesh m, Color c, bool useMeshColor)
         {
             if (m == null) return;
 
-            Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+            //Gl.glEnable(Gl.GL_COLOR_MATERIAL);
+            //Gl.glColorMaterial(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE);
+            //Gl.glEnable(Gl.GL_CULL_FACE);
+            //Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE, material);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_AMBIENT, ambient);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, diffuse);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, specular);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, position);
+            //Gl.glEnable(Gl.GL_LIGHT0);
+            //Gl.glDepthFunc(Gl.GL_LESS);
+            //Gl.glEnable(Gl.GL_DEPTH_TEST);
+            //Gl.glEnable(Gl.GL_LIGHTING);
+            //Gl.glEnable(Gl.GL_NORMALIZE);
 
-            Gl.glEnable(Gl.GL_POLYGON_SMOOTH);
-            Gl.glHint(Gl.GL_POLYGON_SMOOTH_HINT, Gl.GL_NICEST);
+            Gl.glEnable(Gl.GL_POINT_SMOOTH);
             Gl.glEnable(Gl.GL_LINE_SMOOTH);
-            Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
-
             Gl.glEnable(Gl.GL_BLEND);
             Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
-            Gl.glShadeModel(Gl.GL_SMOOTH);
 
             Gl.glEnable(Gl.GL_DEPTH_TEST);
 
+
+            Gl.glEnable(Gl.GL_LIGHTING);
+            Gl.glEnable(Gl.GL_NORMALIZE);
+            Gl.glPolygonOffset(5.0f, 30.0f);
+            Gl.glEnable(Gl.GL_POLYGON_OFFSET_FILL);
+            Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+            float[] mat_a = new float[4] { c.R / 255.0f, c.G / 255.0f, c.B / 255.0f, 1.0f };
+            Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT, mat_a);
+
+            Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+
+            
             if (useMeshColor)
             {
                 Gl.glColor3ub(GLViewer.ModelColor.R, GLViewer.ModelColor.G, GLViewer.ModelColor.B);
@@ -4871,10 +5046,18 @@ namespace SketchPlatform
             }
 
             Gl.glDisable(Gl.GL_DEPTH_TEST);
+            Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+            Gl.glDisable(Gl.GL_LINE_SMOOTH);
+            Gl.glDisable(Gl.GL_POINT_SMOOTH);
+            Gl.glDisable(Gl.GL_BLEND);
+            Gl.glDepthMask(Gl.GL_TRUE);
+
+            //Gl.glDisable(Gl.GL_DEPTH_TEST);
             //Gl.glDisable(Gl.GL_NORMALIZE);
             Gl.glDisable(Gl.GL_LIGHTING);
-            Gl.glDisable(Gl.GL_COLOR_MATERIAL);
-            Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+            //Gl.glDisable(Gl.GL_LIGHT0);
+            //Gl.glDisable(Gl.GL_CULL_FACE);
+            //Gl.glDisable(Gl.GL_COLOR_MATERIAL);
         }
 
         private void drawMeshEdge(Mesh m)
