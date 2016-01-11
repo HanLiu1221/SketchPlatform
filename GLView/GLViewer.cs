@@ -206,6 +206,7 @@ namespace SketchPlatform
         public bool showBoxVanishingLine = true;
         public bool showGuideLineVanishingLine = false;
         private List<int> boxShowSequence = new List<int>();
+        private List<string> pageNumber;
 
         //########## static vars ##########//
         public static Color[] ColorSet;
@@ -356,14 +357,14 @@ namespace SketchPlatform
             segStats = new int[2];
             segStats[0] = sc.segments.Count;
         }// loadSegments
-
+        
         public void loadJSONFile(string jsonFile)
         {
             this.foldername = jsonFile.Substring(0, jsonFile.LastIndexOf('\\'));
 
             SegmentClass sc = new SegmentClass();
             //Matrix4d m = sc.DeserializeJSON(jsonFile, out this.objectCenter);
-            Matrix4d m = sc.DeserializeJSON(jsonFile, out this.objectCenter);
+            Matrix4d m = sc.DeserializeJSON(jsonFile, out this.objectCenter, out this.pageNumber);
 
             if (m != null)
             {
@@ -418,6 +419,14 @@ namespace SketchPlatform
             this.currBoxIdx = -1;
             this.activeSegment = null;
             this.cal2D();
+            if (this.pageNumber != null)
+            {
+                string totalPageStr = "/" + this.pageNumber[this.pageNumber.Count - 1];
+                for (int i = 0; i < this.pageNumber.Count; ++i )
+                {
+                    this.pageNumber[i] += totalPageStr;
+                }
+            }
         }// loadJSONFile
         
 
@@ -567,6 +576,12 @@ namespace SketchPlatform
 
             this.paperPosLines[6] = this.paperPos[3].pos2 + xd * off;
             this.paperPosLines[7] = this.paperPos[3].pos2 - yd * off;
+
+            int x = (int)this.paperPos[2].pos2.x;
+            int y = this.Location.Y + (int)this.paperPos[0].pos2.y + 20;
+            Program.GetFormMain().setPageNumberLocation(x,y);
+            Program.GetFormMain().Refresh();
+            this.Refresh();
         }// calculatePaperPosition
 
         private void calculateVanishingPoints()
@@ -986,87 +1001,121 @@ namespace SketchPlatform
             }
         }
 
-        public void nextSequence()
+        public string nextSequence()
         {
             this.inGuideMode = true;
             if (this.nSequence <= 0)
             {
-                return;
+                Program.GetFormMain().setPageNumber("0");
+                return "0";
             }
             if (this.sequenceIdx == this.nSequence - 1)
             {
+                this.resetAllBoxes();
+                this.sequenceIdx++;
+                Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
+                return this.pageNumber[this.pageNumber.Count - 1];
+            }
+            else if (this.sequenceIdx == this.nSequence)
+            {
                 MessageBox.Show("Finish!");
-                return;
+                Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
+                return this.pageNumber[this.pageNumber.Count - 1];
             }
             this.sequenceIdx++;
             if (this.sequenceIdx == 0)
             {
                 this.clearBoxes();
+                this.boxStack = new List<int>();
             }
-            this.activateGuideSequence();
+            this.activateGuideSequence(true);
             this.lockView = true;
-        }
+            Program.GetFormMain().setPageNumber(this.pageNumber[this.boxStack.Count - 1]);
+            return this.pageNumber[this.boxStack.Count - 1];
+        }//nextSequence
 
-        public void prevSequence()
+        private List<int> boxStack;
+        public string prevSequence()
         {
             this.inGuideMode = true;
             if (this.nSequence <= 0)
             {
-                return;
+                Program.GetFormMain().setPageNumber("0");
+                return "0";
             }
             if (this.sequenceIdx <= 0)
             {
                 MessageBox.Show("This is the first box!");
-                return;
+                Program.GetFormMain().setPageNumber("1");
+                return this.pageNumber[0];
             }
-
-            this.activeSegment = this.currSegmentClass.segments[this.currBoxIdx];
-            this.deActivateBoxAndGuideLines(this.activeSegment);
-            this.sequenceIdx--;
-            this.activeSegment.drawn = false;
-            for (int i = this.sequenceIdx - 1; i >= 0; --i)
+            if (this.currBoxIdx >= 0)
             {
-                if (this.boxShowSequence[i] == this.currBoxIdx)
+                this.activeSegment = this.currSegmentClass.segments[this.currBoxIdx];
+                this.deActivateBoxAndGuideLines(this.activeSegment);
+                this.boxStack.RemoveAt(this.boxStack.Count - 1);
+            }
+            this.sequenceIdx--;
+            if (this.activeSegment != null)
+            {
+                this.activeSegment.drawn = false;
+                this.activeSegment.drawn = this.checkBoxDrawnOrNot(this.currBoxIdx, 1);
+                if (this.activeSegment.drawn)
                 {
-                    this.activeSegment.drawn = true;
                     this.activeSegment.active = true;
                 }
             }
-
-            Segment prevSeg = this.currSegmentClass.segments[this.boxShowSequence[this.sequenceIdx]];
-            prevSeg.drawn = false;
-            for (int i = this.sequenceIdx - 1; i >= 0; --i)
+            if (sequenceIdx < nSequence && this.boxStack.Count > 0 && this.boxStack[this.boxStack.Count - 1] != -1)
             {
-                if (this.boxShowSequence[i] == prevSeg.idx)
-                {
-                    prevSeg.drawn = true;
-                }
+                Segment prevSeg = this.currSegmentClass.segments[this.boxStack[this.boxStack.Count - 1]];
+                prevSeg.drawn = this.checkBoxDrawnOrNot(prevSeg.idx, 2);
             }
-            this.activateGuideSequence();
+            this.activateGuideSequence(false);
             this.lockView = true;
-        }
+            if (this.sequenceIdx == nSequence)
+            {
+                Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
+                return this.pageNumber[this.pageNumber.Count - 1];
+            }
+            else
+            {
+                Program.GetFormMain().setPageNumber(this.pageNumber[this.boxStack.Count - 1]);
+                return this.pageNumber[this.boxStack.Count - 1];
+            }
+        }//prevSequence
 
         public void redoSequence()
         {
             this.inGuideMode = true;
-            this.sequenceIdx = 0;
+            this.sequenceIdx = -1;
             this.clearBoxes();
-            if (this.currSegmentClass != null)
+            this.boxStack = new List<int>();
+            this.nextSequence();
+            this.lockView = true;            
+        }
+
+        private bool checkBoxDrawnOrNot(int boxIdx, int back)
+        {
+            if(this.boxStack == null) return false;
+            bool drawn = false;
+            for (int i = this.boxStack.Count - back; i >= 0; --i)
             {
-                foreach (Segment seg in this.currSegmentClass.segments)
+                if (this.boxStack[i] == boxIdx)
                 {
-                    seg.drawn = false;
+                    drawn = true;
+                    break;
                 }
             }
-            this.activateGuideSequence();
-            this.lockView = true;
-        }
+            return drawn;
+        }//checkBoxDrawnOrNot
 
         private void clearBoxes()
         {
+            if (this.currSegmentClass == null) return;
             foreach (Segment seg in this.currSegmentClass.segments)
             {
                 seg.active = false;
+                seg.drawn = false;
                 List<GuideLine> allLines = seg.boundingbox.getAllLines();
                 foreach (GuideLine line in allLines)
                 {
@@ -1076,6 +1125,22 @@ namespace SketchPlatform
                 seg.boundingbox.highlightFaceIndex = -1;
             }
         }//clearBoxes
+
+        private void resetAllBoxes()
+        {
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                seg.active = true;
+                List<GuideLine> allLines = seg.boundingbox.getAllLines();
+                foreach (GuideLine line in allLines)
+                {
+                    line.active = true;
+                }
+                this.setStrokeSizePerSeg(SegmentClass.StrokeSize, seg, SegmentClass.StrokeColor, GuideLineColor);
+            }
+            this.activeSegment = null;
+            this.currBoxIdx = -1;
+        }
 
         private void resumeBoxes()
         {
@@ -1092,6 +1157,7 @@ namespace SketchPlatform
             this.currBoxIdx = -1;
             this.sequenceIdx = -1;
             this.activeSegment = null;
+            this.boxStack = new List<int>();
             if (this.depthType == Depthtype.hidden)
             {
                 this.updateDepthVal();
@@ -1272,10 +1338,10 @@ namespace SketchPlatform
         }
 
         private int currGroupIdx = -1;
-        private bool drawOnlyGuides = false;
-        private void activateGuideSequence()
-        {
-            
+        private bool showOnlyGuides = false;
+        private bool showArrows = false;
+        private void activateGuideSequence(bool next)
+        {        
             //this.showFaceToDraw = false;
             // parse sequence
             List<int> guideLinesIndex;
@@ -1283,10 +1349,12 @@ namespace SketchPlatform
             int drawFaceIndex;
             int highlightFaceIndex = -1;
             this.showBlinking = false;
-            this.drawOnlyGuides = false;
+            this.showOnlyGuides = false;
+            this.showArrows = false;
+            int prevGuideGroupId = -1;
             this.currSegmentClass.parseASequence(this.sequenceIdx, out this.currBoxIdx, out guideGroupIndex, out guideLinesIndex,
-                out this.nextBoxIdx, out highlightFaceIndex, out drawFaceIndex, out this.showBlinking, out this.drawOnlyGuides);
-
+                out this.nextBoxIdx, out highlightFaceIndex, out drawFaceIndex, out this.showBlinking, out this.showOnlyGuides,
+                out this.showArrows, out prevGuideGroupId);
 
             this.activateDrawnBoxes();
 
@@ -1299,10 +1367,14 @@ namespace SketchPlatform
                 this.drawPrevBoxGuideLines = false; // draw current guide lines for next boxes
             }
 
-            if (this.drawOnlyGuides)
+            if (this.showOnlyGuides)
             {
                 this.drawPrevBoxGuideLines = true;
                 this.currSegmentClass.segments[this.currBoxIdx].drawn = false;
+                if (next)
+                {
+                    this.boxStack.Add(-1);
+                }
                 return;
             }
 
@@ -1321,8 +1393,22 @@ namespace SketchPlatform
             this.readyForGuideArrow = true;
             
             this.currGroupIdx = guideGroupIndex;
-  
-            this.activeSegment.drawn = true;
+
+            if (!this.showArrows)
+            {
+                this.activeSegment.drawn = true;
+            }
+            if (next)
+            {
+                if (!this.showArrows)
+                {
+                    this.boxStack.Add(this.currBoxIdx);
+                }
+                else
+                {
+                    this.boxStack.Add(-1);
+                }
+            }
         }// activateGuideSequence
 
         private void activateDrawnBoxes()
@@ -1363,6 +1449,13 @@ namespace SketchPlatform
                     }
                 }
                 seg.boundingbox.activeFaceIndex = -1;
+                if (seg.boundingbox.arrows != null)
+                {
+                    foreach (Arrow3D arrow in seg.boundingbox.arrows)
+                    {
+                        arrow.active = false;
+                    }
+                }
             }
             this.calculateSketchMesh2d();
         }// activateDrawnBox
@@ -1436,6 +1529,7 @@ namespace SketchPlatform
             Box box = seg.boundingbox;
             // draw arrows
             // draw previous guidelines
+            bool meetGuide = false;
             if (guideLinesIndex.Count > 0 && guideLinesIndex[0] != 0)
             {
                 // fixe to the format
@@ -1500,17 +1594,11 @@ namespace SketchPlatform
                 {
                     this.setStrokeStylePerLine(line, SegmentClass.GuideLineSize, GuideLineColor);
                 }
-                //if (line.isGuide)
-                //{
-                //    foreach (Stroke stroke in line.strokes)
-                //    {
-                //        stroke.strokeColor = SegmentClass.HighlightColor;
-                //    }
-                //}
-                this.Refresh();
-                System.Threading.Thread.Sleep(this.sleepTime);
+                //this.Refresh();
+                //System.Threading.Thread.Sleep(this.sleepTime);
                 if (line.isGuide)
                 {
+                    meetGuide = true;
                     // deactivate previous lines
                     for (int j = 0; j <= i; ++j)
                     {
@@ -1528,9 +1616,35 @@ namespace SketchPlatform
                             //this.setGuideLineTypeColor(jline);
                         }
                     }
-                    this.Refresh();
+                    //this.Refresh();
+                }
+                this.setStrokeStylePerLine(line, SegmentClass.GuideLineSize * 0.6, SegmentClass.HiddenGuideLinecolor);
+            }
+            // the last one is now the current one to highlight
+            if (guideLinesIndex.Count > 0)
+            {
+                GuideLine last = box.guideLines[guideGroupIndex][guideLinesIndex[guideLinesIndex.Count - 1]];
+                if (last.isGuide)
+                {
+                    this.setStrokeStylePerLine(last, SegmentClass.GuideLineSize, SegmentClass.GuideLineWithTypeColor);
+                }
+                else
+                {
+                    this.setStrokeStylePerLine(last, SegmentClass.GuideLineSize, GuideLineColor);
                 }
             }
+            // draw the arrows
+            this.Refresh();
+            if (this.showArrows && box.arrows != null)
+            {
+                foreach (Arrow3D arrow in box.arrows)
+                {
+                    arrow.active = true;
+                    this.Refresh();
+                    System.Threading.Thread.Sleep(this.sleepTime);
+                }
+            }
+
             this.animatedLine = null;
             box.activeFaceIndex =  drawFaceIndex;
             //box.highlightFaceIndex = -1;
@@ -2832,7 +2946,7 @@ namespace SketchPlatform
                 {
                     foreach (Stroke stroke in line.strokes)
                     {
-                        sw.WriteLine("newpatth");
+                        sw.WriteLine("newpath");
                         sw.Write(stroke.u2.x.ToString() + " ");
                         sw.Write(stroke.u2.y.ToString() + " ");
                         sw.WriteLine("moveto ");
@@ -2850,7 +2964,7 @@ namespace SketchPlatform
             }
             if (this.activeSegment != null || this.currBoxIdx != -1)
             {
-                if (this.drawOnlyGuides)
+                if (this.showOnlyGuides)
                 {
 
                 }
@@ -3860,7 +3974,7 @@ namespace SketchPlatform
             }
         }
 
-        private void drawGuideArrow(Arrow3D a, Color c)
+        private void drawGuideArrow(Arrow3D a, Color c, float lineWidth)
         {
             Gl.glEnable(Gl.GL_LINE_SMOOTH);
             Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
@@ -3868,7 +3982,7 @@ namespace SketchPlatform
             Gl.glEnable(Gl.GL_BLEND);
             Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
 
-            Gl.glLineWidth(4.0f);
+            Gl.glLineWidth(lineWidth);
             Gl.glColor3ub(c.R, c.G, c.B);
             Gl.glBegin(Gl.GL_LINES);
             Gl.glVertex3dv(a.u.ToArray());
@@ -3946,7 +4060,6 @@ namespace SketchPlatform
                 }
             }
 
-
             if (this.showLineOrMesh)
             {
                 this.drawActiveBox_line(seg);
@@ -3972,7 +4085,14 @@ namespace SketchPlatform
 
             this.drawAnimatedLine();
 
-            
+            if (this.showArrows && box.arrows != null)
+            {
+                foreach (Arrow3D arrow in box.arrows)
+                {
+                    if (!arrow.active) continue;
+                    this.drawGuideArrow(arrow, SegmentClass.ArrowColor, 3.0f);
+                }
+            }
             
             if (this.enableDepthTest)
             {
@@ -4142,7 +4262,7 @@ namespace SketchPlatform
 
         private void drawVanishingGuide2d(Segment seg)
         {
-            if (this.showVanishingLines && this.showBoxVanishingLine && !this.drawOnlyGuides)
+            if (this.showVanishingLines && this.showBoxVanishingLine && !this.showOnlyGuides)
             {
                 this.drawVanishingLines2d(seg.boundingbox, SegmentClass.VanLineColor, 0.5f);
             }

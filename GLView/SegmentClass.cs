@@ -49,7 +49,7 @@ namespace Component
         public static Color ReflectionColor = Color.FromArgb(228, 26, 28);
 
         public static Color GuideLineWithTypeColor = Color.FromArgb(252, 141, 89);
-
+        public static Color ArrowColor = Color.FromArgb(222, 45, 38);
 
         private string[] sequences;
         
@@ -223,7 +223,7 @@ namespace Component
             }
         }//shadedOrTexture
 
-        public Matrix4d DeserializeJSON(string filename, out Vector3d center)
+        public Matrix4d DeserializeJSON(string filename, out Vector3d center, out List<string> pageNumbers)
         {
             StreamReader sr = new StreamReader(filename);
 
@@ -235,6 +235,7 @@ namespace Component
             string path = filename.Substring(0, filename.LastIndexOf('\\') + 1);
             Matrix4d modelView = null;
             int idx = 0;
+            pageNumbers = new List<string>();
 
             List<string> render_sequence = new List<string>();
             char[] separator = { ',', ' ', '\n' };
@@ -258,6 +259,8 @@ namespace Component
             List<SequenceJson> boxSequences = jsonFile.sequence;
             // repeat boxSequences
             List<string> boxNames = new List<string>();
+            int page = 1;
+            char subpage = 'a';
             for (int i = 0; i < boxSequences.Count; ++i)
             {
                 Vector3d[] bbox = null;
@@ -299,10 +302,10 @@ namespace Component
                         seg.mesh = mesh;
                     }
                 }
-                if (meshfileName != "")
-                {
-                    seg.loadTrieMesh(meshfileName);
-                }
+                //if (meshfileName != "")
+                //{
+                //    seg.loadTrieMesh(meshfileName);
+                //}
 
                 Box box = seg.boundingbox;
                 if (boxSequences[i].hasGuides != null && boxSequences[i].hasGuides.Count > 0)
@@ -320,6 +323,52 @@ namespace Component
                     string s = "box " + boxIndex.ToString();
                     s += " drawOnlyguides";
                     render_sequence.Add(s);
+                    ++page;
+                    pageNumbers.Add(page.ToString());
+                }
+
+                // arrows
+                if (boxSequences[i].arrows != null)
+                {
+                    List<Vector3d> arrowVecs = new List<Vector3d>();
+                    foreach (GuideJson arrow in boxSequences[i].arrows)
+                    {
+                        Vector3d pfrom = null, pto = null;
+                        if (arrow.from != null)
+                        {
+                            pfrom = new Vector3d(
+                                double.Parse(arrow.from.x),
+                                double.Parse(arrow.from.y),
+                                double.Parse(arrow.from.z));
+                        }
+                        if (arrow.to != null)
+                        {
+                            pto = new Vector3d(
+                                double.Parse(arrow.to.x),
+                                double.Parse(arrow.to.y),
+                                double.Parse(arrow.to.z));
+                        }
+                        arrowVecs.Add(pfrom);
+                        arrowVecs.Add(pto);
+                    }
+                    box.arrows = new List<Arrow3D>();
+                    if (arrowVecs.Count > 2)
+                    {
+                        Vector3d vf = arrowVecs[2] - arrowVecs[0];
+                        Vector3d va = arrowVecs[1] - arrowVecs[0];
+                        Vector3d vn = va.Cross(vf).normalize();
+                        for (int j = 0; j < arrowVecs.Count; j += 2)
+                        {
+                            Arrow3D arrow = new Arrow3D(arrowVecs[j], arrowVecs[j + 1], vn);
+                            box.arrows.Add(arrow);
+                        }
+                    }
+                    // draw arrows before guides start if there is any
+                    string astr = "box " + boxIndex.ToString();
+                    astr += " arrows";
+                    render_sequence.Add(astr);
+                    ++page;
+                    pageNumbers.Add(page.ToString());
                 }
 
                 // guides
@@ -376,20 +425,31 @@ namespace Component
                 string boxIndexString = "box " + boxIndex.ToString();
                 string cur = boxIndexString + " ";
                 List<string> curGuides = new List<string>();
-                string separateGuideLineIndx = "";
+                
                 if (boxSequences[i].guide_sequence != null && boxSequences[i].guide_sequence.Count > 0)
                 {
                     cur += "guideGroup " + (box.guideLines.Count - 1).ToString();
                     cur += " guide ";
                     string cur_backup = new string(cur.ToArray());
+                    curGuides.Add(boxIndexString + " ");
+                    ++page;
+                    pageNumbers.Add(page.ToString());
                     foreach (GuideSequenceJson seq in boxSequences[i].guide_sequence)
                     {                        
+                        string separateGuideLineIndx = "";
+                        subpage = 'a';
                         if (seq.guide_indexes != null)
                         {
                             foreach (string s in seq.guide_indexes)
                             {
-                                cur += s + " ";
+                                //cur += s + " ";
                                 separateGuideLineIndx += s + " ";
+                                cur = new string(cur_backup.ToArray());
+                                cur += separateGuideLineIndx;
+                                curGuides.Add(cur);
+                                string pstr = page.ToString() + new string(subpage, 1);
+                                subpage = (char)(subpage + 1);
+                                pageNumbers.Add(pstr);
                             }
                         }
                         int last = Int32.Parse(seq.guide_indexes[seq.guide_indexes.Count-1]);
@@ -398,13 +458,17 @@ namespace Component
                         {
                             box.guideLines[box.guideLines.Count - 1][last].type = Int32.Parse(seq.type);
                         }
-                        curGuides.Add(cur);
-                        cur = new string(cur_backup.ToArray());
+                        ++page;
+                        //curGuides.Add(cur);
+                        //cur = new string(cur_backup.ToArray());
                     }
+                    --page;
                 }
                 if (curGuides.Count == 0)
                 {
                     curGuides.Add(cur);
+                    ++page;
+                    pageNumbers.Add(page.ToString());
                 }
                 Plane faceToHighlight = null;
                 if (boxSequences[i].face_to_highlight != null)
@@ -444,6 +508,14 @@ namespace Component
                     Plane face = new Plane(points);
                     box.facesToDraw.Add(face);
                 }
+
+                if (boxSequences[i].previous_guides != null)
+                {
+                    for (int k = 0; k < curGuides.Count; ++k)
+                    {
+                        curGuides[k] += " previous_guide_group_id " + boxSequences[i].previous_guides;
+                    }
+                }
                 foreach (string s in curGuides)
                 {
                     render_sequence.Add(s);
@@ -460,6 +532,9 @@ namespace Component
             render_sequence.Insert(0, "box 0");
             this.sequences = render_sequence.ToArray();
             //center = this.NormalizeSegmentsToBox();
+            pageNumbers.Insert(0, "1");
+            ++page;
+            pageNumbers.Add(page.ToString());
             return modelView;
         }//DeserializeJSON
 
@@ -520,7 +595,8 @@ namespace Component
         }
 
         public void parseASequence(int idx, out int segIdx, out int guidelineGroupIndex, out List<int> guideLineIndexs, 
-            out int nextBox, out int highlightFaceIndex, out int drawFaceIndex, out bool showBlinking, out bool drawOnlyGuides)
+            out int nextBox, out int highlightFaceIndex, out int drawFaceIndex, out bool showBlinking, 
+            out bool showOnlyGuides, out bool drawArrow, out int previousGuideGroupId)
         {
             string seq = this.sequences[idx];
             char[] separator = { '\n', ' ', ':', ';'};
@@ -533,7 +609,9 @@ namespace Component
             drawFaceIndex = -1;
             highlightFaceIndex = -1;
             showBlinking = false;
-            drawOnlyGuides = false;
+            showOnlyGuides = false;
+            drawArrow = false;
+            previousGuideGroupId = -1;
             while (++i < tokens.Length)
             {
                 if (tokens[i] == "box")
@@ -567,8 +645,17 @@ namespace Component
                 }
                 if (i < tokens.Length && tokens[i] == "drawOnlyguides")
                 {
-                    drawOnlyGuides = true;
+                    showOnlyGuides = true;
                     break;
+                }
+                if (i < tokens.Length && tokens[i] == "arrows")
+                {
+                    drawArrow = true;
+                    break;
+                }
+                if (i < tokens.Length && tokens[i] == "previous_guide_group_id")
+                {
+                    previousGuideGroupId = Int32.Parse(tokens[i++]);
                 }
             }
             segIdx = boxIdx;

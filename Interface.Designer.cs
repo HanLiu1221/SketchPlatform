@@ -38,6 +38,7 @@
             this.loadJSONFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.outputSeqToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadTriMeshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportSequenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tools = new System.Windows.Forms.ToolStripDropDownButton();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -72,6 +73,7 @@
             this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
+            this.pageNumber = new System.Windows.Forms.Label();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.contourLabel = new System.Windows.Forms.GroupBox();
@@ -116,7 +118,6 @@
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
             this.glViewer = new SketchPlatform.GLViewer();
-            this.exportSequenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -213,6 +214,13 @@
             this.loadTriMeshToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
             this.loadTriMeshToolStripMenuItem.Text = "Load tri mesh";
             this.loadTriMeshToolStripMenuItem.Click += new System.EventHandler(this.loadTriMeshToolStripMenuItem_Click);
+            // 
+            // exportSequenceToolStripMenuItem
+            // 
+            this.exportSequenceToolStripMenuItem.Name = "exportSequenceToolStripMenuItem";
+            this.exportSequenceToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
+            this.exportSequenceToolStripMenuItem.Text = "Export sequence";
+            this.exportSequenceToolStripMenuItem.Click += new System.EventHandler(this.exportSequenceToolStripMenuItem_Click);
             // 
             // tools
             // 
@@ -497,6 +505,7 @@
             // 
             // viewPanel.Panel2
             // 
+            this.viewPanel.Panel2.Controls.Add(this.pageNumber);
             this.viewPanel.Panel2.Controls.Add(this.glViewer);
             this.viewPanel.Panel2.Controls.Add(this.statistics);
             this.viewPanel.Panel2.Controls.Add(this.toolboxPanel);
@@ -513,6 +522,20 @@
             this.fileNameTabs.SelectedIndex = 0;
             this.fileNameTabs.Size = new System.Drawing.Size(860, 35);
             this.fileNameTabs.TabIndex = 0;
+            // 
+            // pageNumber
+            // 
+            this.pageNumber.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.pageNumber.AutoSize = true;
+            this.pageNumber.BackColor = System.Drawing.Color.White;
+            this.pageNumber.Font = new System.Drawing.Font("Bookman Old Style", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.pageNumber.ForeColor = System.Drawing.Color.Black;
+            this.pageNumber.Location = new System.Drawing.Point(822, 8);
+            this.pageNumber.Name = "pageNumber";
+            this.pageNumber.Size = new System.Drawing.Size(32, 32);
+            this.pageNumber.TabIndex = 4;
+            this.pageNumber.Text = "0";
+            this.pageNumber.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // statistics
             // 
@@ -1049,18 +1072,11 @@
             this.glViewer.ColorBits = ((byte)(32));
             this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
             this.glViewer.DepthBits = ((byte)(16));
-            this.glViewer.Location = new System.Drawing.Point(170, 3);
+            this.glViewer.Location = new System.Drawing.Point(173, 3);
             this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(693, 669);
+            this.glViewer.Size = new System.Drawing.Size(689, 694);
             this.glViewer.StencilBits = ((byte)(0));
-            this.glViewer.TabIndex = 3;
-            // 
-            // exportSequenceToolStripMenuItem
-            // 
-            this.exportSequenceToolStripMenuItem.Name = "exportSequenceToolStripMenuItem";
-            this.exportSequenceToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
-            this.exportSequenceToolStripMenuItem.Text = "Export sequence";
-            this.exportSequenceToolStripMenuItem.Click += new System.EventHandler(this.exportSequenceToolStripMenuItem_Click);
+            this.glViewer.TabIndex = 5;
             // 
             // Interface
             // 
@@ -1163,7 +1179,6 @@
         private System.Windows.Forms.ToolStripMenuItem loadViewToolStripMenuItem;
         private System.Windows.Forms.Button redoSequence;
         private System.Windows.Forms.CheckBox lockView;
-        private GLViewer glViewer;
         private System.Windows.Forms.GroupBox vanishingBox;
         private System.Windows.Forms.CheckBox showGuideLineVanlines;
         private System.Windows.Forms.CheckBox showBoxVanlines;
@@ -1188,6 +1203,8 @@
         private System.Windows.Forms.ComboBox lineOrMesh;
         private System.Windows.Forms.Label meshorlineLabel;
         private System.Windows.Forms.ToolStripMenuItem exportSequenceToolStripMenuItem;
+        private System.Windows.Forms.Label pageNumber;
+        private GLViewer glViewer;
 
 	}
 }

@@ -22,5 +22,14 @@ namespace SketchPlatform
 		{
 			return Program.formMain;
 		}
+        static public void SetPageNumber(string s)
+        {
+            Program.formMain.setPageNumber(s);
+        }
+
+        static public void SetPageNumberLocation(int x, int y)
+        {
+            Program.formMain.setPageNumberLocation(x, y);
+        }
 	}
 }

@@ -269,7 +269,8 @@ namespace Geometry
         public Vector3d v;
         public Vector3d[] points; // curved arrow
         public Triangle cap;
-        private double dcap = 0.05;
+        private double dcap = 0.03;
+        public bool active = false;
         public Arrow3D(Vector3d p1, Vector3d p2, Vector3d normal)
         {
             this.u = new Vector3d(p1);

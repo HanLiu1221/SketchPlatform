@@ -255,16 +255,38 @@ namespace SketchPlatform
 
         private void sequencePrevButton_Click(object sender, EventArgs e)
         {
-            this.glViewer.prevSequence();
+            string pageStr = this.glViewer.prevSequence();
+            this.pageNumber.Text = pageStr;
             this.lockView.Checked = this.glViewer.lockView;
             this.glViewer.Refresh();
         }
 
         private void sequenceNextButton_Click(object sender, EventArgs e)
         {
-            this.glViewer.nextSequence();
+            string pageStr = this.glViewer.nextSequence();
+            this.pageNumber.Text = pageStr;
             this.lockView.Checked = this.glViewer.lockView;
             this.glViewer.Refresh();
+        }
+
+        private void redoSequence_Click(object sender, EventArgs e)
+        {
+            this.glViewer.redoSequence();
+            //this.pageNumber.Text = "0";
+            this.lockView.Checked = this.glViewer.lockView;
+            this.glViewer.Refresh();
+        }
+
+        public void setPageNumber(string s)
+        {
+            this.pageNumber.Text = s;
+            this.Refresh();
+        }
+
+        public void setPageNumberLocation(int x, int y)
+        {
+            this.pageNumber.Location = new Point(x, y);
+            this.Refresh();
         }
 
         private void reloadViewToolStripMenuItem_Click(object sender, EventArgs e)
@@ -337,13 +359,6 @@ namespace SketchPlatform
             {
                 string filename = dialog.FileName;
             }
-        }
-
-        private void redoSequence_Click(object sender, EventArgs e)
-        {
-            this.glViewer.redoSequence();
-            this.lockView.Checked = this.glViewer.lockView;
-            this.glViewer.Refresh();
         }
 
         private void lockView_CheckedChanged(object sender, EventArgs e)

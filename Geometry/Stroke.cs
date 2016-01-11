@@ -757,6 +757,7 @@ namespace Component
         public int guideBoxIdx = -1;
         public int guideBoxSeqGroupIdx = -1;
         public List<int> guideBoxSeqenceIdx;
+        public List<Arrow3D> arrows;
 
         public Box()
         { }
