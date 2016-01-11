@@ -22,6 +22,7 @@ namespace Component
         public List<Vector3d> silhouettePoints;
         public List<Vector3d> suggestiveContourPoints;
         public List<Vector3d> ridgePoints;
+        public List<Vector3d> boundaryPoints;
         private string meshFileName;
 
         public Segment(Mesh m, Box c)
@@ -97,6 +98,7 @@ namespace Component
             {
                 triMesh.set_transformed_Vertices(vertexPos_);
             }
+            
             nverts = this.triMesh.vertextCount();
         }// computeContour
 
@@ -162,7 +164,7 @@ namespace Component
         {
             if (this.mesh == null || this.triMesh == null) return;
             double[] eyepos = eye.ToArray();
-            double[] contour = new double[30000];
+            double[] contour = new double[50000];
             this.ridgePoints = new List<Vector3d>();
             fixed (double* eyepos_ = eyepos)
             fixed (double* contour_ = contour)
@@ -173,6 +175,25 @@ namespace Component
                     Vector3d v = new Vector3d(contour[i], contour[i + 1], contour[i + 2]);
                     Vector3d vt = (Tv * new Vector4d(v, 1)).ToVector3D();
                     this.ridgePoints.Add(vt);
+                }
+            }
+        }// computeApparentRidge
+
+        public void computeBoundary(Matrix4d Tv, Vector3d eye)
+        {
+            if (this.mesh == null || this.triMesh == null) return;
+            double[] eyepos = eye.ToArray();
+            double[] contour = new double[30000];
+            this.boundaryPoints = new List<Vector3d>();
+            fixed (double* eyepos_ = eyepos)
+            fixed (double* contour_ = contour)
+            {
+                int nps = triMesh.get_boundary(eyepos_, 0, contour_);
+                for (int i = 0; i < nps; i += 3)
+                {
+                    Vector3d v = new Vector3d(contour[i], contour[i + 1], contour[i + 2]);
+                    Vector3d vt = (Tv * new Vector4d(v, 1)).ToVector3D();
+                    this.boundaryPoints.Add(vt);
                 }
             }
         }// computeApparentRidge

@@ -605,7 +605,7 @@ namespace Component
             }
             Stroke line = new Stroke(u - dis * lineDir, v + dis * lineDir, this.isBoxEdge);
             this.strokes.Add(line);
-            double dirfloating = 0.008;
+            double dirfloating = 0.01;
             for (int i = 1; i < this.nSketch; ++i)
             {
                 Vector3d[] endpoints = new Vector3d[2];

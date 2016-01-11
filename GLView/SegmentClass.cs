@@ -50,6 +50,7 @@ namespace Component
 
         public static Color GuideLineWithTypeColor = Color.FromArgb(252, 141, 89);
         public static Color ArrowColor = Color.FromArgb(116, 196, 118);
+        public static Color MeshColor = Color.FromArgb(254, 224, 139);
 
         private string[] sequences;
         

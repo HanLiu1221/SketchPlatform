@@ -74,9 +74,11 @@
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
             this.pageNumber = new System.Windows.Forms.Label();
+            this.glViewer = new SketchPlatform.GLViewer();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.contourLabel = new System.Windows.Forms.GroupBox();
+            this.showSegbundary = new System.Windows.Forms.CheckBox();
             this.showSegApparentRidge = new System.Windows.Forms.CheckBox();
             this.showSegSuggestiveContour = new System.Windows.Forms.CheckBox();
             this.showSegSilhouette = new System.Windows.Forms.CheckBox();
@@ -117,7 +119,6 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.glViewer = new SketchPlatform.GLViewer();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -537,6 +538,26 @@
             this.pageNumber.Text = "0";
             this.pageNumber.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // glViewer
+            // 
+            this.glViewer.AccumBits = ((byte)(0));
+            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.glViewer.AutoCheckErrors = false;
+            this.glViewer.AutoFinish = false;
+            this.glViewer.AutoMakeCurrent = true;
+            this.glViewer.AutoSwapBuffers = true;
+            this.glViewer.BackColor = System.Drawing.Color.Black;
+            this.glViewer.ColorBits = ((byte)(32));
+            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
+            this.glViewer.DepthBits = ((byte)(16));
+            this.glViewer.Location = new System.Drawing.Point(173, 3);
+            this.glViewer.Name = "glViewer";
+            this.glViewer.Size = new System.Drawing.Size(689, 694);
+            this.glViewer.StencilBits = ((byte)(0));
+            this.glViewer.TabIndex = 5;
+            // 
             // statistics
             // 
             this.statistics.AutoSize = true;
@@ -562,6 +583,7 @@
             // 
             // contourLabel
             // 
+            this.contourLabel.Controls.Add(this.showSegbundary);
             this.contourLabel.Controls.Add(this.showSegApparentRidge);
             this.contourLabel.Controls.Add(this.showSegSuggestiveContour);
             this.contourLabel.Controls.Add(this.showSegSilhouette);
@@ -573,6 +595,18 @@
             this.contourLabel.TabIndex = 40;
             this.contourLabel.TabStop = false;
             this.contourLabel.Text = "Contour";
+            // 
+            // showSegbundary
+            // 
+            this.showSegbundary.AutoSize = true;
+            this.showSegbundary.Location = new System.Drawing.Point(87, 88);
+            this.showSegbundary.Name = "showSegbundary";
+            this.showSegbundary.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.showSegbundary.Size = new System.Drawing.Size(70, 17);
+            this.showSegbundary.TabIndex = 19;
+            this.showSegbundary.Text = "boundary";
+            this.showSegbundary.UseVisualStyleBackColor = true;
+            this.showSegbundary.CheckedChanged += new System.EventHandler(this.showSegbundary_CheckedChanged);
             // 
             // showSegApparentRidge
             // 
@@ -1058,26 +1092,6 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
-            // glViewer
-            // 
-            this.glViewer.AccumBits = ((byte)(0));
-            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.glViewer.AutoCheckErrors = false;
-            this.glViewer.AutoFinish = false;
-            this.glViewer.AutoMakeCurrent = true;
-            this.glViewer.AutoSwapBuffers = true;
-            this.glViewer.BackColor = System.Drawing.Color.Black;
-            this.glViewer.ColorBits = ((byte)(32));
-            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
-            this.glViewer.DepthBits = ((byte)(16));
-            this.glViewer.Location = new System.Drawing.Point(173, 3);
-            this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(689, 694);
-            this.glViewer.StencilBits = ((byte)(0));
-            this.glViewer.TabIndex = 5;
-            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1205,6 +1219,7 @@
         private System.Windows.Forms.ToolStripMenuItem exportSequenceToolStripMenuItem;
         private System.Windows.Forms.Label pageNumber;
         private GLViewer glViewer;
+        private System.Windows.Forms.CheckBox showSegbundary;
 
 	}
 }

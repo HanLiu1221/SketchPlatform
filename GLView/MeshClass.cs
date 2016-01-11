@@ -111,6 +111,9 @@ namespace SketchPlatform
                     case 4:
                         nps = triMesh.get_apparent_ridges(eyepos_, 0, contour_);
                         break;
+                    case 5:
+                        nps = triMesh.get_boundary(eyepos_, 0, contour_);
+                        break;
                     case 2:
                         nps = triMesh.get_contour(eyepos_, 0, contour_);
                         break;

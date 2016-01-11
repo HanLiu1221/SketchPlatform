@@ -31,5 +31,10 @@ namespace SketchPlatform
         {
             Program.formMain.setPageNumberLocation(x, y);
         }
+
+        static public void setLockState(bool isLock)
+        {
+            Program.formMain.setLockState(isLock);
+        }
 	}
 }

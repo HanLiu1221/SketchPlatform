@@ -289,6 +289,12 @@ namespace SketchPlatform
             this.Refresh();
         }
 
+        public void setLockState(bool isLock)
+        {
+            this.lockView.Checked = isLock;
+            this.Refresh();
+        }
+
         private void reloadViewToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.glViewer.reloadView();
@@ -525,6 +531,15 @@ namespace SketchPlatform
         {
             this.glViewer.exportSequenceDiv();
         }
+
+        private void showSegbundary_CheckedChanged(object sender, EventArgs e)
+        {
+            this.glViewer.showSegBoundary = this.showSegbundary.Checked;
+            this.glViewer.computeContours();
+            this.glViewer.Refresh();
+        }
+
+
 
 
 	}
