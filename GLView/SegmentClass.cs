@@ -52,6 +52,10 @@ namespace Component
         public static Color ArrowColor = Color.FromArgb(116, 196, 118);
         public static Color MeshColor = Color.FromArgb(254, 224, 139);
 
+        // for sketch
+        public static double PenSize = 2.0;
+        public static Color PenColor = Color.Black;
+
         private string[] sequences;
         
 
@@ -303,10 +307,10 @@ namespace Component
                         seg.mesh = mesh;
                     }
                 }
-                if (meshfileName != "")
-                {
-                    seg.loadTrieMesh(meshfileName);
-                }
+                //if (meshfileName != "")
+                //{
+                //    seg.loadTrieMesh(meshfileName);
+                //}
 
                 Box box = seg.boundingbox;
                 if (boxSequences[i].hasGuides != null && boxSequences[i].hasGuides.Count > 0)

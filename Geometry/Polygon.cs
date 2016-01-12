@@ -111,6 +111,72 @@ namespace Geometry
             double d = (pos - center).Dot(normal) / normal.Length();
             return Math.Abs(d);
         }
+        public static bool IsLineSegmentIntersectWithCircle(Vector2d u, Vector2d v, Vector2d c, double radius)
+        {
+            if ((u - c).Length() < radius || (v - c).Length() < radius) return true;
+            Vector2d uv = v - u;
+            double r = (c - v).Dot(uv) / (u - v).Dot(uv);
+            if (r < 0 || r > 1)
+                return false;
+            Vector2d p = u * r + (1 - r) * v;
+            return (p - c).Length() < radius;
+        }
+
+        public static Vector2d FindLinesegmentCircleIntersection(Vector2d u, Vector2d v, Vector2d c, double radii)
+        {
+            if (!IsLineSegmentIntersectWithCircle(u, v, c, radii))
+            {
+                return u;
+            }
+            Vector2d v1 = new Vector2d();
+            Vector2d v2 = new Vector2d();
+            Vector2d fp = u;
+            if ((v - c).Length() > (u - c).Length())
+            {
+                fp = v;
+            }
+            // line 
+            if (Math.Abs(u.x - v.x) < thresh)
+            {
+                double x = (u.x + v.x) / 2;
+                double y = Math.Sqrt(radii * radii - Math.Pow(x - c.x, 2)) + c.y;
+                double ny = -Math.Sqrt(radii * radii - Math.Pow(x - c.x, 2)) + c.y;
+                v1 = new Vector2d(x, y);
+                v2 = new Vector2d(x, ny);
+            }
+            else if (Math.Abs(u.y - v.y) < thresh)
+            {
+                double y = (u.x + v.y) / 2;
+                double x = Math.Sqrt(radii * radii - Math.Pow(y - c.y, 2)) + c.x;
+                double nx = -Math.Sqrt(radii * radii - Math.Pow(y - c.y, 2)) + c.x;
+                v1 = new Vector2d(x, y);
+                v2 = new Vector2d(nx, y);
+            }
+            else
+            {
+                double k = (u.y - v.y) / (u.x - v.x);
+                double b = u.y - k * u.x;
+                double constant = c.x * c.x + b * b + c.y * c.y - 2 * b * c.y;
+                constant = radii * radii - constant;
+                double coef1 = 1 + k * k;
+                double coef2 = 2 * k * b - 2 * c.x - 2 * k * c.y;
+                coef2 /= coef1;
+                constant /= coef1;
+                constant += coef2 * coef2 / 4;
+                double x = Math.Sqrt(constant) - coef2 / 2;
+                double nx = -Math.Sqrt(constant) - coef2 / 2;
+                v1 = new Vector2d(x, k * x + b);
+                v2 = new Vector2d(nx, k * nx + b);
+            }
+            if ((v1 - fp).Length() < (v2 - fp).Length())
+            {
+                return v1;
+            }
+            else
+            {
+                return v2;
+            }
+        }//FindLinesegmentCircleIntersection
     }// Polygon
 
     public class Quad2d : Polygon

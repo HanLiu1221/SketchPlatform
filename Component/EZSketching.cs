@@ -8,8 +8,7 @@ using Emgu.CV.Structure;
 using Emgu.Util;
 using Emgu.CV.UI;
 
-using MyGeometry;
-
+using Geometry;
 using System.Drawing;
 
 namespace IBrushes

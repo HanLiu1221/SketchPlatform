@@ -26,6 +26,14 @@ namespace SketchPlatform
                 return this.mesh;
             }
         }
+
+        public MyTriMesh2 TriMesh
+        {
+            get
+            {
+                return this.triMesh;
+            }
+        }
         private Mesh mesh;
         public int tabIndex; // list of meshes
         private float[] material = { 0.62f, 0.74f, 0.85f, 1.0f };
@@ -52,7 +60,7 @@ namespace SketchPlatform
             }
         }
 
-        MyTriMesh2 triMesh;      
+        private MyTriMesh2 triMesh;      
         public List<Vector3d> loadTriMesh(string filename, Vector3d eye)
         {
             this.mesh = new Mesh(filename, true);
@@ -89,7 +97,7 @@ namespace SketchPlatform
             List<Vector3d> contourPoints = new List<Vector3d>();
             double[] eyepos = eye.ToArray();
             double[] contour = new double[30000];
-            if (tag == 3)
+            if (tag >= 3)
                 contour = new double[50000];
             int npoints = triMesh.vertextCount();
             fixed (double* verts_ = verts)

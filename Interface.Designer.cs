@@ -39,6 +39,8 @@
             this.outputSeqToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadTriMeshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportSequenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveSketchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadSketchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tools = new System.Windows.Forms.ToolStripDropDownButton();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -47,6 +49,8 @@
             this.autoSequenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.sketchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.eraserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renderOption = new System.Windows.Forms.ToolStripDropDownButton();
             this.vertexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.wireFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -74,7 +78,6 @@
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
             this.pageNumber = new System.Windows.Forms.Label();
-            this.glViewer = new SketchPlatform.GLViewer();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
             this.contourLabel = new System.Windows.Forms.GroupBox();
@@ -119,6 +122,10 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
+            this.clearAllStrokes = new System.Windows.Forms.ToolStripButton();
+            this.keyboardLabel = new System.Windows.Forms.Label();
+            this.strokeColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.glViewer = new SketchPlatform.GLViewer();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -143,7 +150,8 @@
             this.selectElement,
             this.display,
             this.strokeStyle,
-            this.testTools});
+            this.testTools,
+            this.clearAllStrokes});
             this.menu.Location = new System.Drawing.Point(0, 0);
             this.menu.Name = "menu";
             this.menu.Size = new System.Drawing.Size(866, 39);
@@ -160,7 +168,9 @@
             this.loadJSONFileToolStripMenuItem,
             this.outputSeqToolStripMenuItem,
             this.loadTriMeshToolStripMenuItem,
-            this.exportSequenceToolStripMenuItem});
+            this.exportSequenceToolStripMenuItem,
+            this.saveSketchToolStripMenuItem,
+            this.loadSketchToolStripMenuItem});
             this.ModelFile.Image = ((System.Drawing.Image)(resources.GetObject("ModelFile.Image")));
             this.ModelFile.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.ModelFile.Name = "ModelFile";
@@ -223,6 +233,19 @@
             this.exportSequenceToolStripMenuItem.Text = "Export sequence";
             this.exportSequenceToolStripMenuItem.Click += new System.EventHandler(this.exportSequenceToolStripMenuItem_Click);
             // 
+            // saveSketchToolStripMenuItem
+            // 
+            this.saveSketchToolStripMenuItem.Name = "saveSketchToolStripMenuItem";
+            this.saveSketchToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
+            this.saveSketchToolStripMenuItem.Text = "Save Sketch";
+            this.saveSketchToolStripMenuItem.Click += new System.EventHandler(this.saveSketchToolStripMenuItem_Click);
+            // 
+            // loadSketchToolStripMenuItem
+            // 
+            this.loadSketchToolStripMenuItem.Name = "loadSketchToolStripMenuItem";
+            this.loadSketchToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
+            this.loadSketchToolStripMenuItem.Text = "Load Sketch";
+            // 
             // tools
             // 
             this.tools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -232,7 +255,9 @@
             this.reloadViewToolStripMenuItem,
             this.autoSequenceToolStripMenuItem,
             this.saveViewToolStripMenuItem,
-            this.loadViewToolStripMenuItem});
+            this.loadViewToolStripMenuItem,
+            this.sketchToolStripMenuItem,
+            this.eraserToolStripMenuItem});
             this.tools.Image = ((System.Drawing.Image)(resources.GetObject("tools.Image")));
             this.tools.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tools.Name = "tools";
@@ -288,6 +313,20 @@
             this.loadViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.loadViewToolStripMenuItem.Text = "Load view";
             this.loadViewToolStripMenuItem.Click += new System.EventHandler(this.loadViewToolStripMenuItem_Click);
+            // 
+            // sketchToolStripMenuItem
+            // 
+            this.sketchToolStripMenuItem.Name = "sketchToolStripMenuItem";
+            this.sketchToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.sketchToolStripMenuItem.Text = "Sketch";
+            this.sketchToolStripMenuItem.Click += new System.EventHandler(this.sketchToolStripMenuItem_Click);
+            // 
+            // eraserToolStripMenuItem
+            // 
+            this.eraserToolStripMenuItem.Name = "eraserToolStripMenuItem";
+            this.eraserToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.eraserToolStripMenuItem.Text = "Eraser";
+            this.eraserToolStripMenuItem.Click += new System.EventHandler(this.eraserToolStripMenuItem_Click);
             // 
             // renderOption
             // 
@@ -395,7 +434,8 @@
             this.ink1ToolStripMenuItem,
             this.ink2ToolStripMenuItem,
             this.edgeColorToolStripMenuItem,
-            this.guideLineColorToolStripMenuItem});
+            this.guideLineColorToolStripMenuItem,
+            this.strokeColorToolStripMenuItem});
             this.strokeStyle.Image = ((System.Drawing.Image)(resources.GetObject("strokeStyle.Image")));
             this.strokeStyle.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.strokeStyle.Name = "strokeStyle";
@@ -449,7 +489,7 @@
             // 
             this.edgeColorToolStripMenuItem.Name = "edgeColorToolStripMenuItem";
             this.edgeColorToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
-            this.edgeColorToolStripMenuItem.Text = "edge color";
+            this.edgeColorToolStripMenuItem.Text = "box edge color";
             this.edgeColorToolStripMenuItem.Click += new System.EventHandler(this.edgeColorToolStripMenuItem_Click);
             // 
             // guideLineColorToolStripMenuItem
@@ -506,6 +546,7 @@
             // 
             // viewPanel.Panel2
             // 
+            this.viewPanel.Panel2.Controls.Add(this.keyboardLabel);
             this.viewPanel.Panel2.Controls.Add(this.pageNumber);
             this.viewPanel.Panel2.Controls.Add(this.glViewer);
             this.viewPanel.Panel2.Controls.Add(this.statistics);
@@ -537,26 +578,6 @@
             this.pageNumber.TabIndex = 4;
             this.pageNumber.Text = "0";
             this.pageNumber.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // glViewer
-            // 
-            this.glViewer.AccumBits = ((byte)(0));
-            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.glViewer.AutoCheckErrors = false;
-            this.glViewer.AutoFinish = false;
-            this.glViewer.AutoMakeCurrent = true;
-            this.glViewer.AutoSwapBuffers = true;
-            this.glViewer.BackColor = System.Drawing.Color.Black;
-            this.glViewer.ColorBits = ((byte)(32));
-            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
-            this.glViewer.DepthBits = ((byte)(16));
-            this.glViewer.Location = new System.Drawing.Point(173, 3);
-            this.glViewer.Name = "glViewer";
-            this.glViewer.Size = new System.Drawing.Size(689, 694);
-            this.glViewer.StencilBits = ((byte)(0));
-            this.glViewer.TabIndex = 5;
             // 
             // statistics
             // 
@@ -959,8 +980,7 @@
             "opacity",
             "hidden",
             "OpenGL_DetphTest",
-            "none",
-            "ray trace"});
+            "none"});
             this.depthType.Location = new System.Drawing.Point(66, 71);
             this.depthType.Name = "depthType";
             this.depthType.Size = new System.Drawing.Size(62, 21);
@@ -1092,6 +1112,56 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
+            // clearAllStrokes
+            // 
+            this.clearAllStrokes.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.clearAllStrokes.Image = ((System.Drawing.Image)(resources.GetObject("clearAllStrokes.Image")));
+            this.clearAllStrokes.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.clearAllStrokes.Name = "clearAllStrokes";
+            this.clearAllStrokes.Size = new System.Drawing.Size(36, 36);
+            this.clearAllStrokes.Text = "toolStripButton1";
+            this.clearAllStrokes.Click += new System.EventHandler(this.clearAllStrokes_Click);
+            // 
+            // keyboardLabel
+            // 
+            this.keyboardLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.keyboardLabel.AutoSize = true;
+            this.keyboardLabel.BackColor = System.Drawing.Color.Aquamarine;
+            this.keyboardLabel.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.keyboardLabel.Location = new System.Drawing.Point(172, 594);
+            this.keyboardLabel.Name = "keyboardLabel";
+            this.keyboardLabel.Size = new System.Drawing.Size(120, 78);
+            this.keyboardLabel.TabIndex = 6;
+            this.keyboardLabel.Text = "Space: unlock view\r\nCtrl + C: clear all strokes\r\nS: sketch mode\r\nE: eraser mode\r\n" +
+    "V: view mode\r\nR: reset view";
+            // 
+            // strokeColorToolStripMenuItem
+            // 
+            this.strokeColorToolStripMenuItem.Name = "strokeColorToolStripMenuItem";
+            this.strokeColorToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.strokeColorToolStripMenuItem.Text = "stroke color";
+            this.strokeColorToolStripMenuItem.Click += new System.EventHandler(this.strokeColorToolStripMenuItem_Click);
+            // 
+            // glViewer
+            // 
+            this.glViewer.AccumBits = ((byte)(0));
+            this.glViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.glViewer.AutoCheckErrors = false;
+            this.glViewer.AutoFinish = false;
+            this.glViewer.AutoMakeCurrent = true;
+            this.glViewer.AutoSwapBuffers = true;
+            this.glViewer.BackColor = System.Drawing.Color.Black;
+            this.glViewer.ColorBits = ((byte)(32));
+            this.glViewer.CurrentUIMode = SketchPlatform.GLViewer.UIMode.Viewing;
+            this.glViewer.DepthBits = ((byte)(16));
+            this.glViewer.Location = new System.Drawing.Point(173, 3);
+            this.glViewer.Name = "glViewer";
+            this.glViewer.Size = new System.Drawing.Size(689, 694);
+            this.glViewer.StencilBits = ((byte)(0));
+            this.glViewer.TabIndex = 5;
+            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1220,6 +1290,13 @@
         private System.Windows.Forms.Label pageNumber;
         private GLViewer glViewer;
         private System.Windows.Forms.CheckBox showSegbundary;
+        private System.Windows.Forms.ToolStripMenuItem sketchToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveSketchToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem loadSketchToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem eraserToolStripMenuItem;
+        private System.Windows.Forms.ToolStripButton clearAllStrokes;
+        private System.Windows.Forms.Label keyboardLabel;
+        private System.Windows.Forms.ToolStripMenuItem strokeColorToolStripMenuItem;
 
 	}
 }

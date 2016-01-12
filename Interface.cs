@@ -216,6 +216,15 @@ namespace SketchPlatform
             }
         }
 
+        private void strokeColorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (this.strokeColorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                this.glViewer.setStrokeColor(this.strokeColorDialog.Color);
+                this.glViewer.Refresh();
+            }
+        }
+
         private void loadJSONFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog dialog = new OpenFileDialog();
@@ -538,6 +547,36 @@ namespace SketchPlatform
             this.glViewer.computeContours();
             this.glViewer.Refresh();
         }
+
+        private void sketchToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setUIMode(5);
+        }
+
+        private void saveSketchToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //SaveFileDialog dialog = new SaveFileDialog();
+            //dialog.Filter = "sketch file (*.sketch)|*.sketch|All Files(*.*)|*.*";
+            //if (dialog.ShowDialog(this) == DialogResult.OK)
+            //{
+            //    string filename = dialog.FileName;
+            //    this.glViewer.saveSketches(filename);
+            //}
+            this.glViewer.saveSketches("");
+        }
+
+        private void eraserToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setUIMode(6);
+        }
+
+        private void clearAllStrokes_Click(object sender, EventArgs e)
+        {
+            this.glViewer.clearAllStrokes();
+            this.glViewer.Refresh();
+        }
+
+        
 
 
 

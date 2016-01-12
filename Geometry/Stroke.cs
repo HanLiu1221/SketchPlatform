@@ -35,6 +35,7 @@ namespace Component
         private bool isBoxEdge = true;
         public double weight = SegmentClass.StrokeSize; // for line drawing
 
+        public Stroke() { }
         public Stroke(Vector3d v1, Vector3d v2, bool isBoxEdge)
         {
             this.u3 = v1;
@@ -76,7 +77,7 @@ namespace Component
         public void setStrokeMeshPoints(List<Vector2d> points, List<Vector2d> normals)
         {
             this.meshVertices2d = new List<Vector2d>();
-            double radius = this.size2 / 2;
+            double radius = this.size2;
             this.npoints = points.Count;
             for (int i = 0; i < this.npoints; ++i)
             {
@@ -90,6 +91,48 @@ namespace Component
             this.buildStrokeMeshFace();
         }// setStrokeMeshPoints
 
+        public Stroke(List<Vector2d> points, double size2)
+        {
+            this.meshVertices2d = new List<Vector2d>();
+            double radius = this.size2 / 2;
+            this.npoints = points.Count;
+            this.strokePoints = new List<StrokePoint>();
+            this.size2 = size2;
+            this.size3 = size2 / 500;
+            for (int i = 0; i < this.npoints; ++i)
+            {
+                Vector2d p = points[i];
+                this.strokePoints.Add(new StrokePoint(p));
+                Vector2d nor = new Vector2d();
+                if (i + 1 < this.npoints)
+                {
+                    Vector2d d = points[i + 1] - points[i];
+                    nor = new Vector2d(-d.y, d.x);
+                }
+                else
+                {
+                    Vector2d d = points[i] - points[i - 1];
+                    nor = new Vector2d(-d.y, d.x);
+                }
+                nor.normalize();
+                Vector2d v1 = p + nor * radius;
+                Vector2d v2 = p - nor * radius;
+                this.meshVertices2d.Add(v1);
+                this.meshVertices2d.Add(v2);
+            }
+            this.changeStyle2d((int)SegmentClass.strokeStyle);
+            this.strokeColor = Color.Black;
+        }// setStrokeMeshPoints
+
+        public double get2DLength()
+        {
+            double len = 0;
+            for(int i = 0; i < this.strokePoints.Count - 1; ++i)
+            {
+                len += (this.strokePoints[i].pos2 - this.strokePoints[i + 1].pos2).Length();
+            }
+            return len;
+        }
 
         public void setStrokeMeshPoints2D(Vector2d normal)
         {
@@ -502,6 +545,88 @@ namespace Component
             //    v3 = v4.ToVector3D();
             //    this.meshVertices3d.Add(v3);
             //}
+        }// changeStyle
+
+        public void changeStyle2d(int type)
+        {
+            this.meshVertices2d = new List<Vector2d>();
+            int N = this.npoints;
+            float start = (float)N;
+
+            double r_size2 = Polygon.getRandomDoubleInRange(rand, this.size2, this.size2 * 2);
+            if (this.isBoxEdge)
+            {
+                r_size2 = this.size2 * 2;
+            }
+            double isize2 = r_size2 / 2;
+            for (int i = 0; i < N; ++i)
+            {
+                int I = i - 1 >= 0 ? i - 1 : i;
+                int J = i + 1 < N ? i + 1 : i;
+                Vector2d u2 = this.strokePoints[I].pos2;
+                Vector2d v2 = this.strokePoints[J].pos2;
+                Vector2d o2 = this.strokePoints[i].pos2;
+                Vector2d d2 = (v2 - u2).normalize();	// dir
+                Vector2d n2 = new Vector2d(-d2.y, d2.x).normalize();
+
+
+                int op = 255;
+                switch (type)
+                {
+                    case 0: // pencil
+                        {
+                            op = 255;
+                            break;
+                        }
+                    case 1: // pen
+                        {
+                            isize2 = (start - i + 1) / start * r_size2;
+                            op = 255; //(int)((start - i) / start * 255.0);
+                            break;
+                        }
+                    case 2:// pen-2
+                        {
+                            isize2 = (i + 1) / start * r_size2;
+                            op = 255; // (int)(i / start * 255.0);
+                            break;
+                        }
+                    case 3: // crayon
+                        {
+                            op = 155;
+                            break;
+                        }
+                    case 4://ink - 1
+                        {
+                            double diff = (i - start / 2) / start * 8;
+                            diff = Math.Pow(Math.E, -(diff * diff) / 10);
+                            isize2 = diff * r_size2;
+                            op = (int)((diff + 0.1) * 255.0);
+                            if (op > 255)
+                                op = 255;
+                            break;
+                        }
+                    case 5: //ink-2 watercolor
+                        {
+                            double diff = (i - start / 2) / start * 8;
+                            diff = Math.Pow(Math.E, -(diff * diff) / 10);
+                            if (diff < 1)
+                                diff = 1 - diff;
+                            else
+                                diff = diff - 1;
+                            diff += 0.2;
+                            if (diff > 1) diff = 1.0;
+                            isize2 = diff * r_size2;
+                            op = (int)(diff * 255.0);
+                            break;
+                        }
+                }
+                this.strokePoints[i].opacity = (byte)(op);
+                this.meshVertices2d.Add(o2 + isize2 * n2);
+                this.meshVertices2d.Add(o2 - isize2 * n2);
+            }
+            this.buildStrokeMeshFace();
+            this.addRoundCap2D();
+            this.addHeadTailFaceIndex(2);
         }// changeStyle
 
         
@@ -981,6 +1106,7 @@ namespace Component
         public Vector2d pos2;
         public Vector3d pos3;
         public Vector2d pos2_origin;
+        public Vector2d pos2_local;
         public Vector3d pos3_origin;
         public byte opacity = 255;
         public Color color = Color.Black;
@@ -990,6 +1116,7 @@ namespace Component
         public StrokePoint(Vector2d p)
         {
             this.pos2 = new Vector2d(p);
+            this.pos2_local = new Vector2d(this.pos2);
         }
 
         public StrokePoint(Vector3d p)

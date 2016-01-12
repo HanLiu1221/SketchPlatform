@@ -62,6 +62,8 @@ namespace SketchPlatform
                                       new Vector3d(0, 0, -1.2), new Vector3d(0, 0, 1.2),
                                       new Vector3d(-0.2, 0, 1), new Vector3d(0, 0, 1.2),
                                       new Vector3d(0.2, 0, 1), new Vector3d(0, 0, 1.2)};
+            this.startWid = this.Width;
+            this.startHeig = this.Height;
 
         }
 
@@ -113,7 +115,8 @@ namespace SketchPlatform
         public enum UIMode 
         {
             // !Do not change the order of the modes --- used in the current program to retrieve the index (Integer)
-            Viewing, VertexSelection, EdgeSelection, FaceSelection, ComponentSelection, Guide, NONE
+            Viewing, VertexSelection, EdgeSelection, FaceSelection, ComponentSelection, Guide, 
+            Sketch, Eraser, NONE
         }
 
         private bool drawVertex = false;
@@ -208,6 +211,12 @@ namespace SketchPlatform
         public bool showGuideLineVanishingLine = false;
         private List<int> boxShowSequence = new List<int>();
         private List<string> pageNumber;
+
+        //########## sketch vars ##########//
+        private List<Vector2d> currSketchPoints;
+        private double strokeLength = 0;
+        private Stroke currStroke = null;
+        private List<Stroke> sketchStrokes = new List<Stroke>();
 
         //########## static vars ##########//
         public static Color[] ColorSet;
@@ -321,8 +330,16 @@ namespace SketchPlatform
             return alphas;
         }
 
+        private void clearContext()
+        {
+            this.currMeshClass = null;
+            this.currSegmentClass = null;
+        }
+
         public void loadMesh(string filename)
         {
+            this.clearContext();
+
             Mesh m = new Mesh(filename, true);
             MeshClass mc = new MeshClass(m);
             this.meshClasses.Add(mc);
@@ -336,6 +353,11 @@ namespace SketchPlatform
 
         public void loadTriMesh(string filename)
         {
+            MessageBox.Show("Trimesh is not activated in this version.");
+            return;
+
+            this.clearContext();
+
             this.currSegmentClass = null;
             MeshClass mc = new MeshClass();
             this.contourPoints = mc.loadTriMesh(filename, this.eye);
@@ -346,6 +368,8 @@ namespace SketchPlatform
 
         public void loadSegments(string segfolder)
         {
+            this.clearContext();
+
             this.segmentClasses = new List<SegmentClass>();
             int idx = segfolder.LastIndexOf('\\');
             string bbofolder = segfolder.Substring(0, idx + 1);
@@ -362,6 +386,8 @@ namespace SketchPlatform
         
         public void loadJSONFile(string jsonFile)
         {
+            this.clearContext();
+
             this.foldername = jsonFile.Substring(0, jsonFile.LastIndexOf('\\'));
 
             SegmentClass sc = new SegmentClass();
@@ -429,15 +455,42 @@ namespace SketchPlatform
                     this.pageNumber[i] += totalPageStr;
                 }
             }
+            this.loadSketches("");
         }// loadJSONFile
         
 
         private void cal2D()
         {
+            // otherwise when glViewe is initialized, it will run this function from MouseUp()
+            if (this.currSegmentClass == null) return;
+
+            // reset the current 3d transformation again to check in the camera info, projection/modelview
+            Gl.glViewport(0, 0, this.Width, this.Height);
+            Gl.glMatrixMode(Gl.GL_PROJECTION);
+            Gl.glLoadIdentity();
+            double aspect = (double)this.Width / this.Height;
+            Glu.gluPerspective(90, aspect, 0.1, 1000);
+            Glu.gluLookAt(0, 0, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);            
+
+            Matrix4d m = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
+            m = Matrix4d.TranslationMatrix(this.objectCenter) * m * Matrix4d.TranslationMatrix(
+                new Vector3d() - this.objectCenter);
+
+
+            Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            Gl.glPushMatrix();
+            Gl.glMultMatrixd(m.Transpose().ToArray());
+
             this.calculatePoint2DInfo();
             this.calculateVanishingPoints();
+
+            Gl.glPopMatrix();
+
+
             this.calculatePaperPosition();
-        }
+
+            
+        }//cal2D
 
         private void calculatePoint2DInfo()
         {
@@ -510,12 +563,12 @@ namespace SketchPlatform
             }
         }//calculatePoint2DInfo
 
-        private void calculatePaperPosition()
+        private void calSegmentsBounds(out Vector2d minCoord, out Vector2d maxCoord)
         {
-            // for printed paper tutorial
+            minCoord = Vector2d.MaxCoord();
+            maxCoord = Vector2d.MinCoord();
             if (this.currSegmentClass == null) return;
-            this.paperPos = new StrokePoint[4];
-            Vector2d minCoord = Vector2d.MaxCoord(), maxCoord = Vector2d.MinCoord();
+            
             foreach (Segment seg in this.currSegmentClass.segments)
             {
                 Box box = seg.boundingbox;
@@ -531,6 +584,18 @@ namespace SketchPlatform
                     }
                 }
             }
+            Vector2d center = (maxCoord + minCoord) / 2;
+        }//calSegmentsBounds
+
+        private void calculatePaperPosition()
+        {
+            // for printed paper tutorial
+            if (this.currSegmentClass == null) return;
+            this.paperPos = new StrokePoint[4];
+           
+            Vector2d minCoord = Vector2d.MaxCoord(), maxCoord = Vector2d.MinCoord();
+            this.calSegmentsBounds(out minCoord, out maxCoord);
+
             Vector2d center = (maxCoord + minCoord) / 2;
             double w = 297, h = 210;
             int sx = this.Location.X, sy = this.Location.Y;
@@ -819,6 +884,15 @@ namespace SketchPlatform
             }
         }// setGuideLineColor
 
+        public void setStrokeColor(Color c)
+        {
+            SegmentClass.PenColor = c;
+            foreach (Stroke stroke in this.sketchStrokes)
+            {
+                stroke.strokeColor = c;
+            }
+        }
+
         public void setStrokeSketchyRate(double rate)
         {
             if (this.currSegmentClass == null) return;
@@ -872,11 +946,15 @@ namespace SketchPlatform
 
         public void setStrokeStyle(int idx)
         {
-            if (this.currSegmentClass != null)
+            if (this.currSegmentClass != null)// && this.showLineOrMesh)
             {
                 this.currSegmentClass.setStrokeStyle(idx);
                 this.updateStrokeMesh();
                 this.drawShadedOrTexturedStroke = this.currSegmentClass.shadedOrTexture();
+            }
+            foreach (Stroke stroke in this.sketchStrokes)
+            {
+                stroke.changeStyle2d(idx);
             }
         }//setStrokeStyle
 
@@ -1020,7 +1098,7 @@ namespace SketchPlatform
             }
             else if (this.sequenceIdx == this.nSequence)
             {
-                MessageBox.Show("Finish!");
+                MessageBox.Show("This is the last page.");
                 Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
                 return this.pageNumber[this.pageNumber.Count - 1];
             }
@@ -1048,7 +1126,7 @@ namespace SketchPlatform
             }
             if (this.sequenceIdx <= 0)
             {
-                MessageBox.Show("This is the first box!");
+                MessageBox.Show("This is the first page.");
                 Program.GetFormMain().setPageNumber("1");
                 return this.pageNumber[0];
             }
@@ -1845,6 +1923,14 @@ namespace SketchPlatform
 
         public void computeContours()
         {
+            return;
+            this.silhouettePoints = new List<Vector3d>();
+            this.contourPoints = new List<Vector3d>();
+            this.contourLines = new List<List<Vector3d>>();
+            this.apparentRidgePoints = new List<Vector3d>();
+            this.suggestiveContourPoints = new List<Vector3d>();
+            this.boundaryPoints = new List<Vector3d>();
+
             if (this.currSegmentClass != null)
             {
                 if (!this.isShowContour()) return;
@@ -1885,7 +1971,7 @@ namespace SketchPlatform
                     }
                 }
             }
-            if (this.currMeshClass != null)
+            if (this.currMeshClass != null && this.currMeshClass.TriMesh != null)
             {
                 if (!this.isShowContour()) return;
                 
@@ -3032,6 +3118,12 @@ namespace SketchPlatform
                 case 4:
                     this.currUIMode = UIMode.FaceSelection;
                     break;
+                case 5:
+                    this.currUIMode = UIMode.Sketch;
+                    break;
+                case 6:
+                    this.currUIMode = UIMode.Eraser;
+                    break;
                 case 1:
                 default:
                     this.currUIMode = UIMode.Viewing;
@@ -3175,6 +3267,7 @@ namespace SketchPlatform
         private void viewMouseUp()
         {
             this.currModelTransformMatrix = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
+            int type = 0;
             if (this.arcBall.motion == ArcBall.MotionType.Pan)
             {
                 this.transMat = this.arcBall.getTransformMatrix() * this.transMat;
@@ -3185,13 +3278,18 @@ namespace SketchPlatform
             else
             {
                 this.scaleMat = this.arcBall.getTransformMatrix() * this.scaleMat;
+                type = 1;
             }
             this.arcBall.mouseUp();
             //this.modelTransformMatrix = this.transMat * this.rotMat * this.scaleMat;
 
             this.modelTransformMatrix = this.currModelTransformMatrix.Transpose();
-
             this.cal2D();
+            //if (type == 1)
+            //{
+            //    this.updateSketchStrokePositionToLocalCoord();
+            //}
+
             this.updateDepthVal();
             if (this.enableHiddencheck)
             {
@@ -3235,14 +3333,24 @@ namespace SketchPlatform
                     {
                         break;
                     }
+                case UIMode.Sketch:
+                    {
+                        this.SketchMouseDown(this.currMousePos);
+                        break;
+                    }
+                case UIMode.Eraser:
+                    {
+                        this.EraserMouseDown(this.currMousePos, e);
+                        break;
+                    }
                 case UIMode.Viewing:
                 default:
                     {
                         this.viewMouseDown(e);
-                        this.Refresh();
                         break;
                     }
-            }            
+            }
+            this.Refresh();
         }// OnMouseDown
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -3262,12 +3370,22 @@ namespace SketchPlatform
                         {
                             this.highlightQuad = new Quad2d(this.mouseDownPos, this.currMousePos);
                             this.currMeshClass.selectMouseMove((int)this.currUIMode, this.highlightQuad);
-                            this.Refresh();
+                            //this.Refresh();
                         }
                         break;
                     }
                 case UIMode.ComponentSelection:
                     {
+                        break;
+                    }
+                case UIMode.Sketch:
+                    {
+                        this.SketchMouseMove(this.currMousePos);
+                        break;
+                    }
+                case UIMode.Eraser:
+                    {
+                        this.EraserMouseMove(this.currMousePos, e);
                         break;
                     }
                 case UIMode.Viewing:
@@ -3276,11 +3394,12 @@ namespace SketchPlatform
                         if (!this.lockView)
                         {
                             this.viewMouseMove(e.X, e.Y);
-                            this.Refresh();
+                            //this.Refresh();
                         }
                         break;
                     }
-            }            
+            }
+            this.Refresh();
         }// OnMouseMove
 
         protected override void OnMouseUp(MouseEventArgs e)
@@ -3302,11 +3421,21 @@ namespace SketchPlatform
                         {
                             this.currMeshClass.selectMouseUp();
                         }
-                        this.Refresh();
+                        //this.Refresh();
                         break;
                     }
                 case UIMode.ComponentSelection:
                     {
+                        break;
+                    }
+                case UIMode.Sketch:
+                    {
+                        this.SketchMouseUp();
+                        break;
+                    }
+                case UIMode.Eraser:
+                    {
+                        this.EraserMouseUp();
                         break;
                     }
                 case UIMode.Viewing:
@@ -3324,8 +3453,9 @@ namespace SketchPlatform
         {
             base.OnResize(e);
             // to get the correct 2d info of the points
-            this.Refresh();
-            this.cal2D(); 
+            //this.Refresh();
+            this.cal2D();
+            this.updateSketchStrokePositionToLocalCoord();
             this.Refresh();
         }
 
@@ -3355,6 +3485,21 @@ namespace SketchPlatform
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
+            if (e.Control == true && e.KeyCode == Keys.C)
+            {
+                this.clearAllStrokes();
+                this.Refresh();
+                return;
+            }
+            if (e.Control == true && e.KeyCode == Keys.Z)
+            {
+                if (this.sketchStrokes.Count > 0)
+                {
+                    this.sketchStrokes.RemoveAt(this.sketchStrokes.Count - 1);
+                    this.Refresh();
+                    return;
+                }
+            }
             switch (e.KeyData)
             {
                 case System.Windows.Forms.Keys.V:
@@ -3372,6 +3517,16 @@ namespace SketchPlatform
                         this.resetView(); // Identity
                         break;
                     }
+                case Keys.S:
+                    {
+                        this.currUIMode = UIMode.Sketch;
+                        break;
+                    }
+                case Keys.E:
+                    {
+                        this.currUIMode = UIMode.Eraser;
+                        break;
+                    }
                 case Keys.D:
                     {
                         this.inGuideMode = !this.inGuideMode;
@@ -3379,7 +3534,8 @@ namespace SketchPlatform
                         {
                             this.showBoundingbox = false;
                             this.showMesh = false;
-                            this.nextBox();
+                            //this.nextBox();
+                            this.nextSequence();
                         }
                         else
                         {
@@ -3418,14 +3574,399 @@ namespace SketchPlatform
             this.Refresh();
         }// OnKeyDown        
 
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            base.OnMouseWheel(e);
+            if (this.currUIMode == UIMode.Sketch || this.currUIMode == UIMode.Eraser)
+            {
+                double ratio = e.Delta / 100.0;
+                if (ratio < 0)
+                {
+                    ratio = 1.0 / Math.Abs(ratio);
+                }
+                this.penRadius *= ratio;
+                SegmentClass.PenSize = SegmentClass.PenSize * ratio;
+                this.Refresh();
+            }
+        }//OnMouseWheel
+
         protected override void OnPaint(System.Windows.Forms.PaintEventArgs e)
         {
             //base.OnPaint(e);
             this.MakeCurrent();
             this.clearScene();
-            this.Draw2D();
+            //this.Draw2D();
             this.Draw3D();
+            this.Draw2D();
+
+            this.SwapBuffers();
         }// onPaint
+
+        //######### Sketch #########//
+        
+        private void SketchMouseDown(Vector2d p)
+        {
+            Vector2d pos = new Vector2d(p.x, this.Height - p.y);
+            this.currSketchPoints = new List<Vector2d>();
+            this.currSketchPoints.Add(pos);
+            this.strokeLength = 0;
+
+            this.lockView = true;
+            Program.GetFormMain().setLockState(true);
+        }
+
+        public void SketchMouseMove(Vector2d p)
+        {
+            if (!this.isMouseDown) return;
+            Vector2d prevpos = this.currSketchPoints[this.currSketchPoints.Count - 1];
+            Vector2d pos = new Vector2d(p.x, this.Height - p.y);
+            Vector2d off = pos - prevpos;
+            double len = off.Length();
+            Vector2d offnormal = off.normalize();
+            this.strokeLength += len;
+
+            double dis_thres = 4.0;
+            if (len > dis_thres) 
+            {
+                // moving the pen
+                int steps = (int)(len / dis_thres) + 1;
+                double delta = len / steps;
+                for (int i = 1; i <= steps; ++i)
+                {
+                    Vector2d v = prevpos + offnormal * (i * delta);
+                    this.currSketchPoints.Add(v);
+                }
+            }
+        }
+
+        public void SketchMouseUp()
+        {
+            if (this.currSketchPoints.Count > 5) {
+                bool isLongEnough = strokeLength >= 5;
+                if (isLongEnough)
+                {
+                    CubicSpline2 spline = new CubicSpline2(this.currSketchPoints.ToArray());
+                    this.currStroke = new Stroke(this.currSketchPoints, SegmentClass.PenSize);
+                    this.currStroke.strokeColor = SegmentClass.PenColor;
+                    this.storeSketchStrokePositionToLocalCoord(this.currStroke);
+                    this.sketchStrokes.Add(this.currStroke);
+                }
+            }
+            this.currStroke = null;
+            this.currSketchPoints = new List<Vector2d>();
+        }//SketchMouseUp
+
+        private void findClosestVertex(List<Vector2d> points)
+        {
+            if (this.currSegmentClass == null) return;
+            List<Vector2d> meshPoints2d = new List<Vector2d>();
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                if (seg.mesh == null) continue;
+                for (int i = 0, j = 0; i < seg.mesh.VertexCount; ++i, j += 3)
+                {
+                    Vector3d v = new Vector3d(seg.mesh.VertexPos[j], seg.mesh.VertexPos[j + 1], seg.mesh.VertexPos[j + 2]);
+                    
+                }
+            }
+        }
+
+        private void storeSketchStrokePositionToLocalCoord(Stroke stroke)
+        {
+            this.cal2D();
+            Vector2d minCoord = Vector2d.MaxCoord(), maxCoord = Vector2d.MinCoord();
+            this.calSegmentsBounds(out minCoord, out maxCoord);
+            double wl = maxCoord.x - minCoord.x;
+            double hl = maxCoord.y - minCoord.y;
+            double wg = this.Width;
+            double hg = this.Height;
+
+            // relative position [0, 1]
+            //foreach (Stroke stroke in this.sketchStrokes)
+            //{
+                foreach (StrokePoint sp in stroke.strokePoints)
+                {
+                    sp.pos2_local = new Vector2d(
+                        (sp.pos2.x - minCoord.x) / wl,
+                        (sp.pos2.y - minCoord.y) / hl);
+                }
+            //}
+        }//storeSketchStrokePositionToLocalCoord
+
+        private void updateSketchStrokePositionToLocalCoord()
+        {
+            Vector2d minCoord = Vector2d.MaxCoord(), maxCoord = Vector2d.MinCoord();
+            this.calSegmentsBounds(out minCoord, out maxCoord);
+            double wl = maxCoord.x - minCoord.x;
+            double hl = maxCoord.y - minCoord.y;
+            double wg = this.Width;
+            double hg = this.Height;
+            // update pos2 origin in loca cooord
+
+            foreach (Stroke stroke in this.sketchStrokes)
+            {
+                foreach (StrokePoint sp in stroke.strokePoints)
+                {
+                    sp.pos2 = new Vector2d(
+                        sp.pos2_local.x * wl,
+                        sp.pos2_local.y * hl);
+                    sp.pos2 += minCoord;
+                }
+                stroke.changeStyle2d((int)SegmentClass.strokeStyle);
+            }
+        }//updateSketchStrokePositionToLocalCoord
+
+
+        private List<Stroke> currEraseStrokes;
+        private double penRadius = 8.0f;
+        private void selectEraseStroke(Vector2d p)
+        {
+            this.currEraseStrokes = new List<Stroke>();
+            Vector2d pos = new Vector2d(p.x, this.Height - p.y);
+            foreach (Stroke stroke in this.sketchStrokes)
+            {
+                foreach (StrokePoint sp in stroke.strokePoints)
+                {
+                    if ((sp.pos2 - pos).Length() < this.penRadius)
+                    {
+                        this.currEraseStrokes.Add(stroke);
+                        break;
+                    }
+                }
+            }
+        }//selectEraseStroke
+
+        public void clearAllStrokes()
+        {
+            this.currStroke = null;
+            this.sketchStrokes = new List<Stroke>();
+        }
+
+        private void SplitStrokeByEraser(Stroke stroke, Vector2d pos)
+		{
+			// split the current stroke under erasing
+			double radius = this.penRadius;
+			int s = -1, e = -1;
+			int n = stroke.strokePoints.Count;
+			for (int i = 0; i < n; ++i )
+			{
+				StrokePoint p = stroke.strokePoints[i];
+				if ((pos - p.pos2).Length() < radius)
+				{
+					if (s == -1)
+						s = i;
+				}
+				else if (s != -1)
+				{
+					e = i;
+					break;
+				}
+			}
+			if (s == -1 || e == -1)
+				return;
+			List<StrokePoint> points_left = stroke.strokePoints.GetRange(0, s);
+			List<StrokePoint> points_right = stroke.strokePoints.GetRange(e, n - e);
+            List<Vector2d> left = new List<Vector2d>();
+            List<Vector2d> right = new List<Vector2d>();
+            double len_left = 0, len_right = 0;
+            for(int i = 0; i < points_left.Count; ++i){
+                StrokePoint sp = points_left[i];
+                if(i + 1 < points_left.Count){
+                len_left += (sp.pos2 - points_left[i+1].pos2).Length();
+                }
+                left.Add(sp.pos2);
+            }
+            for(int i = 0; i < points_right.Count; ++i){
+                StrokePoint sp = points_right[i];
+                if(i + 1 < points_right.Count){
+                len_right += (sp.pos2 - points_right[i+1].pos2).Length();
+                }
+                right.Add(sp.pos2);
+            }
+			if(len_left > this.penRadius * 2){
+                this.sketchStrokes.Add(new Stroke(left, SegmentClass.PenSize));
+            }
+            if(len_right > this.penRadius * 2){
+                this.sketchStrokes.Add(new Stroke(right, SegmentClass.PenSize));
+            }
+			this.sketchStrokes.Remove(stroke);
+		}//SplitStrokeByEraser
+
+        private void toneStroke(Vector2d pos)
+        {
+            if (this.currEraseStrokes.Count == 0) return;
+            double radius = this.penRadius;
+            pos = new Vector2d(pos.x, this.Height - pos.y);
+            for (int s = 0; s < this.currEraseStrokes.Count; ++s)
+            {
+                Stroke stroke = this.currEraseStrokes[s];
+                // get the set of points that is on the radius
+                List<int> point_in_radii = new List<int>();
+                // endpoint
+                double len_to_left = (pos - stroke.strokePoints[0].pos2).Length();
+                double len_to_right = (pos - stroke.strokePoints[stroke.strokePoints.Count - 1].pos2).Length();
+
+                bool left_end_in = len_to_left < radius;
+                bool right_end_in = len_to_right < radius;
+
+                //if (!left_end_in && !right_end_in)
+                //	continue;
+                if (!left_end_in && !right_end_in)
+                {
+                    this.SplitStrokeByEraser(stroke, pos);
+                    this.currEraseStrokes.RemoveAt(s);
+                    --s;
+                    continue;
+                }
+
+                for (int i = 0; i < stroke.strokePoints.Count; ++i)
+                {
+                    double len = (pos - stroke.strokePoints[i].pos2).Length();
+                    if (len < radius)
+                    {
+                        point_in_radii.Add(i);
+                    }
+                }
+                // remove if not at endpoint
+                if (left_end_in && right_end_in)
+                {
+                    // select on endpoint
+                    int split = -1;
+                    for (int i = 0; i < point_in_radii.Count - 1; ++i)
+                    {
+                        if (point_in_radii[i + 1] - point_in_radii[i] > 1)
+                        {
+                            split = i;
+                        }
+                    }
+                    if (split >= 0)
+                    {
+                        if (split > point_in_radii.Count - split - 1)
+                        {
+                            int n = point_in_radii.Count - split - 1;
+                            for (int i = 0; i < n; ++i)
+                            {
+                                point_in_radii.RemoveAt(point_in_radii.Count - 1);
+                            }
+                            right_end_in = false;
+                        }
+                        else
+                        {
+                            for (int i = 0; i <= split; ++i)
+                            {
+                                point_in_radii.RemoveAt(0);
+                            }
+                            left_end_in = false;
+                        }
+                    }
+                }
+                if (point_in_radii.Count == 0)
+                    continue;
+                //bool left_end_in = point_in_radii[0] == 0;
+                //bool right_end_in = point_in_radii[point_in_radii.Count - 1] == stroke.strokePoints.Count - 1;
+
+                int left = point_in_radii[0];
+                int right = point_in_radii[point_in_radii.Count - 1];
+
+                if (point_in_radii.Count == stroke.strokePoints.Count)
+                    stroke.strokePoints.Clear();
+                else
+                {
+                    StrokePoint I = stroke.strokePoints[0];
+                    if (left_end_in)
+                    {
+                        for (int i = 0; i < stroke.strokePoints.Count; ++i)
+                        {
+                            if (!point_in_radii.Contains(i))
+                            {
+                                I = stroke.strokePoints[i - 1];
+                                break;
+                            }
+                        }
+                    }
+                    StrokePoint J = stroke.strokePoints[stroke.strokePoints.Count - 1];
+                    if (right_end_in)
+                    {
+                        for (int i = stroke.strokePoints.Count - 1; i >= 0; --i)
+                        {
+                            if (!point_in_radii.Contains(i))
+                            {
+                                J = stroke.strokePoints[i + 1];
+                                break;
+                            }
+                        }
+                    }
+                    List<StrokePoint> new_stroke_points = new List<StrokePoint>();
+                    int old_count = stroke.strokePoints.Count;
+                    int new_count = old_count - point_in_radii.Count + 1;
+                    for (int i = 0; i < stroke.strokePoints.Count; ++i)
+                    {
+                        if (!point_in_radii.Contains(i))
+                        {
+                            new_stroke_points.Add(stroke.strokePoints[i]);
+                        }
+                    }
+                    if (left_end_in)
+                    {
+                        StrokePoint u = I, v = new_stroke_points[0];
+                        Vector2d q = Polygon.FindLinesegmentCircleIntersection(u.pos2, v.pos2, pos, this.penRadius);
+                        new_stroke_points.Insert(0, new StrokePoint(q));	// at head
+
+
+                    }
+                    if (right_end_in)
+                    {
+                        StrokePoint u = J, v = new_stroke_points[new_stroke_points.Count - 1];
+                        Vector2d q = Polygon.FindLinesegmentCircleIntersection(u.pos2, v.pos2, pos, this.penRadius);
+                        new_stroke_points.Add(new StrokePoint(q));		// at tail
+
+                    }
+                    if (stroke.get2DLength() < this.penRadius * 2)
+                    {
+                        this.currEraseStrokes.RemoveAt(s);
+                        --s;
+                    }
+                    else
+                    {
+                        stroke.changeStyle2d((int)SegmentClass.strokeStyle);
+                    }
+                }
+            }
+        }
+
+        private void EraserMouseDown(Vector2d p, MouseEventArgs e)
+        {
+            this.selectEraseStroke(p);
+            if(e.Button == System.Windows.Forms.MouseButtons.Left){
+                this.toneStroke(p);
+            }else if(e.Button == System.Windows.Forms.MouseButtons.Right){
+                foreach(Stroke stroke in this.currEraseStrokes){
+                    this.sketchStrokes.Remove(stroke);
+                }
+            }
+        }
+
+        private void EraserMouseMove(Vector2d p, MouseEventArgs e)
+        {
+            this.selectEraseStroke(p);
+            if(e.Button == System.Windows.Forms.MouseButtons.Left){
+                this.toneStroke(p);
+            }else if(e.Button == System.Windows.Forms.MouseButtons.Right){
+                foreach(Stroke stroke in this.currEraseStrokes){
+                    this.sketchStrokes.Remove(stroke);
+                }
+            }
+            this.currEraseStrokes = new List<Stroke>();
+        }//EraserMouseMove
+
+        private void EraserMouseUp()
+        {
+            this.currEraseStrokes = new List<Stroke>();
+        }//EraserMouseUp
+
+        //######### end- Sketch #########//
+
+
 
         private void setViewMatrix()
         {
@@ -3471,17 +4012,29 @@ namespace SketchPlatform
             Gl.glMultMatrixd(m.Transpose().ToArray());
         }
 
+        private int startWid = 0, startHeig = 0;
+
         private void Draw2D()
         {
             int w = this.Width, h = this.Height;
 
+            //Gl.glPushMatrix();
+
             Gl.glViewport(0, 0, w, h);
             Gl.glMatrixMode(Gl.GL_PROJECTION);
             Gl.glLoadIdentity();
+
+            //double aspect = (double)w / h;
+            //Glu.gluPerspective(90, aspect, 0.1, 1000);
+            //Glu.gluLookAt(0, 0, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
             Glu.gluOrtho2D(0, w, 0, h);
+
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glLoadIdentity();
             Gl.glPushMatrix();
+
+            //Gl.glScaled((double)this.Width / this.startWid, (double)this.Height / this.startHeig, 1.0);
 
             if (this.paperPos != null)
             {
@@ -3493,6 +4046,9 @@ namespace SketchPlatform
 
             this.drawVanishingPoints2d();
 
+            this.drawSketchPoints();
+            this.drawSketchStrokes();
+
             //this.drawSketchyLines2D();   
          
             /*****TEST*****/
@@ -3503,6 +4059,111 @@ namespace SketchPlatform
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
             //Gl.glPopMatrix();
+        }
+
+        private void drawSketchPoints()
+        {
+            if (this.currSketchPoints != null)
+            {
+                this.drawLines2D(this.currSketchPoints, SegmentClass.PenColor, (float)SegmentClass.PenSize * 2);
+                //this.drawPoints2d(this.currSketchPoints.ToArray(), SegmentClass.PenColor, (float)SegmentClass.PenSize * 2);
+            }
+            //foreach (List<Vector2d> points in this.sketchPoints)
+            //{
+            //    //this.drawLines2D(points, Color.Black, 4.0f);
+            //    this.drawPoints2d(points.ToArray(), Color.Black, 4.0f);
+            //}
+        }
+
+        private void drawSketchStrokes()
+        {
+
+            foreach (Stroke stroke in this.sketchStrokes)
+            {
+                if (this.drawShadedOrTexturedStroke)
+                {
+                    this.drawTriMeshShaded2D(stroke, false, this.showOcclusion);
+                }
+                else
+                {
+                    this.drawTriMeshTextured2D(stroke, this.showOcclusion);
+                }
+            }
+
+            if (this.currStroke != null)
+            {
+                if (this.drawShadedOrTexturedStroke)
+                {
+                    this.drawTriMeshShaded2D(this.currStroke, true, this.showOcclusion);
+                }
+                else
+                {
+                    this.drawTriMeshTextured2D(this.currStroke, this.showOcclusion);
+                }
+
+            }
+        }// drawSketchStrokes
+
+        public void saveSketches(string filename)
+        {
+            if (filename == "")
+            {
+                filename = this.foldername + "\\contour.sketch";
+            }
+            StreamWriter sw = new StreamWriter(filename);
+            int i = 0;
+            foreach (Stroke stroke in this.sketchStrokes)
+            {
+                sw.WriteLine("sketch " + i.ToString());
+                sw.WriteLine(stroke.strokePoints.Count().ToString());
+                foreach (StrokePoint sp in stroke.strokePoints)
+                {
+                    //sw.WriteLine(sp.pos2.x.ToString() + " " + sp.pos2.y.ToString());
+                    sw.WriteLine(sp.pos2_local.x.ToString() + " " + sp.pos2_local.y.ToString());
+                }
+                ++i;
+            }
+            sw.Close();
+        }//saveSketches
+
+        public void loadSketches(string filename)
+        {
+            if (filename == "")
+            {
+                filename = this.foldername + "\\contour.sketch";
+            }
+            if (!File.Exists(filename)) return;
+
+            StreamReader sr = new StreamReader(filename);
+            char[] separator = { ' ' };
+            this.sketchStrokes = new List<Stroke>();
+            while (sr.Peek() > -1)
+            {
+                string line = sr.ReadLine();
+                string[] tokens = line.Split(separator);
+                int n = 0;
+                if (tokens.Length > 0 && tokens[0] == "sketch")
+                {
+                    line = sr.ReadLine();
+                    tokens = line.Split(separator);
+                    n = Int32.Parse(tokens[0]);
+                }
+                List<Vector2d> points = new List<Vector2d>();
+                for (int i = 0; i < n; ++i)
+                {
+                    line = sr.ReadLine();
+                    tokens = line.Split(separator);
+                    double x = double.Parse(tokens[0]);
+                    double y = double.Parse(tokens[1]);
+                    Vector2d p = new Vector2d(x, y);
+                    points.Add(p);
+                }
+                Stroke stroke = new Stroke(points, SegmentClass.PenSize);
+                stroke.strokeColor = Color.Black;
+                stroke.changeStyle2d((int)SegmentClass.strokeStyle);
+                this.sketchStrokes.Add(stroke);
+            }
+            this.updateSketchStrokePositionToLocalCoord();
         }
 
         private void drawPaperBoundary2d()
@@ -3697,7 +4358,7 @@ namespace SketchPlatform
                 this.drawQuad2d(this.highlightQuad, ColorSet[3]);
             }
 
-            this.SwapBuffers();
+            //this.SwapBuffers();
         }// Draw3D     
    
         private void drawContours()
@@ -3717,29 +4378,30 @@ namespace SketchPlatform
 
             if (this.currSegmentClass == null) return;
             // for segment
+            float width = 6.0f;
             if (this.showSegSilhouette)
             {
-                this.drawSegmentSilhouette(Color.FromArgb(252,141,98) , 10.0f);
+                this.drawSegmentSilhouette(Color.FromArgb(252, 141, 98), width);
             }
 
             if (this.showSegContour)
             {
-                this.drawSegmentContour(Color.FromArgb(0, 15, 85), 10.0f);
+                this.drawSegmentContour(Color.FromArgb(0, 15, 85), width);
             }
 
             if (this.showSegSuggestiveContour)
             {
-                this.drawSegmentSuggestiveContour(Color.FromArgb(231, 138, 195), 10.0f);
+                this.drawSegmentSuggestiveContour(Color.FromArgb(231, 138, 195), width);
             }
 
             if (this.showSegApparentRidge)
             {
-                this.drawSegmentApparentRige(SegmentClass.StrokeColor, 10.0f);
+                this.drawSegmentApparentRige(SegmentClass.StrokeColor, width);
             }
 
             if (this.showSegBoundary)
             {
-                this.drawSegmentBoundary(Color.FromArgb(251, 106, 74), 10.0f);
+                this.drawSegmentBoundary(Color.FromArgb(251, 106, 74), width);
             }
             Gl.glDisable(Gl.GL_DEPTH_TEST);
         }//drawContours
@@ -3764,10 +4426,10 @@ namespace SketchPlatform
                 {
                     if (this.drawFace)
                     {
-                        if (this.isShowContour())
+                        if (this.isShowContour() || this.sketchStrokes.Count > 0)
                         {
                             //this.drawMeshFace(seg.mesh, Color.Blue, false);
-                            this.drawMeshFace(seg.mesh, Color.WhiteSmoke, false);
+                            this.drawMeshFace(seg.mesh, Color.White, false);
                         }
                         else
                         {
@@ -4075,6 +4737,12 @@ namespace SketchPlatform
             {
                 this.drawVanishingGuide2d(this.currSegmentClass.segments[0]);
             }
+
+            if (this.currUIMode == UIMode.Sketch ||this.currUIMode == UIMode.Eraser)
+            {
+                DrawCircle2(new Vector2d(this.currMousePos.x, this.Height-this.currMousePos.y), Color.Black, (float)this.penRadius);
+            }
+
             if (this.currBoxIdx == -1 || this.currBoxIdx > this.currSegmentClass.segments.Count)
                 return;
 
@@ -4651,6 +5319,29 @@ namespace SketchPlatform
             
         }
 
+        private void drawLines2D(List<Vector2d> points, Color c, float linewidth)
+        {
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glEnable(Gl.GL_LINE_SMOOTH);
+            Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+
+            Gl.glLineWidth(linewidth);
+            Gl.glBegin(Gl.GL_LINES);
+            Gl.glColor3ub(c.R, c.G, c.B);
+            for (int i = 0; i < points.Count - 1;++i )
+            {
+                Gl.glVertex2dv(points[i].ToArray());
+                Gl.glVertex2dv(points[i+1].ToArray());
+            }
+            Gl.glEnd();
+
+            Gl.glDisable(Gl.GL_LINE_SMOOTH);
+            Gl.glDisable(Gl.GL_BLEND);
+
+            Gl.glLineWidth(1.0f);
+        }
+
         private void drawLines2D(Vector2d v1, Vector2d v2, Color c, float linewidth)
         {
             Gl.glEnable(Gl.GL_BLEND);
@@ -4690,6 +5381,31 @@ namespace SketchPlatform
             Gl.glDisable(Gl.GL_LINE_SMOOTH);
             Gl.glDisable(Gl.GL_BLEND);
             Gl.glDisable(Gl.GL_LINE_STIPPLE);
+
+            Gl.glLineWidth(1.0f);
+        }
+
+        private void drawLines3D(List<Vector3d> points, Color c, float linewidth)
+        {
+
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glEnable(Gl.GL_LINE_SMOOTH);
+            Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+            Gl.glEnable(Gl.GL_POINT_SMOOTH);
+            Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
+
+            Gl.glLineWidth(linewidth);
+            Gl.glColor3ub(c.R, c.G, c.B);
+            Gl.glBegin(Gl.GL_LINES);
+            foreach (Vector3d p in points)
+            {
+                Gl.glVertex3dv(p.ToArray());
+            }
+            Gl.glEnd();
+
+            Gl.glDisable(Gl.GL_LINE_SMOOTH);
+            Gl.glDisable(Gl.GL_BLEND);
 
             Gl.glLineWidth(1.0f);
         }
@@ -5227,6 +5943,208 @@ namespace SketchPlatform
             //Gl.glPopAttrib();
         }
 
+        public void drawTriMeshShaded2D(Stroke stroke, bool highlight, bool useOcclusion)
+        {
+            Gl.glPushAttrib(Gl.GL_COLOR_BUFFER_BIT);
+
+            int iMultiSample = 0;
+            int iNumSamples = 0;
+            Gl.glGetIntegerv(Gl.GL_SAMPLE_BUFFERS, out iMultiSample);
+            Gl.glGetIntegerv(Gl.GL_SAMPLES, out iNumSamples);
+            if (iNumSamples == 0)
+            {
+                Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+
+                Gl.glEnable(Gl.GL_POLYGON_SMOOTH);
+                Gl.glHint(Gl.GL_POLYGON_SMOOTH_HINT, Gl.GL_NICEST);
+                Gl.glEnable(Gl.GL_LINE_SMOOTH);
+                Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+
+                Gl.glEnable(Gl.GL_BLEND);
+                Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+                Gl.glShadeModel(Gl.GL_SMOOTH);
+            }
+            else
+            {
+                Gl.glEnable(Gl.GL_MULTISAMPLE);
+                Gl.glHint(Gl.GL_MULTISAMPLE_FILTER_HINT_NV, Gl.GL_NICEST);
+                Gl.glEnable(Gl.GL_SAMPLE_ALPHA_TO_ONE);
+            }
+            
+            for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+            {
+                int vidx1 = stroke.faceIndex[j];
+                int vidx2 = stroke.faceIndex[j + 1];
+                int vidx3 = stroke.faceIndex[j + 2];
+
+                int ipt = (i + stroke.ncapoints) / 2;
+                if (ipt < 0) ipt = 0;
+                if (ipt >= stroke.strokePoints.Count) ipt = stroke.strokePoints.Count - 1;
+                StrokePoint pt = stroke.strokePoints[ipt];
+
+                byte opa = (byte)(pt.depth * 255);
+
+                if (useOcclusion)
+                {
+                    opa = opa >= 0 ? opa : pt.opacity;
+                    opa = opa < 255 ? opa : pt.opacity;
+                }
+                else
+                    opa = pt.opacity;
+                if (!highlight)
+                {
+                    Gl.glColor4ub(stroke.strokeColor.R, stroke.strokeColor.G, stroke.strokeColor.B, (byte)opa);
+                }
+                else
+                {
+                    Gl.glColor4ub(GuideLineColor.R, GuideLineColor.G, GuideLineColor.B, (byte)opa);
+                }
+                Gl.glBegin(Gl.GL_POLYGON);
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx1].ToArray());
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx2].ToArray());
+                Gl.glVertex2dv(stroke.meshVertices2d[vidx3].ToArray());
+                Gl.glEnd();
+            }
+            
+
+
+            if (iNumSamples == 0)
+            {
+                Gl.glDisable(Gl.GL_BLEND);
+                Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+            }
+            else
+            {
+                Gl.glDisable(Gl.GL_MULTISAMPLE);
+            }
+
+            Gl.glPopAttrib();
+        } // drawTriMeshShaded2D
+
+        public void drawTriMeshTextured2D(Stroke stroke, bool useOcclusion)
+        {
+            uint tex_id = GLViewer.pencilTextureId;
+            switch ((int)SegmentClass.strokeStyle)
+            {
+                case 3:
+                    tex_id = GLViewer.crayonTextureId;
+                    break;
+                case 4:
+                    tex_id = GLViewer.inkTextureId;
+                    break;
+                case 0:
+                default:
+                    tex_id = GLViewer.pencilTextureId;
+                    break;
+            }
+
+            Gl.glPushAttrib(Gl.GL_COLOR_BUFFER_BIT);
+
+            int iMultiSample = 0;
+            int iNumSamples = 0;
+            Gl.glGetIntegerv(Gl.GL_SAMPLE_BUFFERS, out iMultiSample);
+            Gl.glGetIntegerv(Gl.GL_SAMPLES, out iNumSamples);
+            if (iNumSamples == 0)
+            {
+                Gl.glEnable(Gl.GL_POINT_SMOOTH);
+                Gl.glEnable(Gl.GL_LINE_SMOOTH);
+                Gl.glEnable(Gl.GL_POLYGON_SMOOTH);
+
+                Gl.glDisable(Gl.GL_CULL_FACE);
+                Gl.glDisable(Gl.GL_LIGHTING);
+                Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
+                Gl.glShadeModel(Gl.GL_SMOOTH);
+                Gl.glDisable(Gl.GL_DEPTH_TEST);
+
+                Gl.glEnable(Gl.GL_BLEND);
+                Gl.glBlendEquation(Gl.GL_ADD);
+                Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+                Gl.glHint(Gl.GL_PERSPECTIVE_CORRECTION_HINT, Gl.GL_NICEST);
+
+                Gl.glDepthMask(Gl.GL_FALSE);
+
+                Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+                Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
+                Gl.glHint(Gl.GL_POLYGON_SMOOTH_HINT, Gl.GL_NICEST);
+            }
+            else
+            {
+                Gl.glEnable(Gl.GL_MULTISAMPLE);
+                Gl.glHint(Gl.GL_MULTISAMPLE_FILTER_HINT_NV, Gl.GL_NICEST);
+                Gl.glEnable(Gl.GL_SAMPLE_ALPHA_TO_ONE);
+            }
+
+            Gl.glEnable(Gl.GL_TEXTURE_2D);
+            //Gl.glTexEnvf(Gl.GL_TEXTURE_ENV, Gl.GL_TEXTURE_ENV_MODE, Gl.GL_MODULATE);
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, tex_id);
+
+            for (int i = 0, j = 0; i < stroke.FaceCount; ++i, j += 3)
+            {
+                int j1 = stroke.faceIndex[j];
+                int j2 = stroke.faceIndex[j + 1];
+                int j3 = stroke.faceIndex[j + 2];
+                Vector2d pos1 = stroke.meshVertices2d[j1];
+                Vector2d pos2 = stroke.meshVertices2d[j2];
+                Vector2d pos3 = stroke.meshVertices2d[j3];
+
+                int ipt = (i + stroke.ncapoints) / 2;
+                if (ipt < 0) ipt = 0;
+                if (ipt >= stroke.strokePoints.Count) ipt = stroke.strokePoints.Count - 1;
+                StrokePoint pt = stroke.strokePoints[ipt];
+
+                byte opa = (byte)(pt.depth * 255);
+
+                if (useOcclusion)
+                {
+                    opa = opa >= 0 ? opa : pt.opacity;
+                    opa = opa < 255 ? opa : pt.opacity;
+                }
+                else
+                    opa = pt.opacity;
+
+                Gl.glColor4ub(255, 255, 255, (byte)opa);
+
+                Gl.glBegin(Gl.GL_POLYGON);
+
+                if (i % 2 == 1)
+                {
+                    Gl.glTexCoord2d(0, 0);
+                    Gl.glVertex2dv(pos1.ToArray());
+                    Gl.glVertex2d(0, 1);
+                    Gl.glVertex2dv(pos2.ToArray());
+                    Gl.glTexCoord2d(1, 1);
+                    Gl.glVertex2dv(pos3.ToArray());
+                }
+                else
+                {
+                    Gl.glTexCoord2d(0, 0);
+                    Gl.glVertex2dv(pos1.ToArray());
+                    Gl.glTexCoord2d(1, 1);
+                    Gl.glVertex2dv(pos3.ToArray());
+                    Gl.glTexCoord2d(1, 0);
+                    Gl.glVertex2dv(pos2.ToArray());
+                }
+
+                Gl.glEnd();
+            }
+
+            Gl.glDisable(Gl.GL_TEXTURE_2D);
+
+            if (iNumSamples == 0)
+            {
+                Gl.glDisable(Gl.GL_BLEND);
+                Gl.glDisable(Gl.GL_POLYGON_SMOOTH);
+                Gl.glDisable(Gl.GL_POINT_SMOOTH);
+                Gl.glDisable(Gl.GL_LINE_SMOOTH);
+                Gl.glDepthMask(Gl.GL_TRUE);
+            }
+            else
+            {
+                Gl.glDisable(Gl.GL_MULTISAMPLE);
+            }
+            Gl.glPopAttrib();
+        }
+
         public void drawTriMeshShaded3D(Stroke stroke, bool highlight, bool useOcclusion)
         {
             Gl.glPushAttrib(Gl.GL_COLOR_BUFFER_BIT);
@@ -5485,7 +6403,7 @@ namespace SketchPlatform
 
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                this.drawContours(seg.contourPoints, width);
+                this.drawContours(seg.contourPoints, width, c);
             }
 
         }//drawSegmentContour
@@ -5515,7 +6433,7 @@ namespace SketchPlatform
 
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                this.drawContours(seg.silhouettePoints, width);
+                this.drawContours(seg.silhouettePoints, width, c);
             }
 
         }//drawSegmentSilhouette
@@ -5544,7 +6462,7 @@ namespace SketchPlatform
 
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                this.drawContours(seg.suggestiveContourPoints, width);
+                this.drawContours(seg.suggestiveContourPoints, width, c);
             }
         }//drawSegmentSuggestiveContour
 
@@ -5569,7 +6487,7 @@ namespace SketchPlatform
             //}
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                this.drawContours(seg.ridgePoints, width);
+                this.drawContours(seg.ridgePoints, width, c);
             }
         }//drawSegmentApparentRige
 
@@ -5594,11 +6512,11 @@ namespace SketchPlatform
             //}
             foreach (Segment seg in this.currSegmentClass.segments)
             {
-                this.drawContours(seg.boundaryPoints, width);
+                this.drawContours(seg.boundaryPoints, width, c);
             }
         }//drawSegmentBoundary
 
-        public void drawContours(List<Vector3d> points, float width)
+        public void drawContours(List<Vector3d> points, float width, Color c)
         {
             if (points == null) return;
 
@@ -5613,7 +6531,7 @@ namespace SketchPlatform
             Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
 
             Gl.glLineWidth(width);
-            Gl.glColor3ub(0, 0, 0);
+            Gl.glColor3ub(c.R, c.G, c.B);
             Gl.glBegin(Gl.GL_LINES);
 
             for (int i = 0; i < points.Count; i++)
