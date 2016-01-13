@@ -145,6 +145,8 @@ namespace SketchPlatform
         public bool showSegBoundary = false;
         public bool showLineOrMesh = true;
 
+        public bool showDrawnStroke = true;
+
         public bool showBlinking = false;
 
         private bool inGuideMode = false;
@@ -353,8 +355,8 @@ namespace SketchPlatform
 
         public void loadTriMesh(string filename)
         {
-            MessageBox.Show("Trimesh is not activated in this version.");
-            return;
+            //MessageBox.Show("Trimesh is not activated in this version.");
+            //return;
 
             this.clearContext();
 
@@ -465,7 +467,7 @@ namespace SketchPlatform
             if (this.currSegmentClass == null) return;
 
             // reset the current 3d transformation again to check in the camera info, projection/modelview
-            Gl.glViewport(0, 0, this.Width, this.Height);
+             Gl.glViewport(0, 0, this.Width, this.Height);
             Gl.glMatrixMode(Gl.GL_PROJECTION);
             Gl.glLoadIdentity();
             double aspect = (double)this.Width / this.Height;
@@ -477,14 +479,15 @@ namespace SketchPlatform
                 new Vector3d() - this.objectCenter);
 
 
-            Gl.glMatrixMode(Gl.GL_MODELVIEW);
-            Gl.glPushMatrix();
-            Gl.glMultMatrixd(m.Transpose().ToArray());
+            //Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            //Gl.glPushMatrix();
+            //Gl.glMultMatrixd(m.Transpose().ToArray());
 
             this.calculatePoint2DInfo();
             this.calculateVanishingPoints();
 
-            Gl.glPopMatrix();
+            //Gl.glMatrixMode(Gl.GL_MODELVIEW);
+            //Gl.glPopMatrix();
 
 
             this.calculatePaperPosition();
@@ -952,10 +955,11 @@ namespace SketchPlatform
                 this.updateStrokeMesh();
                 this.drawShadedOrTexturedStroke = this.currSegmentClass.shadedOrTexture();
             }
-            foreach (Stroke stroke in this.sketchStrokes)
-            {
-                stroke.changeStyle2d(idx);
-            }
+
+                foreach (Stroke stroke in this.sketchStrokes)
+                {
+                    stroke.changeStyle2d(idx);
+                }
         }//setStrokeStyle
 
         public void setDepthType(int idx)
@@ -987,6 +991,15 @@ namespace SketchPlatform
         {
             this.vanishinglineDrawType = idx;
         }// setDepthType
+
+        public void setSegmentColor(Color c)
+        {
+            if (this.currSegmentClass == null) return;
+            foreach (Segment seg in this.currSegmentClass.segments)
+            {
+                seg.color = c;
+            }
+        }
 
         public void nextBox()
         {
@@ -1923,7 +1936,7 @@ namespace SketchPlatform
 
         public void computeContours()
         {
-            return;
+            //return;
             this.silhouettePoints = new List<Vector3d>();
             this.contourPoints = new List<Vector3d>();
             this.contourLines = new List<List<Vector3d>>();
@@ -3625,11 +3638,12 @@ namespace SketchPlatform
             Vector2d offnormal = off.normalize();
             this.strokeLength += len;
 
-            double dis_thres = 4.0;
+            double dis_thres = 6.0;
             if (len > dis_thres) 
             {
                 // moving the pen
                 int steps = (int)(len / dis_thres) + 1;
+                steps = Math.Min(4, steps);
                 double delta = len / steps;
                 for (int i = 1; i <= steps; ++i)
                 {
@@ -3647,6 +3661,7 @@ namespace SketchPlatform
                 {
                     CubicSpline2 spline = new CubicSpline2(this.currSketchPoints.ToArray());
                     this.currStroke = new Stroke(this.currSketchPoints, SegmentClass.PenSize);
+                    this.smoothStroke(this.currStroke);
                     this.currStroke.strokeColor = SegmentClass.PenColor;
                     this.storeSketchStrokePositionToLocalCoord(this.currStroke);
                     this.sketchStrokes.Add(this.currStroke);
@@ -3655,6 +3670,29 @@ namespace SketchPlatform
             this.currStroke = null;
             this.currSketchPoints = new List<Vector2d>();
         }//SketchMouseUp
+
+        private void smoothStroke(Stroke stroke)
+        {
+            int nloop = 5;
+            int n = 0;
+            int step = 3;
+            while (n < nloop)
+            {
+                for (int i = n; i < stroke.strokePoints.Count - step; i += step)
+                {
+                    Vector2d v1 = stroke.strokePoints[i].pos2;
+                    Vector2d v2 = stroke.strokePoints[i + step].pos2;
+                    double len = (v1-v2).Length()/step;
+                    Vector2d dir = (v2 - v1).normalize();
+                    for (int j = i; j < i + step; ++j)
+                    {
+                        stroke.strokePoints[j].pos2 = v1 + (j * len) * dir;
+                    }
+
+                }
+                ++n;
+            }
+        }
 
         private void findClosestVertex(List<Vector2d> points)
         {
@@ -4066,7 +4104,7 @@ namespace SketchPlatform
             if (this.currSketchPoints != null)
             {
                 this.drawLines2D(this.currSketchPoints, SegmentClass.PenColor, (float)SegmentClass.PenSize * 2);
-                //this.drawPoints2d(this.currSketchPoints.ToArray(), SegmentClass.PenColor, (float)SegmentClass.PenSize * 2);
+                //this.drawPoints2d(this.currSketchPoints.ToArray(), SegmentClass.PenColor, (float)SegmentClass.PenSize);
             }
             //foreach (List<Vector2d> points in this.sketchPoints)
             //{
@@ -4077,7 +4115,7 @@ namespace SketchPlatform
 
         private void drawSketchStrokes()
         {
-
+            if (!this.showDrawnStroke) return;
             foreach (Stroke stroke in this.sketchStrokes)
             {
                 if (this.drawShadedOrTexturedStroke)
@@ -4094,13 +4132,12 @@ namespace SketchPlatform
             {
                 if (this.drawShadedOrTexturedStroke)
                 {
-                    this.drawTriMeshShaded2D(this.currStroke, true, this.showOcclusion);
+                    this.drawTriMeshShaded2D(this.currStroke, false, this.showOcclusion);
                 }
                 else
                 {
                     this.drawTriMeshTextured2D(this.currStroke, this.showOcclusion);
                 }
-
             }
         }// drawSketchStrokes
 
@@ -4266,9 +4303,9 @@ namespace SketchPlatform
         private void Draw3D()
         {
 
-            InitGlMaterialLights();
-
             this.setViewMatrix();
+
+            SetDefaultLight();
 
             /***** Draw *****/
             //clearScene();
@@ -4426,10 +4463,10 @@ namespace SketchPlatform
                 {
                     if (this.drawFace)
                     {
-                        if (this.isShowContour() || this.sketchStrokes.Count > 0)
+                        if (this.isShowContour() || this.showDrawnStroke)
                         {
                             //this.drawMeshFace(seg.mesh, Color.Blue, false);
-                            this.drawMeshFace(seg.mesh, Color.White, false);
+                            this.drawMeshFace(seg.mesh, SegmentClass.MeshColor, false);
                         }
                         else
                         {
@@ -5572,27 +5609,56 @@ namespace SketchPlatform
 
         private static void SetDefaultLight()
         {
-            float[] pos1 = new float[4] { 0.1f, 0.1f, -0.02f, 0.0f };
-            float[] pos2 = new float[4] { -0.1f, 0.1f, -0.02f, 0.0f };
-            float[] pos3 = new float[4] { 0.0f, 0.0f, 0.1f, 0.0f };
-            float[] col1 = new float[4] { 0.7f, 0.7f, 0.8f, 1.0f };
-            float[] col2 = new float[4] { 0.8f, 0.7f, 0.7f, 1.0f };
-            float[] col3 = new float[4] { 1.0f, 1.0f, 1.0f, 1.0f };
 
+            float[] col1 = new float[4]  { 0.7f, 0.7f, 0.7f, 1.0f };
+            float[] col2 = new float[4] { 0.8f, 0.7f, 0.7f, 1.0f };
+            float[] col3 = new float[4] { 0, 0, 0, 1 };//{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+            float[] pos_1 = {10, 0,0};// { 0, -5, 10.0f };
+            float[] pos_2 = {0, 10, 0};// { 0, 5, -10.0f };
+            float[] pos_3 = {0,0,10};//{ -5, 5, -10.0f };
+            float[] pos_4 = { -10, 0, 0 };// { 0, -5, 10.0f };
+            float[] pos_5 = { 0, -10, 0 };// { 0, 5, -10.0f };
+            float[] pos_6 = { 0, 0, -10 };//{ -5, 5, -10.0f };
+
+            float[] intensity = {0.5f, 0.5f, 0.5f};
+            //Gl.glLightModeli(Gl.GL_LIGHT_MODEL_TWO_SIDE, Gl.GL_TRUE);
             Gl.glEnable(Gl.GL_LIGHT0);
-            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, pos1);
+            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, pos_1);
             Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, col1);
+            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_INTENSITY, intensity);
             Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, col1);
 
             Gl.glEnable(Gl.GL_LIGHT1);
-            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_POSITION, pos2);
-            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_DIFFUSE, col2);
-            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_SPECULAR, col2);
+            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_POSITION, pos_2);
+            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_DIFFUSE, col1);
+            Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_INTENSITY, intensity);
+            Gl.glLightfv(Gl.GL_LIGHT1, Gl.GL_SPECULAR, col1);
 
             Gl.glEnable(Gl.GL_LIGHT2);
-            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_POSITION, pos3);
-            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_DIFFUSE, col3);
-            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_SPECULAR, col3);
+            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_POSITION, pos_3);
+            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_DIFFUSE, col1);
+            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_SPECULAR, col1);
+            Gl.glLightfv(Gl.GL_LIGHT2, Gl.GL_INTENSITY, intensity);
+
+            //Gl.glEnable(Gl.GL_LIGHT3);
+            //Gl.glLightfv(Gl.GL_LIGHT3, Gl.GL_POSITION, pos_4);
+            //Gl.glLightfv(Gl.GL_LIGHT3, Gl.GL_DIFFUSE, col1);
+            //Gl.glLightfv(Gl.GL_LIGHT3, Gl.GL_SPECULAR, col1);
+            //Gl.glLightfv(Gl.GL_LIGHT3, Gl.GL_INTENSITY, intensity);
+
+
+            Gl.glEnable(Gl.GL_LIGHT4);
+            Gl.glLightfv(Gl.GL_LIGHT4, Gl.GL_POSITION, pos_5);
+            Gl.glLightfv(Gl.GL_LIGHT4, Gl.GL_DIFFUSE, col1);
+            Gl.glLightfv(Gl.GL_LIGHT4, Gl.GL_SPECULAR, col1);
+            Gl.glLightfv(Gl.GL_LIGHT4, Gl.GL_INTENSITY, intensity);
+
+            Gl.glEnable(Gl.GL_LIGHT5);
+            Gl.glLightfv(Gl.GL_LIGHT5, Gl.GL_POSITION, pos_6);
+            Gl.glLightfv(Gl.GL_LIGHT5, Gl.GL_DIFFUSE, col1);
+            Gl.glLightfv(Gl.GL_LIGHT5, Gl.GL_SPECULAR, col1);
+            Gl.glLightfv(Gl.GL_LIGHT5, Gl.GL_INTENSITY, intensity);
 
         }
         public void AddLight(Vector3d pos, Color col)
@@ -5610,6 +5676,9 @@ namespace SketchPlatform
             Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_DIFFUSE, matDiffuse);
             Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_SPECULAR, matSpecular);
             Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_SHININESS, shine);
+
+            
+
 
         }
         public static List<float[]> lightPositions = new List<float[]>();
@@ -5677,31 +5746,6 @@ namespace SketchPlatform
             }
         }
 
-        public static void InitGlMaterialLights()
-        {
-            // Material
-            SetDefaultMaterial();
-
-            // Lighting
-            SetDefaultLight();
-
-            SetAdditionalLight();
-
-            //// Fog
-            //float[] fogColor = new float[] { 0.3f, 0.3f, 0.4f, 1.0f };
-            //Gl.glFogi(Gl.GL_FOG_MODE, Gl.GL_LINEAR);
-            //Gl.glFogfv(Gl.GL_FOG_COLOR, fogColor);
-            //Gl.glFogf(Gl.GL_FOG_DENSITY, 0.35f);
-            //Gl.glHint(Gl.GL_FOG_HINT, Gl.GL_DONT_CARE);
-            //Gl.glFogf(Gl.GL_FOG_START, 5.0f);
-            //Gl.glFogf(Gl.GL_FOG_END, 25.0f);
-
-            //	Glut.glutInit();
-            //Glut.glutInitDisplayMode(Glut.GLUT_DOUBLE | Glut.GLUT_RGB | Glut.GLUT_DEPTH | Glut.GLUT_MULTISAMPLE);
-            //	Glut.glutInitDisplayMode(Glut.GLUT_DOUBLE | Glut.GLUT_MULTISAMPLE);
-
-        }
-
         // draw mesh
         public void drawMeshFace(Mesh m, Color c, bool useMeshColor)
         {
@@ -5713,6 +5757,7 @@ namespace SketchPlatform
             Gl.glEnable(Gl.GL_BLEND);
             Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
 
+            Gl.glDisable(Gl.GL_CULL_FACE);
             //Gl.glEnable(Gl.GL_COLOR_MATERIAL);
 
             //Gl.glEnable(Gl.GL_LIGHTING);
@@ -5721,17 +5766,26 @@ namespace SketchPlatform
             //Gl.glEnable(Gl.GL_POLYGON_OFFSET_FILL);
             //Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
             float[] mat_a = new float[4] { c.R / 255.0f, c.G / 255.0f, c.B / 255.0f, 1.0f };
+
+            float[] ka = { 0.1f, 0.05f, 0.0f, 1.0f };
+            float[] kd = { .9f, .6f, .2f, 1.0f };
+            float[] ks = { 0, 0, 0, 0 };//{ .2f, .2f, .2f, 1.0f };
+            float[] shine = { 1.0f };
             Gl.glColorMaterial(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT_AND_DIFFUSE);
             Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_AMBIENT, mat_a);
             Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_DIFFUSE, mat_a);
-            Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_SPECULAR, mat_a);
+            Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_SPECULAR, ks);
             Gl.glMaterialfv(Gl.GL_FRONT_AND_BACK, Gl.GL_SHININESS, shine);
+
+            
 
             Gl.glPolygonMode(Gl.GL_FRONT_AND_BACK, Gl.GL_FILL);
 
             Gl.glEnable(Gl.GL_DEPTH_TEST);
             Gl.glEnable(Gl.GL_LIGHTING);
-            Gl.glEnable(Gl.GL_NORMALIZE);          
+            Gl.glEnable(Gl.GL_NORMALIZE);
+
+            //Vector3d newEye = (this.currModelTransformMatrix.Transpose() * new Vector4d(this.eye, 1)).ToVector3D();
 
             
             if (useMeshColor)
@@ -5751,7 +5805,14 @@ namespace SketchPlatform
                     Color fc = Color.FromArgb(m.FaceColor[i * 4 + 3], m.FaceColor[i * 4], m.FaceColor[i * 4 + 1], m.FaceColor[i * 4 + 2]);
                     Gl.glColor4ub(fc.R, fc.G, fc.B, fc.A);
                     Gl.glBegin(Gl.GL_TRIANGLES);
-                    Gl.glNormal3d(m.FaceNormal[i * 3], m.FaceNormal[i * 3 + 1], m.FaceNormal[i * 3 + 2]);
+                    Vector3d centroid = (v1 + v2 + v3) / 3;
+                    Vector3d normal = new Vector3d(m.FaceNormal[i * 3], m.FaceNormal[i * 3 + 1], m.FaceNormal[i * 3 + 2]);
+                    //if ((centroid - newEye).Dot(normal) > 0)
+                    //{
+                    //    normal *= -1.0;
+                    //}
+                    //normal *= -1;
+                    Gl.glNormal3dv(normal.ToArray());
                     //Gl.glNormal3d(m.VertexNormal[vidx1 * 3], m.VertexNormal[vidx1 * 3 + 1], m.VertexNormal[vidx1 * 3 + 2]);
                     Gl.glVertex3d(v1.x, v1.y, v1.z);
                     //Gl.glNormal3d(m.VertexNormal[vidx2 * 3], m.VertexNormal[vidx2 * 3 + 1], m.VertexNormal[vidx2 * 3 + 2]);
@@ -5797,6 +5858,11 @@ namespace SketchPlatform
             Gl.glDisable(Gl.GL_NORMALIZE);
             Gl.glDisable(Gl.GL_LIGHTING);
             Gl.glDisable(Gl.GL_LIGHT0);
+            //Gl.glDisable(Gl.GL_LIGHT1);
+            //Gl.glDisable(Gl.GL_LIGHT2);
+            //Gl.glDisable(Gl.GL_LIGHT3);
+            //Gl.glDisable(Gl.GL_LIGHT4);
+            //Gl.glDisable(Gl.GL_LIGHT5);
             Gl.glDisable(Gl.GL_CULL_FACE);
             Gl.glDisable(Gl.GL_COLOR_MATERIAL);
         }

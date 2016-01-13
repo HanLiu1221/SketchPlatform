@@ -345,6 +345,7 @@ namespace SketchPlatform
             Gl.glEnable(Gl.GL_LIGHTING);
             Gl.glEnable(Gl.GL_NORMALIZE);
 
+
             Gl.glColor3ub(GLViewer.ModelColor.R, GLViewer.ModelColor.G, GLViewer.ModelColor.B);
 
             fixed (double* vp = this.mesh.VertexPos)

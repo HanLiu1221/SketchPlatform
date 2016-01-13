@@ -86,6 +86,7 @@ namespace SketchPlatform
             if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 GLViewer.ModelColor = colorDialog.Color;
+                this.glViewer.setSegmentColor(colorDialog.Color);
                 this.glViewer.Refresh();
             }
         }
@@ -453,7 +454,8 @@ namespace SketchPlatform
 
         private void sharpEdge_CheckedChanged(object sender, EventArgs e)
         {
-            this.glViewer.showSharpEdge = this.sharpEdge.Checked;
+            //this.glViewer.showSharpEdge = this.sharpEdge.Checked;
+            this.glViewer.showDrawnStroke = this.sharpEdge.Checked;
             this.glViewer.Refresh();
         }
 
@@ -574,6 +576,19 @@ namespace SketchPlatform
         {
             this.glViewer.clearAllStrokes();
             this.glViewer.Refresh();
+        }
+
+        private void loadSketchToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Filter = "sketch file (*.sketch)|*.sketch|All Files(*.*)|*.*";
+            dialog.CheckFileExists = true;
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                string filename = dialog.FileName;
+                this.glViewer.loadSketches(filename);
+                this.glViewer.Refresh();
+            }
         }
 
         

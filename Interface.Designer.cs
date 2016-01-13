@@ -245,6 +245,7 @@
             this.loadSketchToolStripMenuItem.Name = "loadSketchToolStripMenuItem";
             this.loadSketchToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
             this.loadSketchToolStripMenuItem.Text = "Load Sketch";
+            this.loadSketchToolStripMenuItem.Click += new System.EventHandler(this.loadSketchToolStripMenuItem_Click);
             // 
             // tools
             // 
@@ -680,12 +681,14 @@
             // sharpEdge
             // 
             this.sharpEdge.AutoSize = true;
+            this.sharpEdge.Checked = true;
+            this.sharpEdge.CheckState = System.Windows.Forms.CheckState.Checked;
             this.sharpEdge.Location = new System.Drawing.Point(4, 88);
             this.sharpEdge.Name = "sharpEdge";
             this.sharpEdge.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.sharpEdge.Size = new System.Drawing.Size(79, 17);
+            this.sharpEdge.Size = new System.Drawing.Size(86, 17);
             this.sharpEdge.TabIndex = 13;
-            this.sharpEdge.Text = "sharp edge";
+            this.sharpEdge.Text = "draw strokes";
             this.sharpEdge.UseVisualStyleBackColor = true;
             this.sharpEdge.CheckedChanged += new System.EventHandler(this.sharpEdge_CheckedChanged);
             // 

@@ -6,6 +6,7 @@ using System.Drawing;
 
 using Tao.OpenGl;
 using Tao.Platform.Windows;
+
 using Geometry;
 
 namespace Component
@@ -46,6 +47,16 @@ namespace Component
             this.sampleStrokePoints();
         }
 
+        public Stroke(Vector2d v1, Vector2d v2, bool isBoxEdge)
+        {
+            this.u2 = v1;
+            this.v2 = v2;
+            this.npoints = (int)((v1 - v2).Length() / 0.01);
+            this.npoints = this.npoints > 0 ? this.npoints : 1;
+            this.isBoxEdge = isBoxEdge;
+            this.sampleStrokePoints();
+        }
+
         public int FaceCount
         {
             get
@@ -70,6 +81,18 @@ namespace Component
             for (int i = 0; i < this.npoints; ++i)
             {
                 Vector3d p = new Vector3d(this.u3 + step * i * dir);
+                this.strokePoints.Add(new StrokePoint(p));
+            }
+        }//sampleStrokePoints
+
+        private void sampleStrokePoints2d()
+        {
+            Vector2d dir = (this.v2 - this.u2).normalize();
+            this.strokePoints = new List<StrokePoint>();
+            double step = (this.v2 - this.u2).Length() / this.npoints;
+            for (int i = 0; i < this.npoints; ++i)
+            {
+                Vector2d p = new Vector2d(this.u2 + step * i * dir);
                 this.strokePoints.Add(new StrokePoint(p));
             }
         }//sampleStrokePoints
@@ -121,7 +144,6 @@ namespace Component
                 this.meshVertices2d.Add(v2);
             }
             this.changeStyle2d((int)SegmentClass.strokeStyle);
-            this.strokeColor = Color.Black;
         }// setStrokeMeshPoints
 
         public double get2DLength()
@@ -628,8 +650,7 @@ namespace Component
             this.addRoundCap2D();
             this.addHeadTailFaceIndex(2);
         }// changeStyle
-
-        
+       
     }//Stroke
 
     public class GuideLine
@@ -678,6 +699,13 @@ namespace Component
             {
                 this.guideArrow = new Arrow3D(v1, v2, plane.normal);
             }
+        }
+
+        public GuideLine(Stroke stroke)
+        {
+            // draw strokes
+            this.strokes = new List<Stroke>();
+            strokes.Add(stroke);
         }
 
         public void setHostPlane(Plane plane)
@@ -864,6 +892,209 @@ namespace Component
         }
 
     }//GuideLine
+
+
+    public class DrawStroke2d
+    {
+        //endpoints
+        public Vector2d u2;
+        public Vector2d v2;
+        private int npoints;
+        //stroke points
+        public List<Stroke> strokes;
+        public double strokeGap = 0.1;
+
+        private static readonly Random rand = new Random();
+
+        public DrawStroke2d() { }
+
+        public DrawStroke2d(Stroke stroke)
+        {
+            this.strokes = new List<Stroke>();
+            this.strokes.Add(stroke);
+
+            Vector2d p, q;
+            bool isLine = this.linearRegression(stroke, out p, out q);
+            if (isLine)
+            {
+                this.u2 = p;
+                this.v2 = q;
+                this.DefineRandomLines();
+            }
+            else
+            {
+                this.u2 = new Vector2d(stroke.strokePoints[0].pos2);
+                this.v2 = new Vector2d(stroke.strokePoints[stroke.strokePoints.Count - 1].pos2);
+            }
+        }
+
+        public void DefineRandomLines()
+        {        
+            double strokeLen = (v2 - u2).Length();
+            double len = strokeGap * strokeLen;
+            Vector2d lineDir = (v2 - u2).normalize();
+            int  n = rand.Next(1, 4);
+            // now the first one is always the correct one without errors
+            double dirfloating = 0.01;
+            for (int i = 1; i < n; ++i)
+            {
+                Vector2d[] endpoints = new Vector2d[2];
+                for (int j = 0; j < 2; ++j)
+                {
+                    // find an arbitrary point
+                    double dis = this.getRandomDoubleInRange(rand, -len, len);
+                    // find a random normal
+                    Vector2d normal1 = new Vector2d();
+                    for (int k = 0; k < 2; ++k)
+                    {
+                        normal1[k] = this.getRandomDoubleInRange(rand, -1, 1);
+                    }
+                    normal1.normalize();
+                    Vector2d step1 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal1;
+                    Vector2d step2 = new Vector2d() - step1;
+
+                    if (j == 0)
+                    {
+                        endpoints[j] = u2 + dis * lineDir;
+                        endpoints[j] += step1;
+                    }
+                    else
+                    {
+                        endpoints[j] = v2 + dis * lineDir;
+                        endpoints[j] += step2;
+                    }
+                }
+                Stroke stroke = new Stroke(endpoints[0], endpoints[1], false);
+                stroke.weight *= 0.7;
+                stroke.strokeColor = SegmentClass.sideStrokeColor;
+                this.strokes.Add(stroke);
+            }
+        }//Define random lines (strokes)
+
+        public void DefineRandomCurves()
+        {
+            double strokeLen = (v2 - u2).Length();
+            double len = strokeGap * strokeLen;
+            Vector2d lineDir = (v2 - u2).normalize();
+            int n = rand.Next(1, 4);
+            // now the first one is always the correct one without errors
+            double dirfloating = 0.01;
+            double angle = 0.3;
+            int npoints = this.strokes[0].strokePoints.Count;
+            for (int i = 1; i < n; ++i)
+            {
+                // 1. rotate angle
+                double theta = this.getRandomDoubleInRange(rand, -angle, angle);
+                // 2. rotate from which point
+                int idx = rand.Next(1, n - 1);
+                List<Vector2d> points = new List<Vector2d>();
+
+                Vector2d[] endpoints = new Vector2d[2];
+                for (int j = 0; j < 2; ++j)
+                {
+                    // find an arbitrary point
+                    double dis = this.getRandomDoubleInRange(rand, -len, len);
+                    // find a random normal
+                    Vector2d normal1 = new Vector2d();
+                    for (int k = 0; k < 2; ++k)
+                    {
+                        normal1[k] = this.getRandomDoubleInRange(rand, -1, 1);
+                    }
+                    normal1.normalize();
+                    Vector2d step1 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal1;
+                    Vector2d step2 = new Vector2d() - step1;
+
+                    if (j == 0)
+                    {
+                        endpoints[j] = u2 + dis * lineDir;
+                        endpoints[j] += step1;
+                    }
+                    else
+                    {
+                        endpoints[j] = v2 + dis * lineDir;
+                        endpoints[j] += step2;
+                    }
+                }
+                Stroke stroke = new Stroke(endpoints[0], endpoints[1], false);
+                stroke.weight *= 0.7;
+                stroke.strokeColor = SegmentClass.sideStrokeColor;
+                this.strokes.Add(stroke);
+            }
+        }//Define random curves (strokes)
+
+        private double getRandomDoubleInRange(Random rand, double s, double e)
+        {
+            return s + (e - s) * rand.NextDouble();
+        }
+
+        private bool linearRegression(Stroke stroke, out Vector2d p, out Vector2d q)
+        {
+            // check if a stroke is a line or curve, to decide which perturb method to use
+            int n = stroke.strokePoints.Count;
+            double[,] xy = new double[n, 2];
+            int i = 0;
+            int nvar = 1;
+            List<Vector2d> points = new List<Vector2d>();
+            p = new Vector2d();
+            q = new Vector2d();
+            foreach (StrokePoint sp in stroke.strokePoints)
+            {
+                xy[i, 0] = sp.pos2.x;
+                xy[i, 1] = sp.pos2.y;
+                points.Add(sp.pos2);
+                ++i;
+            }
+            alglib.linearmodel lrmodel;
+            alglib.lrreport lrreport;
+            int info;
+            alglib.lrbuild(xy, n, 2, out info, out lrmodel, out lrreport);
+            if (info == 1)
+            {
+                double[] coef;
+                alglib.lrunpack(lrmodel, out coef, out nvar);
+                double a = coef[0], b = coef[1], c = 0;	 // y = ax + b  is the line formula
+
+                // using non-linear optimization -- for case when there is a vetical line which causes the linear regression unstable
+                LineOptimizer opt = new LineOptimizer();
+                opt.Init(points, new double[3] { a, -1, b });
+                double[] abc = opt.Optimize();
+                a = abc[0]; b = abc[1]; c = abc[2];
+                double error = opt.GetFittingError(abc);
+
+                if (a == 0 && b == 0)
+                    throw new ArgumentException("line regression failed!");
+
+                Vector2d pt = new Vector2d(0, -c / b);				// a point on line
+                if (b == 0) pt = new Vector2d(-c / a, 0);		// a point on line
+                Vector2d d = new Vector2d(-b, a).normalize();	// line direction
+                double min = double.MaxValue, max = double.MinValue;
+
+                foreach (StrokePoint v in stroke.strokePoints)
+                {
+                    double x = (v.pos2 - pt).Dot(d);
+                    if (x > max)
+                    {
+                        max = x;
+                        p = pt + d * x;
+                    }
+                    if (x < min)
+                    {
+                        min = x;
+                        q = pt + d * x;
+                    }
+                }
+                // for the type of x = c
+                double dist_max = (stroke.strokePoints[0].pos2 - stroke.strokePoints[stroke.strokePoints.Count - 1].pos2).Length();
+                double dist = (p - q).Length();
+                dist_max *= 2;
+                if (dist > 1e-6 && dist < dist_max)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    } // Draw stroke 2d
 
     public class Box
     {
@@ -1138,4 +1369,98 @@ namespace Component
         }
 
     }// StrokePoint
+
+    public class LineOptimizer
+    {
+        private int multivariate = 1;
+        private double[] initialx = null;	// a*x + b*y +c = 0; this is a more general line equation
+        private List<Vector2d> points = null;
+
+        public void Init(List<Vector2d> points, double[] init_x)
+        {
+            int n = points.Count;
+            this.initialx = init_x;
+            this.points = points;
+            this.multivariate = n;
+        }
+        public double[] Optimize()
+        {
+            double[] x = this.initialx;
+            double epsg = 0.0000000001;
+            double epsf = 0;
+            double epsx = 0;
+            int maxits = 100;
+
+            alglib.minlmstate state;
+            alglib.minlmreport rep;
+
+            //	this.OutputEnergy(x, "before:");
+
+            // with jacobi
+            alglib.minlmcreatevj(this.multivariate, x, out state);
+            alglib.minlmsetcond(state, epsg, epsf, epsx, maxits);
+            alglib.minlmoptimize(state, function, jacobi, null, null);
+            alglib.minlmresults(state, out x, out rep);
+
+            //// without jacobi
+            //alglib.minlmcreatev(this.multivariate, x, 0.0001, out state);
+            //alglib.minlmsetcond(state, epsg, epsf, epsx, maxits);
+            //alglib.minlmoptimize(state, function, null, null);
+            //alglib.minlmresults(state, out x, out rep);
+
+            //	this.OutputEnergy(x, "after:");
+
+            return x;
+        }
+        public double GetFittingError(double[] x)
+        {
+            double error = 0;
+            foreach (Vector2d p in this.points)
+            {
+                double a = x[0], b = x[1], c = x[2];
+                double d = Math.Abs(a * p.x + b * p.y + c);
+                d /= Math.Sqrt(a * a + b * b);
+                error += d;
+            }
+            return error / this.points.Count;
+        }
+        private void function(double[] x, double[] func, object obj)
+        {
+            int _functionIndex = 0;
+            foreach (Vector2d pt in this.points)
+            {
+                double a = x[0], b = x[1], c = x[2];
+                double d = (a * pt.x + b * pt.y + c);
+                //		d /= Math.Sqrt(a * a + b * b);
+                func[_functionIndex] = d;
+                _functionIndex++;
+            }
+        }//function
+        private void jacobi(double[] x, double[] func, double[,] jacoi, object obj)
+        {
+            int _functionIndex = 0;
+            foreach (Vector2d pt in this.points)
+            {
+                double a = x[0], b = x[1], c = x[2];
+                double d = (a * pt.x + b * pt.y + c);
+                func[_functionIndex] = d;
+                jacoi[_functionIndex, 0] = pt.x;
+                jacoi[_functionIndex, 1] = pt.y;
+                jacoi[_functionIndex, 2] = 1;
+                _functionIndex++;
+            }
+        }
+        private void OutputEnergy(double[] x, string prefix_text)
+        {
+            Console.Write("x = [");
+            for (int i = 0; i < x.Length; ++i)
+            {
+                Console.Write(x[i].ToString("f3") + ",");
+            }
+            Console.WriteLine("]");
+
+            double error = this.GetFittingError(x);
+            Console.WriteLine(prefix_text + " energy = " + error);
+        }
+    }
 }

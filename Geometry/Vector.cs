@@ -170,6 +170,15 @@ namespace Geometry
         {
             return new Vector2d(double.MinValue, double.MinValue);
         }
+
+        public Vector2d rotate(double theta)
+        {
+            double[] rot = {Math.Cos(theta), -Math.Sin(theta), Math.Sin(theta), Math.Cos(theta)};
+            Vector2d rotatedVec = new Vector2d();
+            rotatedVec.x = rot[0] * this.x + rot[1] * this.y;
+            rotatedVec.y = rot[2] * this.x + rot[3] * this.y;
+            return rotatedVec;
+        }
 	}//class-Vector2d
 
 	public class Vector3d
