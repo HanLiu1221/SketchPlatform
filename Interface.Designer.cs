@@ -71,12 +71,15 @@
             this.ink2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.edgeColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.guideLineColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.strokeColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.testTools = new System.Windows.Forms.ToolStripDropDownButton();
             this.exampleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.moveBoxToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.clearAllStrokes = new System.Windows.Forms.ToolStripButton();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
+            this.keyboardLabel = new System.Windows.Forms.Label();
             this.pageNumber = new System.Windows.Forms.Label();
             this.statistics = new System.Windows.Forms.Label();
             this.toolboxPanel = new System.Windows.Forms.Panel();
@@ -122,10 +125,9 @@
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.clearAllStrokes = new System.Windows.Forms.ToolStripButton();
-            this.keyboardLabel = new System.Windows.Forms.Label();
-            this.strokeColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.screenCaptureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.glViewer = new SketchPlatform.GLViewer();
+            this.moveCameraToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -258,7 +260,8 @@
             this.saveViewToolStripMenuItem,
             this.loadViewToolStripMenuItem,
             this.sketchToolStripMenuItem,
-            this.eraserToolStripMenuItem});
+            this.eraserToolStripMenuItem,
+            this.screenCaptureToolStripMenuItem});
             this.tools.Image = ((System.Drawing.Image)(resources.GetObject("tools.Image")));
             this.tools.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tools.Name = "tools";
@@ -269,63 +272,63 @@
             // viewToolStripMenuItem
             // 
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            this.viewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.viewToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.viewToolStripMenuItem.Text = "View";
             this.viewToolStripMenuItem.Click += new System.EventHandler(this.viewToolStripMenuItem_Click);
             // 
             // resetViewToolStripMenuItem
             // 
             this.resetViewToolStripMenuItem.Name = "resetViewToolStripMenuItem";
-            this.resetViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.resetViewToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.resetViewToolStripMenuItem.Text = "Reset View";
             this.resetViewToolStripMenuItem.Click += new System.EventHandler(this.resetViewToolStripMenuItem_Click);
             // 
             // modelColorToolStripMenuItem
             // 
             this.modelColorToolStripMenuItem.Name = "modelColorToolStripMenuItem";
-            this.modelColorToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.modelColorToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.modelColorToolStripMenuItem.Text = "Model Color";
             this.modelColorToolStripMenuItem.Click += new System.EventHandler(this.modelColorToolStripMenuItem_Click);
             // 
             // reloadViewToolStripMenuItem
             // 
             this.reloadViewToolStripMenuItem.Name = "reloadViewToolStripMenuItem";
-            this.reloadViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.reloadViewToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.reloadViewToolStripMenuItem.Text = "Reload View";
             this.reloadViewToolStripMenuItem.Click += new System.EventHandler(this.reloadViewToolStripMenuItem_Click);
             // 
             // autoSequenceToolStripMenuItem
             // 
             this.autoSequenceToolStripMenuItem.Name = "autoSequenceToolStripMenuItem";
-            this.autoSequenceToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.autoSequenceToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.autoSequenceToolStripMenuItem.Text = "Auto sequence";
             this.autoSequenceToolStripMenuItem.Click += new System.EventHandler(this.autoSequenceToolStripMenuItem_Click);
             // 
             // saveViewToolStripMenuItem
             // 
             this.saveViewToolStripMenuItem.Name = "saveViewToolStripMenuItem";
-            this.saveViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.saveViewToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.saveViewToolStripMenuItem.Text = "Save view";
             this.saveViewToolStripMenuItem.Click += new System.EventHandler(this.saveViewToolStripMenuItem_Click);
             // 
             // loadViewToolStripMenuItem
             // 
             this.loadViewToolStripMenuItem.Name = "loadViewToolStripMenuItem";
-            this.loadViewToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.loadViewToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.loadViewToolStripMenuItem.Text = "Load view";
             this.loadViewToolStripMenuItem.Click += new System.EventHandler(this.loadViewToolStripMenuItem_Click);
             // 
             // sketchToolStripMenuItem
             // 
             this.sketchToolStripMenuItem.Name = "sketchToolStripMenuItem";
-            this.sketchToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.sketchToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.sketchToolStripMenuItem.Text = "Sketch";
             this.sketchToolStripMenuItem.Click += new System.EventHandler(this.sketchToolStripMenuItem_Click);
             // 
             // eraserToolStripMenuItem
             // 
             this.eraserToolStripMenuItem.Name = "eraserToolStripMenuItem";
-            this.eraserToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.eraserToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.eraserToolStripMenuItem.Text = "Eraser";
             this.eraserToolStripMenuItem.Click += new System.EventHandler(this.eraserToolStripMenuItem_Click);
             // 
@@ -414,14 +417,14 @@
             // displayAxis
             // 
             this.displayAxis.Name = "displayAxis";
-            this.displayAxis.Size = new System.Drawing.Size(116, 22);
+            this.displayAxis.Size = new System.Drawing.Size(152, 22);
             this.displayAxis.Text = "Axis";
             this.displayAxis.Click += new System.EventHandler(this.displayAxis_Click);
             // 
             // contourToolStripMenuItem
             // 
             this.contourToolStripMenuItem.Name = "contourToolStripMenuItem";
-            this.contourToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.contourToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.contourToolStripMenuItem.Text = "contour";
             this.contourToolStripMenuItem.Click += new System.EventHandler(this.contourToolStripMenuItem_Click);
             // 
@@ -500,12 +503,20 @@
             this.guideLineColorToolStripMenuItem.Text = "guide line color";
             this.guideLineColorToolStripMenuItem.Click += new System.EventHandler(this.guideLineColorToolStripMenuItem_Click);
             // 
+            // strokeColorToolStripMenuItem
+            // 
+            this.strokeColorToolStripMenuItem.Name = "strokeColorToolStripMenuItem";
+            this.strokeColorToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.strokeColorToolStripMenuItem.Text = "stroke color";
+            this.strokeColorToolStripMenuItem.Click += new System.EventHandler(this.strokeColorToolStripMenuItem_Click);
+            // 
             // testTools
             // 
             this.testTools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.exampleToolStripMenuItem,
             this.moveBoxToolStripMenuItem,
-            this.showSpecificFacesToolStripMenuItem});
+            this.showSpecificFacesToolStripMenuItem,
+            this.moveCameraToolStripMenuItem});
             this.testTools.Image = ((System.Drawing.Image)(resources.GetObject("testTools.Image")));
             this.testTools.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.testTools.Name = "testTools";
@@ -533,6 +544,16 @@
             this.showSpecificFacesToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.showSpecificFacesToolStripMenuItem.Text = "show specific faces";
             this.showSpecificFacesToolStripMenuItem.Click += new System.EventHandler(this.showSpecificFacesToolStripMenuItem_Click);
+            // 
+            // clearAllStrokes
+            // 
+            this.clearAllStrokes.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.clearAllStrokes.Image = ((System.Drawing.Image)(resources.GetObject("clearAllStrokes.Image")));
+            this.clearAllStrokes.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.clearAllStrokes.Name = "clearAllStrokes";
+            this.clearAllStrokes.Size = new System.Drawing.Size(36, 36);
+            this.clearAllStrokes.Text = "toolStripButton1";
+            this.clearAllStrokes.Click += new System.EventHandler(this.clearAllStrokes_Click);
             // 
             // viewPanel
             // 
@@ -565,6 +586,19 @@
             this.fileNameTabs.SelectedIndex = 0;
             this.fileNameTabs.Size = new System.Drawing.Size(860, 35);
             this.fileNameTabs.TabIndex = 0;
+            // 
+            // keyboardLabel
+            // 
+            this.keyboardLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.keyboardLabel.AutoSize = true;
+            this.keyboardLabel.BackColor = System.Drawing.Color.Aquamarine;
+            this.keyboardLabel.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.keyboardLabel.Location = new System.Drawing.Point(172, 594);
+            this.keyboardLabel.Name = "keyboardLabel";
+            this.keyboardLabel.Size = new System.Drawing.Size(120, 78);
+            this.keyboardLabel.TabIndex = 6;
+            this.keyboardLabel.Text = "Space: unlock view\r\nCtrl + C: clear all strokes\r\nS: sketch mode\r\nE: eraser mode\r\n" +
+    "V: view mode\r\nR: reset view";
             // 
             // pageNumber
             // 
@@ -610,7 +644,6 @@
             this.contourLabel.Controls.Add(this.showSegSuggestiveContour);
             this.contourLabel.Controls.Add(this.showSegSilhouette);
             this.contourLabel.Controls.Add(this.showSegContour);
-            this.contourLabel.Controls.Add(this.sharpEdge);
             this.contourLabel.Location = new System.Drawing.Point(3, 556);
             this.contourLabel.Name = "contourLabel";
             this.contourLabel.Size = new System.Drawing.Size(156, 108);
@@ -621,7 +654,7 @@
             // showSegbundary
             // 
             this.showSegbundary.AutoSize = true;
-            this.showSegbundary.Location = new System.Drawing.Point(87, 88);
+            this.showSegbundary.Location = new System.Drawing.Point(7, 88);
             this.showSegbundary.Name = "showSegbundary";
             this.showSegbundary.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.showSegbundary.Size = new System.Drawing.Size(70, 17);
@@ -683,12 +716,12 @@
             this.sharpEdge.AutoSize = true;
             this.sharpEdge.Checked = true;
             this.sharpEdge.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.sharpEdge.Location = new System.Drawing.Point(4, 88);
+            this.sharpEdge.Location = new System.Drawing.Point(6, 88);
             this.sharpEdge.Name = "sharpEdge";
             this.sharpEdge.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.sharpEdge.Size = new System.Drawing.Size(86, 17);
+            this.sharpEdge.Size = new System.Drawing.Size(99, 17);
             this.sharpEdge.TabIndex = 13;
-            this.sharpEdge.Text = "draw strokes";
+            this.sharpEdge.Text = "drawn contours";
             this.sharpEdge.UseVisualStyleBackColor = true;
             this.sharpEdge.CheckedChanged += new System.EventHandler(this.sharpEdge_CheckedChanged);
             // 
@@ -725,6 +758,8 @@
             // showGuideLineVanlines
             // 
             this.showGuideLineVanlines.AutoSize = true;
+            this.showGuideLineVanlines.Checked = true;
+            this.showGuideLineVanlines.CheckState = System.Windows.Forms.CheckState.Checked;
             this.showGuideLineVanlines.Location = new System.Drawing.Point(5, 90);
             this.showGuideLineVanlines.Name = "showGuideLineVanlines";
             this.showGuideLineVanlines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
@@ -1058,6 +1093,7 @@
             this.displayBox.Controls.Add(this.showSketchyEdges);
             this.displayBox.Controls.Add(this.showMesh);
             this.displayBox.Controls.Add(this.showBBox);
+            this.displayBox.Controls.Add(this.sharpEdge);
             this.displayBox.Location = new System.Drawing.Point(3, 4);
             this.displayBox.Name = "displayBox";
             this.displayBox.Size = new System.Drawing.Size(157, 114);
@@ -1068,12 +1104,12 @@
             // showGuideLines
             // 
             this.showGuideLines.AutoSize = true;
-            this.showGuideLines.Location = new System.Drawing.Point(6, 88);
+            this.showGuideLines.Location = new System.Drawing.Point(6, 65);
             this.showGuideLines.Name = "showGuideLines";
             this.showGuideLines.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.showGuideLines.Size = new System.Drawing.Size(76, 17);
+            this.showGuideLines.Size = new System.Drawing.Size(70, 17);
             this.showGuideLines.TabIndex = 4;
-            this.showGuideLines.Text = "guide lines";
+            this.showGuideLines.Text = "all guides";
             this.showGuideLines.UseVisualStyleBackColor = true;
             this.showGuideLines.CheckedChanged += new System.EventHandler(this.showGuideLines_CheckedChanged);
             // 
@@ -1082,12 +1118,12 @@
             this.showSketchyEdges.AutoSize = true;
             this.showSketchyEdges.Checked = true;
             this.showSketchyEdges.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.showSketchyEdges.Location = new System.Drawing.Point(6, 65);
+            this.showSketchyEdges.Location = new System.Drawing.Point(63, 42);
             this.showSketchyEdges.Name = "showSketchyEdges";
             this.showSketchyEdges.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.showSketchyEdges.Size = new System.Drawing.Size(95, 17);
+            this.showSketchyEdges.Size = new System.Drawing.Size(76, 17);
             this.showSketchyEdges.TabIndex = 3;
-            this.showSketchyEdges.Text = "sketchy edges";
+            this.showSketchyEdges.Text = "guide lines";
             this.showSketchyEdges.UseVisualStyleBackColor = true;
             this.showSketchyEdges.CheckedChanged += new System.EventHandler(this.showSketchyEdges_CheckedChanged);
             // 
@@ -1115,35 +1151,12 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
-            // clearAllStrokes
+            // screenCaptureToolStripMenuItem
             // 
-            this.clearAllStrokes.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.clearAllStrokes.Image = ((System.Drawing.Image)(resources.GetObject("clearAllStrokes.Image")));
-            this.clearAllStrokes.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.clearAllStrokes.Name = "clearAllStrokes";
-            this.clearAllStrokes.Size = new System.Drawing.Size(36, 36);
-            this.clearAllStrokes.Text = "toolStripButton1";
-            this.clearAllStrokes.Click += new System.EventHandler(this.clearAllStrokes_Click);
-            // 
-            // keyboardLabel
-            // 
-            this.keyboardLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.keyboardLabel.AutoSize = true;
-            this.keyboardLabel.BackColor = System.Drawing.Color.Aquamarine;
-            this.keyboardLabel.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.keyboardLabel.Location = new System.Drawing.Point(172, 594);
-            this.keyboardLabel.Name = "keyboardLabel";
-            this.keyboardLabel.Size = new System.Drawing.Size(120, 78);
-            this.keyboardLabel.TabIndex = 6;
-            this.keyboardLabel.Text = "Space: unlock view\r\nCtrl + C: clear all strokes\r\nS: sketch mode\r\nE: eraser mode\r\n" +
-    "V: view mode\r\nR: reset view";
-            // 
-            // strokeColorToolStripMenuItem
-            // 
-            this.strokeColorToolStripMenuItem.Name = "strokeColorToolStripMenuItem";
-            this.strokeColorToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
-            this.strokeColorToolStripMenuItem.Text = "stroke color";
-            this.strokeColorToolStripMenuItem.Click += new System.EventHandler(this.strokeColorToolStripMenuItem_Click);
+            this.screenCaptureToolStripMenuItem.Name = "screenCaptureToolStripMenuItem";
+            this.screenCaptureToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.screenCaptureToolStripMenuItem.Text = "Screen Capture";
+            this.screenCaptureToolStripMenuItem.Click += new System.EventHandler(this.screenCaptureToolStripMenuItem_Click);
             // 
             // glViewer
             // 
@@ -1164,6 +1177,13 @@
             this.glViewer.Size = new System.Drawing.Size(689, 694);
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 5;
+            // 
+            // moveCameraToolStripMenuItem
+            // 
+            this.moveCameraToolStripMenuItem.Name = "moveCameraToolStripMenuItem";
+            this.moveCameraToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
+            this.moveCameraToolStripMenuItem.Text = "move camera";
+            this.moveCameraToolStripMenuItem.Click += new System.EventHandler(this.moveCameraToolStripMenuItem_Click);
             // 
             // Interface
             // 
@@ -1300,6 +1320,8 @@
         private System.Windows.Forms.ToolStripButton clearAllStrokes;
         private System.Windows.Forms.Label keyboardLabel;
         private System.Windows.Forms.ToolStripMenuItem strokeColorToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem screenCaptureToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem moveCameraToolStripMenuItem;
 
 	}
 }

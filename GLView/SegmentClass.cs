@@ -54,7 +54,7 @@ namespace Component
 
         // for sketch
         public static double PenSize = 2.0;
-        public static Color PenColor = Color.Black;
+        public static Color PenColor = Color.FromArgb(60, 60, 60);
 
         private string[] sequences;
         

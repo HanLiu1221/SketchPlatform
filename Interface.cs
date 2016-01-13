@@ -186,7 +186,7 @@ namespace SketchPlatform
         //    if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
         //        return;
         //    int size = Int32.Parse(this.strokeSizeBox.Text);
-        //    this.glViewer.setStrokeSizePerSeg(size);
+        //    this.glViewer.setStrokeSize(size);
         //    this.glViewer.Refresh();
         //}
 
@@ -194,8 +194,8 @@ namespace SketchPlatform
         {
             if (this.strokeSizeBox.Text == null || this.strokeSizeBox.Text.Length == 0)
                 return;
-            int size = Int32.Parse(this.strokeSizeBox.Text);
-            this.glViewer.setStrokeSizePerSeg(size);
+            double size = double.Parse(this.strokeSizeBox.Text);
+            this.glViewer.setStrokeSize(size);
             this.glViewer.Refresh();
         }
 
@@ -591,8 +591,16 @@ namespace SketchPlatform
             }
         }
 
-        
+        private void screenCaptureToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.captureScreen(this.glViewer.getSequenceNumber());
+        }
 
+        private void moveCameraToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.setUIMode(7);
+            this.glViewer.Refresh();
+        }
 
 
 

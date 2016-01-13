@@ -221,9 +221,9 @@ namespace Component
                 while (s < queue.Count && d < ndist)
                 {
                     int j = queue[s];
-                    for (int k = 0; k < mesh.VertexFaceIndex.GetLength(1); ++k)
+                    for (int k = 0; k < mesh.VertexFaceIndex[j].Count; ++k)
                     {
-                        int f = mesh.VertexFaceIndex[j, k];
+                        int f = mesh.VertexFaceIndex[j][k];
                         if (f == -1) continue;
                         for (int fi = 0; fi < 3; ++fi)
                         {

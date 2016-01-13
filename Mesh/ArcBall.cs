@@ -127,8 +127,15 @@ namespace Geometry
 
         private Matrix4d getRotationMatrix()
         {
-            Vector3d vn = currPos.Cross(startPos) / (currPos.Length() * startPos.Length());
-            Vector4d quaternion = new Vector4d(vn.x, vn.y, vn.z, currPos.Dot(startPos)) / (currPos.Length() * startPos.Length());
+            Vector3d cpos = currPos;
+            Vector3d spos = startPos;
+            cpos[1] = 0;
+            //cpos.normalize();
+            spos[1] = 0;
+            //spos.normalize();
+
+            Vector3d vn = cpos.Cross(startPos) / (cpos.Length() * spos.Length());
+            Vector4d quaternion = new Vector4d(vn.x, vn.y, vn.z, cpos.Dot(startPos)) / (cpos.Length() * spos.Length());
             quaternion.normalize();
 
             double x = quaternion.x;
@@ -148,6 +155,28 @@ namespace Geometry
             m[2, 2] = w * w - x * x - y * y + z * z;
             m[3, 3] = w * w + x * x + y * y + z * z;
             return m;
+
+            //Vector3d vn = currPos.Cross(startPos) / (currPos.Length() * startPos.Length());
+            //Vector4d quaternion = new Vector4d(vn.x, vn.y, vn.z, currPos.Dot(startPos)) / (currPos.Length() * startPos.Length());
+            //quaternion.normalize();
+
+            //double x = quaternion.x;
+            //double y = quaternion.y;
+            //double z = quaternion.z;
+            //double w = quaternion.w;
+
+            //Matrix4d m = new Matrix4d();
+            //m[0, 0] = w * w + x * x - y * y - z * z;
+            //m[0, 1] = 2 * x * y + 2 * w * z;
+            //m[0, 2] = 2 * x * z - 2 * w * y;
+            //m[1, 0] = 2 * x * y - 2 * w * z;
+            //m[1, 1] = w * w - x * x + y * y - z * z;
+            //m[1, 2] = 2 * y * z + 2 * w * x;
+            //m[2, 0] = 2 * x * z + 2 * w * y;
+            //m[2, 1] = 2 * y * z - 2 * w * x;
+            //m[2, 2] = w * w - x * x - y * y + z * z;
+            //m[3, 3] = w * w + x * x + y * y + z * z;
+            //return m;
         }
 
     }//Arcball

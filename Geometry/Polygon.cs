@@ -106,6 +106,13 @@ namespace Geometry
             return vec1;
         }
 
+        public static Vector2d FindPointTolineFootPrint(Vector2d pt, Vector2d u, Vector2d v)
+        {
+            Vector2d uv = (v - u).normalize();
+            if (double.IsNaN(uv.x)) return pt;
+            return u + (pt - u).Dot(uv) * uv;
+        }
+
         public static double PointDistToPlane(Vector3d pos, Vector3d center, Vector3d normal)
         {
             double d = (pos - center).Dot(normal) / normal.Length();

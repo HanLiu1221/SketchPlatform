@@ -47,14 +47,14 @@ namespace Component
             this.sampleStrokePoints();
         }
 
-        public Stroke(Vector2d v1, Vector2d v2, bool isBoxEdge)
+        public Stroke(Vector2d v1, Vector2d v2, bool isBoxEdge, int n)
         {
+            this.size2 = SegmentClass.StrokeSize / 2;
             this.u2 = v1;
             this.v2 = v2;
-            this.npoints = (int)((v1 - v2).Length() / 0.01);
-            this.npoints = this.npoints > 0 ? this.npoints : 1;
+            this.npoints = n;
             this.isBoxEdge = isBoxEdge;
-            this.sampleStrokePoints();
+            this.sampleStrokePoints2d();
         }
 
         public int FaceCount
@@ -95,6 +95,7 @@ namespace Component
                 Vector2d p = new Vector2d(this.u2 + step * i * dir);
                 this.strokePoints.Add(new StrokePoint(p));
             }
+            this.changeStyle2d((int)SegmentClass.strokeStyle);
         }//sampleStrokePoints
 
         public void setStrokeMeshPoints(List<Vector2d> points, List<Vector2d> normals)
@@ -117,10 +118,10 @@ namespace Component
         public Stroke(List<Vector2d> points, double size2)
         {
             this.meshVertices2d = new List<Vector2d>();
+            this.size2 = size2;
             double radius = this.size2 / 2;
             this.npoints = points.Count;
             this.strokePoints = new List<StrokePoint>();
-            this.size2 = size2;
             this.size3 = size2 / 500;
             for (int i = 0; i < this.npoints; ++i)
             {
@@ -143,6 +144,7 @@ namespace Component
                 this.meshVertices2d.Add(v1);
                 this.meshVertices2d.Add(v2);
             }
+            
             this.changeStyle2d((int)SegmentClass.strokeStyle);
         }// setStrokeMeshPoints
 
@@ -572,7 +574,7 @@ namespace Component
         public void changeStyle2d(int type)
         {
             this.meshVertices2d = new List<Vector2d>();
-            int N = this.npoints;
+            int N = this.strokePoints.Count;
             float start = (float)N;
 
             double r_size2 = Polygon.getRandomDoubleInRange(rand, this.size2, this.size2 * 2);
@@ -649,7 +651,31 @@ namespace Component
             this.buildStrokeMeshFace();
             this.addRoundCap2D();
             this.addHeadTailFaceIndex(2);
-        }// changeStyle
+        }// changeStyle2d
+
+        public void smooth()
+        {
+            int nloop = 5;
+            int n = 0;
+            int step = 3;
+            while (n < nloop)
+            {
+                for (int i = n; i < this.strokePoints.Count - step; i += step)
+                {
+                    Vector2d v1 = this.strokePoints[i].pos2;
+                    Vector2d v2 = this.strokePoints[i + step].pos2;
+                    double len = (v1 - v2).Length() / step;
+                    Vector2d dir = (v2 - v1).normalize();
+                    for (int j = i; j < i + step; ++j)
+                    {
+                        this.strokePoints[j].pos2 = v1 + ((j - i) * len) * dir;
+                    }
+
+                }
+                ++n;
+            }
+            this.changeStyle2d((int)SegmentClass.strokeStyle);
+        }
        
     }//Stroke
 
@@ -899,7 +925,6 @@ namespace Component
         //endpoints
         public Vector2d u2;
         public Vector2d v2;
-        private int npoints;
         //stroke points
         public List<Stroke> strokes;
         public double strokeGap = 0.1;
@@ -919,30 +944,33 @@ namespace Component
             {
                 this.u2 = p;
                 this.v2 = q;
-                this.DefineRandomLines();
+                this.DefineRandomCurves();
             }
             else
             {
                 this.u2 = new Vector2d(stroke.strokePoints[0].pos2);
                 this.v2 = new Vector2d(stroke.strokePoints[stroke.strokePoints.Count - 1].pos2);
+                this.DefineRandomCurves();
             }
         }
 
         public void DefineRandomLines()
-        {        
+        {
+            Vector2d v2 = this.strokes[0].strokePoints[0].pos2;
+            Vector2d u2 = this.strokes[0].strokePoints[this.strokes[0].strokePoints.Count - 1].pos2;
             double strokeLen = (v2 - u2).Length();
             double len = strokeGap * strokeLen;
             Vector2d lineDir = (v2 - u2).normalize();
             int  n = rand.Next(1, 4);
             // now the first one is always the correct one without errors
-            double dirfloating = 0.01;
+            double dirfloating = 10;
             for (int i = 1; i < n; ++i)
             {
                 Vector2d[] endpoints = new Vector2d[2];
                 for (int j = 0; j < 2; ++j)
                 {
                     // find an arbitrary point
-                    double dis = this.getRandomDoubleInRange(rand, -len, len);
+                    double dis = this.getRandomDoubleInRange(rand, -1, 1) * len;
                     // find a random normal
                     Vector2d normal1 = new Vector2d();
                     for (int k = 0; k < 2; ++k)
@@ -950,7 +978,7 @@ namespace Component
                         normal1[k] = this.getRandomDoubleInRange(rand, -1, 1);
                     }
                     normal1.normalize();
-                    Vector2d step1 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal1;
+                    Vector2d step1 = this.getRandomDoubleInRange(rand, -1, 1) * dirfloating * normal1;
                     Vector2d step2 = new Vector2d() - step1;
 
                     if (j == 0)
@@ -964,7 +992,7 @@ namespace Component
                         endpoints[j] += step2;
                     }
                 }
-                Stroke stroke = new Stroke(endpoints[0], endpoints[1], false);
+                Stroke stroke = new Stroke(endpoints[0], endpoints[1], false, this.strokes[0].strokePoints.Count);
                 stroke.weight *= 0.7;
                 stroke.strokeColor = SegmentClass.sideStrokeColor;
                 this.strokes.Add(stroke);
@@ -974,11 +1002,13 @@ namespace Component
         public void DefineRandomCurves()
         {
             double strokeLen = (v2 - u2).Length();
-            double len = strokeGap * strokeLen;
+            double len = strokeLen / 10;
             Vector2d lineDir = (v2 - u2).normalize();
-            int n = rand.Next(1, 4);
+            int n = rand.Next(2, 4);
+            //return;
+            //n = n > 2 ? 2 : n;
+            //n = 1;
             // now the first one is always the correct one without errors
-            double dirfloating = 0.01;
             double angle = 0.3;
             int npoints = this.strokes[0].strokePoints.Count;
             for (int i = 1; i < n; ++i)
@@ -986,37 +1016,43 @@ namespace Component
                 // 1. rotate angle
                 double theta = this.getRandomDoubleInRange(rand, -angle, angle);
                 // 2. rotate from which point
-                int idx = rand.Next(1, n - 1);
+                int idx = rand.Next(1, this.strokes[0].strokePoints.Count - 1);
                 List<Vector2d> points = new List<Vector2d>();
 
-                Vector2d[] endpoints = new Vector2d[2];
-                for (int j = 0; j < 2; ++j)
+                // left: rotate theta
+                // right: rotate -theta
+                //for (int j = 0; j < npoints; ++j)
+                //{
+                //    Vector2d vr = this.strokes[0].strokePoints[j].pos2.rotate(theta);
+                //    points.Add(vr);
+                //}
+                double dist = this.getRandomDoubleInRange(rand, 5, len);
+                double d = dist / idx;
+                for (int j = 0; j <= idx; ++j)
                 {
-                    // find an arbitrary point
-                    double dis = this.getRandomDoubleInRange(rand, -len, len);
-                    // find a random normal
-                    Vector2d normal1 = new Vector2d();
-                    for (int k = 0; k < 2; ++k)
-                    {
-                        normal1[k] = this.getRandomDoubleInRange(rand, -1, 1);
-                    }
-                    normal1.normalize();
-                    Vector2d step1 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal1;
-                    Vector2d step2 = new Vector2d() - step1;
-
-                    if (j == 0)
-                    {
-                        endpoints[j] = u2 + dis * lineDir;
-                        endpoints[j] += step1;
-                    }
-                    else
-                    {
-                        endpoints[j] = v2 + dis * lineDir;
-                        endpoints[j] += step2;
-                    }
+                    Vector2d dir = (this.strokes[0].strokePoints[j + 1].pos2 - this.strokes[0].strokePoints[j].pos2).normalize();
+                    Vector2d norm = new Vector2d(-dir.y, dir.x);
+                    norm.normalize();
+                    Vector2d trans = this.strokes[0].strokePoints[j].pos2 + d * (idx - j) * norm;
+                    points.Add(trans);
                 }
-                Stroke stroke = new Stroke(endpoints[0], endpoints[1], false);
-                stroke.weight *= 0.7;
+                dist = this.getRandomDoubleInRange(rand, 0, len);
+                d = dist / (this.strokes[0].strokePoints.Count - idx);
+                for (int j = idx + 1; j < this.strokes[0].strokePoints.Count; ++j)
+                {
+                    Vector2d dir = new Vector2d();
+                    if (j < this.strokes[0].strokePoints.Count - 1)
+                        dir = (this.strokes[0].strokePoints[j + 1].pos2 - this.strokes[0].strokePoints[j].pos2).normalize();
+                    else
+                        dir = (this.strokes[0].strokePoints[j].pos2 - this.strokes[0].strokePoints[j - 1].pos2).normalize();
+
+                    Vector2d norm = -1 * new Vector2d(-dir.y, dir.x);
+                    norm.normalize();
+                    Vector2d trans = this.strokes[0].strokePoints[j].pos2 + d * (j - idx) * norm;
+                    points.Add(trans);
+                }
+
+                Stroke stroke = new Stroke(points, SegmentClass.PenSize/2);
                 stroke.strokeColor = SegmentClass.sideStrokeColor;
                 this.strokes.Add(stroke);
             }
@@ -1047,7 +1083,7 @@ namespace Component
             alglib.linearmodel lrmodel;
             alglib.lrreport lrreport;
             int info;
-            alglib.lrbuild(xy, n, 2, out info, out lrmodel, out lrreport);
+            alglib.lrbuild(xy, n, nvar, out info, out lrmodel, out lrreport);
             if (info == 1)
             {
                 double[] coef;
@@ -1087,11 +1123,23 @@ namespace Component
                 double dist_max = (stroke.strokePoints[0].pos2 - stroke.strokePoints[stroke.strokePoints.Count - 1].pos2).Length();
                 double dist = (p - q).Length();
                 dist_max *= 2;
-                if (dist > 1e-6 && dist < dist_max)
-                {
-                    return true;
-                }
+                //if (dist > 1e-6 && dist < dist_max)
+                //{
+                //    return true;
+                //}
             }
+
+            double err = 0.0;
+            foreach (StrokePoint pt in stroke.strokePoints)
+            {
+                Vector2d foot = Polygon.FindPointTolineFootPrint(pt.pos2,
+                    stroke.strokePoints[0].pos2, stroke.strokePoints[stroke.strokePoints.Count - 1].pos2
+                    );
+                err += (foot - pt.pos2).Length();
+            }
+            err /= stroke.strokePoints.Count;
+            if (err < 10)
+                return true;
             return false;
         }
     } // Draw stroke 2d
