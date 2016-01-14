@@ -296,7 +296,7 @@ namespace SketchPlatform
         public void setPageNumberLocation(int x, int y)
         {
             this.pageNumber.Location = new Point(x, y);
-            this.Refresh();
+            //this.Refresh();
         }
 
         public void setLockState(bool isLock)
@@ -598,11 +598,29 @@ namespace SketchPlatform
 
         private void moveCameraToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.glViewer.setUIMode(7);
+            //this.glViewer.setUIMode(7);
+            //this.glViewer.zoonIn = !this.glViewer.zoonIn;
             this.glViewer.Refresh();
         }
 
+        //########## inset view ##########//
 
+        public void addInsetViewer(InsetViewer viewer)
+        {
+            this.viewPanel.Panel2.Controls.Add(viewer);
+            viewer.BringToFront();
+        }
+
+        public void setLineType(string s)
+        {
+            this.lineTypeLabel.Text = s;
+            this.Refresh();
+        }
+
+        public void setLineTypeLabelLoc(int x, int y)
+        {
+            this.lineTypeLabel.Location = new Point(x, y);
+        }
 
 	}
 }

@@ -36,5 +36,20 @@ namespace SketchPlatform
         {
             Program.formMain.setLockState(isLock);
         }
+
+        static public void setInsetViewer(InsetViewer viewer)
+        {
+            Program.formMain.addInsetViewer(viewer);
+        }
+
+        static public void writeLineType(string s)
+        {
+            Program.formMain.setLineType(s);
+        }
+
+        static public void setLineTypeLabelLoc(int x, int y)
+        {
+            Program.formMain.setLineTypeLabelLoc(x,y);
+        }
 	}
 }

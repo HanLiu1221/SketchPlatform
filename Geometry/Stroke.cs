@@ -705,6 +705,8 @@ namespace Component
         public int type = 1;
         public double weight = SegmentClass.StrokeSize;
 
+        public GuideLine() { }
+
         public GuideLine(Vector3d v1, Vector3d v2, Plane plane, bool isBoxEdge)
         {
             this.u = v1;

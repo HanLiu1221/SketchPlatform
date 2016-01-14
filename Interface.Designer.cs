@@ -51,6 +51,7 @@
             this.loadViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sketchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.eraserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.screenCaptureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renderOption = new System.Windows.Forms.ToolStripDropDownButton();
             this.vertexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.wireFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -76,9 +77,11 @@
             this.exampleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.moveBoxToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.moveCameraToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.clearAllStrokes = new System.Windows.Forms.ToolStripButton();
             this.viewPanel = new System.Windows.Forms.SplitContainer();
             this.fileNameTabs = new System.Windows.Forms.TabControl();
+            this.lineTypeLabel = new System.Windows.Forms.Label();
             this.keyboardLabel = new System.Windows.Forms.Label();
             this.pageNumber = new System.Windows.Forms.Label();
             this.statistics = new System.Windows.Forms.Label();
@@ -89,7 +92,6 @@
             this.showSegSuggestiveContour = new System.Windows.Forms.CheckBox();
             this.showSegSilhouette = new System.Windows.Forms.CheckBox();
             this.showSegContour = new System.Windows.Forms.CheckBox();
-            this.sharpEdge = new System.Windows.Forms.CheckBox();
             this.vanishingBox = new System.Windows.Forms.GroupBox();
             this.showFaceToDraw = new System.Windows.Forms.CheckBox();
             this.showGuideLineVanlines = new System.Windows.Forms.CheckBox();
@@ -124,10 +126,9 @@
             this.showSketchyEdges = new System.Windows.Forms.CheckBox();
             this.showMesh = new System.Windows.Forms.CheckBox();
             this.showBBox = new System.Windows.Forms.CheckBox();
+            this.sharpEdge = new System.Windows.Forms.CheckBox();
             this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
-            this.screenCaptureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.glViewer = new SketchPlatform.GLViewer();
-            this.moveCameraToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
             this.viewPanel.Panel1.SuspendLayout();
@@ -332,6 +333,13 @@
             this.eraserToolStripMenuItem.Text = "Eraser";
             this.eraserToolStripMenuItem.Click += new System.EventHandler(this.eraserToolStripMenuItem_Click);
             // 
+            // screenCaptureToolStripMenuItem
+            // 
+            this.screenCaptureToolStripMenuItem.Name = "screenCaptureToolStripMenuItem";
+            this.screenCaptureToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.screenCaptureToolStripMenuItem.Text = "Screen Capture";
+            this.screenCaptureToolStripMenuItem.Click += new System.EventHandler(this.screenCaptureToolStripMenuItem_Click);
+            // 
             // renderOption
             // 
             this.renderOption.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -417,14 +425,14 @@
             // displayAxis
             // 
             this.displayAxis.Name = "displayAxis";
-            this.displayAxis.Size = new System.Drawing.Size(152, 22);
+            this.displayAxis.Size = new System.Drawing.Size(116, 22);
             this.displayAxis.Text = "Axis";
             this.displayAxis.Click += new System.EventHandler(this.displayAxis_Click);
             // 
             // contourToolStripMenuItem
             // 
             this.contourToolStripMenuItem.Name = "contourToolStripMenuItem";
-            this.contourToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.contourToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.contourToolStripMenuItem.Text = "contour";
             this.contourToolStripMenuItem.Click += new System.EventHandler(this.contourToolStripMenuItem_Click);
             // 
@@ -545,6 +553,13 @@
             this.showSpecificFacesToolStripMenuItem.Text = "show specific faces";
             this.showSpecificFacesToolStripMenuItem.Click += new System.EventHandler(this.showSpecificFacesToolStripMenuItem_Click);
             // 
+            // moveCameraToolStripMenuItem
+            // 
+            this.moveCameraToolStripMenuItem.Name = "moveCameraToolStripMenuItem";
+            this.moveCameraToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
+            this.moveCameraToolStripMenuItem.Text = "move camera";
+            this.moveCameraToolStripMenuItem.Click += new System.EventHandler(this.moveCameraToolStripMenuItem_Click);
+            // 
             // clearAllStrokes
             // 
             this.clearAllStrokes.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
@@ -568,6 +583,7 @@
             // 
             // viewPanel.Panel2
             // 
+            this.viewPanel.Panel2.Controls.Add(this.lineTypeLabel);
             this.viewPanel.Panel2.Controls.Add(this.keyboardLabel);
             this.viewPanel.Panel2.Controls.Add(this.pageNumber);
             this.viewPanel.Panel2.Controls.Add(this.glViewer);
@@ -586,6 +602,17 @@
             this.fileNameTabs.SelectedIndex = 0;
             this.fileNameTabs.Size = new System.Drawing.Size(860, 35);
             this.fileNameTabs.TabIndex = 0;
+            // 
+            // lineTypeLabel
+            // 
+            this.lineTypeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.lineTypeLabel.AutoSize = true;
+            this.lineTypeLabel.BackColor = System.Drawing.Color.Transparent;
+            this.lineTypeLabel.Font = new System.Drawing.Font("Book Antiqua", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lineTypeLabel.Location = new System.Drawing.Point(455, 646);
+            this.lineTypeLabel.Name = "lineTypeLabel";
+            this.lineTypeLabel.Size = new System.Drawing.Size(0, 26);
+            this.lineTypeLabel.TabIndex = 7;
             // 
             // keyboardLabel
             // 
@@ -710,20 +737,6 @@
             this.showSegContour.Text = "contour";
             this.showSegContour.UseVisualStyleBackColor = true;
             this.showSegContour.CheckedChanged += new System.EventHandler(this.showSegContour_CheckedChanged);
-            // 
-            // sharpEdge
-            // 
-            this.sharpEdge.AutoSize = true;
-            this.sharpEdge.Checked = true;
-            this.sharpEdge.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.sharpEdge.Location = new System.Drawing.Point(6, 88);
-            this.sharpEdge.Name = "sharpEdge";
-            this.sharpEdge.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.sharpEdge.Size = new System.Drawing.Size(99, 17);
-            this.sharpEdge.TabIndex = 13;
-            this.sharpEdge.Text = "drawn contours";
-            this.sharpEdge.UseVisualStyleBackColor = true;
-            this.sharpEdge.CheckedChanged += new System.EventHandler(this.sharpEdge_CheckedChanged);
             // 
             // vanishingBox
             // 
@@ -1151,12 +1164,19 @@
             this.showBBox.UseVisualStyleBackColor = true;
             this.showBBox.CheckedChanged += new System.EventHandler(this.showBBox_CheckedChanged);
             // 
-            // screenCaptureToolStripMenuItem
+            // sharpEdge
             // 
-            this.screenCaptureToolStripMenuItem.Name = "screenCaptureToolStripMenuItem";
-            this.screenCaptureToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
-            this.screenCaptureToolStripMenuItem.Text = "Screen Capture";
-            this.screenCaptureToolStripMenuItem.Click += new System.EventHandler(this.screenCaptureToolStripMenuItem_Click);
+            this.sharpEdge.AutoSize = true;
+            this.sharpEdge.Checked = true;
+            this.sharpEdge.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.sharpEdge.Location = new System.Drawing.Point(6, 88);
+            this.sharpEdge.Name = "sharpEdge";
+            this.sharpEdge.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.sharpEdge.Size = new System.Drawing.Size(99, 17);
+            this.sharpEdge.TabIndex = 13;
+            this.sharpEdge.Text = "drawn contours";
+            this.sharpEdge.UseVisualStyleBackColor = true;
+            this.sharpEdge.CheckedChanged += new System.EventHandler(this.sharpEdge_CheckedChanged);
             // 
             // glViewer
             // 
@@ -1177,13 +1197,6 @@
             this.glViewer.Size = new System.Drawing.Size(689, 694);
             this.glViewer.StencilBits = ((byte)(0));
             this.glViewer.TabIndex = 5;
-            // 
-            // moveCameraToolStripMenuItem
-            // 
-            this.moveCameraToolStripMenuItem.Name = "moveCameraToolStripMenuItem";
-            this.moveCameraToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
-            this.moveCameraToolStripMenuItem.Text = "move camera";
-            this.moveCameraToolStripMenuItem.Click += new System.EventHandler(this.moveCameraToolStripMenuItem_Click);
             // 
             // Interface
             // 
@@ -1322,6 +1335,7 @@
         private System.Windows.Forms.ToolStripMenuItem strokeColorToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem screenCaptureToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem moveCameraToolStripMenuItem;
+        private System.Windows.Forms.Label lineTypeLabel;
 
 	}
 }
