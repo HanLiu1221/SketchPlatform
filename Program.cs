@@ -51,5 +51,15 @@ namespace SketchPlatform
         {
             Program.formMain.setLineTypeLabelLoc(x,y);
         }
+		
+		static public void SetInsetPageNumber(string s)
+		{
+			Program.formMain.setInsetPageNumber(s);
+		}
+
+		static public void SetInsetPageNumberLocation(int x, int y)
+		{
+			Program.formMain.setInsetPageNumberLocation(x, y);
+		}
 	}
 }

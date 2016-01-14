@@ -296,8 +296,26 @@ namespace SketchPlatform
         public void setPageNumberLocation(int x, int y)
         {
             this.pageNumber.Location = new Point(x, y);
-            //this.Refresh();
+			this.Refresh();
         }
+
+		public void setInsetPageNumber(string s)
+		{
+			this.insetPageNumber.Text = s;
+			this.Refresh();
+		}
+
+		public void setInsetPageNumberLocation(int x, int y)
+		{
+			this.insetPageNumber.Location = new Point(x, y);
+			this.insetPageNumber.BringToFront();
+			this.Refresh();
+		}
+
+		public void bringToFront()
+		{
+			this.insetPageNumber.BringToFront();
+		}
 
         public void setLockState(bool isLock)
         {
@@ -619,8 +637,15 @@ namespace SketchPlatform
 
         public void setLineTypeLabelLoc(int x, int y)
         {
+			this.lineTypeLabel.Hide();
             this.lineTypeLabel.Location = new Point(x, y);
         }
+
+		private void pointPerspectiveToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			this.glViewer.changePerspective();
+			this.glViewer.Refresh();
+		}
 
 	}
 }

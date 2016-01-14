@@ -71,14 +71,16 @@ namespace SketchPlatform
         {
             this.insetViewer = new InsetViewer();
 
-            int w = this.Width/3, h = this.Height/3;
-            this.insetViewer.Location = new Point(this.Location.X + this.Width-w-10, this.Location.Y  + this.Height-h - 10);
             this.insetViewer.Anchor = (AnchorStyles.Bottom | AnchorStyles.Right);
-            this.insetViewer.BorderStyle = BorderStyle.FixedSingle;
-            this.insetViewer.Size = new System.Drawing.Size(w, h);
+            this.insetViewer.BorderStyle = BorderStyle.None;
             this.insetViewer.AutoSwapBuffers = true;
-            this.insetViewer.BackColor = System.Drawing.Color.Black;
+            this.insetViewer.BackColor = System.Drawing.Color.Transparent;
             this.insetViewer.accModelView(this.currModelTransformMatrix);
+			int h = this.Height / 3, w = h * 4 / 3;
+			int off = 50;
+			this.insetViewer.Location = new Point(this.Location.X + this.Width - w - off / 2,
+				this.Location.Y + this.Height - h - off);
+			this.insetViewer.Size = new System.Drawing.Size(w, h);
         }
 
         private void initializeColors()
@@ -478,9 +480,11 @@ namespace SketchPlatform
                     this.pageNumber[i] += totalPageStr;
                 }
             }
+			this.reloadView();
+
             this.loadSketches("");
 
-            this.reloadView();
+            
             this.insetViewer.accModelView(this.currModelTransformMatrix);
         }// loadJSONFile
 
@@ -670,10 +674,12 @@ namespace SketchPlatform
             this.paperPosLines[6] = this.paperPos[3].pos2 + xd * off;
             this.paperPosLines[7] = this.paperPos[3].pos2 - yd * off;
 
-            int x = (int)this.paperPos[2].pos2.x;
-            int y = this.Location.Y + (int)this.paperPos[0].pos2.y + 20;
-            Program.GetFormMain().setPageNumberLocation(x,y);
+			int x = (int)this.paperPos[2].pos2.x;
+			int y = this.Location.Y + (int)this.paperPos[0].pos2.y + 20;
+			Program.GetFormMain().setPageNumberLocation(x, y);
 
+			this.updateInsetViewSize();
+			
         }// calculatePaperPosition
 
         private void calculateVanishingPoints()
@@ -699,43 +705,6 @@ namespace SketchPlatform
 
             //this.calculateVanishingLine();
             this.calculateVanishingLine2d();
-
-            //this.vanishingPoints[0].pos3 = new Vector3d(0, 0, -2);
-            //this.vanishingPoints[1].pos3 = new Vector3d(-2, 0, 0);
-
-            //Vector3d zline1 = (b.points[0] - b.points[3]).normalize();
-            //Vector3d zline2 = (b.points[4] - b.points[7]).normalize();
-            //int s = 1;
-            //Vector3d vp1 = zline1 * 0.1 * s;
-            //while (true)
-            //{
-            //    Vector2d v2 = this.camera.Project(vp1).ToVector2d();
-            //    double dist = (v2 - this.vanishingPoints[0].pos2).Length();
-            //    if (dist < 10)
-            //    {
-            //        break;
-            //    }
-            //    ++s;
-            //    vp1 = b.points[3] + zline1 * 0.2 * s;
-            //}
-            //this.vanishingPoints[0].pos3 = vp1;
-
-            //Vector3d xline1 = (b.points[3] - b.points[7]).normalize();
-            //Vector3d xline2 = (b.points[0] - b.points[4]).normalize();
-
-            //Vector3d vp2 = xline1 * 0.5 * s;
-            //while (true)
-            //{
-            //    Vector2d v2 = this.camera.Project(vp2).ToVector2d();
-            //    double dist = (v2 - this.vanishingPoints[1].pos2).Length();
-            //    if (dist < 10)
-            //    {
-            //        break;
-            //    }
-            //    ++s;
-            //    vp2 = zline1 * 0.1 * s;
-            //}
-            //this.vanishingPoints[1].pos3 = vp2;
         }
 
         private void calculateVanishingLine2d()
@@ -1149,58 +1118,30 @@ namespace SketchPlatform
             return num;
         }
 
-        public void sendBoxtoInsetViewer()
+        public void sendDataToInsetViewer()
         {
             //if (this.sequenceIdx < tillNext) return;
             string page = this.pageNumber[this.boxStack.Count - 1];
             this.prevPageIdx = this.currPageIdx;
             this.currPageIdx = this.extractPageNum(page);
-            if (this.prevPageIdx == this.currPageIdx) return;
-            
+			if (this.sequenceIdx >= this.nSequence)
+			{
+				this.currPageIdx = this.extractPageNum(this.pageNumber[this.pageNumber.Count-1]);
+				List<Box> boxes = new List<Box>();
+				foreach (Segment seg in this.currSegmentClass.segments)
+				{
+					boxes.Add(seg.boundingbox);
+				}
+				this.insetViewer.accBoxes(boxes);
+				Program.GetFormMain().setInsetPageNumber(this.pageNumber[this.sequenceIdx].ToString());
+				this.insetViewer.Refresh();
+				return;
+			}
+            if (this.prevPageIdx == this.currPageIdx || this.sequenceIdx >= this.nSequence) return;
+			
 
-            Box box = null;
-            if (this.activeSegment != null)
-            {
-                box = this.activeSegment.boundingbox ;
-            }else if (this.currBoxIdx != -1) {
-                box = this.currSegmentClass.segments[this.currBoxIdx].boundingbox;
-            }
-            Box cloneBox = new Box();
-            // only change the active value
-            // for convenience, copy other values
-            cloneBox.points = box.points;
-            cloneBox.planes = box.planes;
-            cloneBox.vanLines = box.vanLines;
-            cloneBox.edges = box.edges;
-            cloneBox.guideLines = new List<List<GuideLine>>();
-            cloneBox.arrows = box.arrows;
-            cloneBox.facesToHighlight = box.facesToHighlight;
-            cloneBox.guideBoxSeqGroupIdx = box.guideBoxSeqGroupIdx;
-            cloneBox.guideBoxSeqenceIdx = box.guideBoxSeqenceIdx;
-            cloneBox.guideBoxIdx = box.guideBoxIdx;
-            if (cloneBox.arrows != null)
-            {
-                foreach (Arrow3D arrow in cloneBox.arrows)
-                {
-                    arrow.active = false;
-                }
-            }
-            foreach (List<GuideLine> lines in box.guideLines)
-            {
-                List<GuideLine> cloneLines = new List<GuideLine>();
-                foreach (GuideLine line in lines)
-                {
-                    GuideLine cloneLine = new GuideLine();
-                    cloneLine.hostPlane = line.hostPlane;
-                    cloneLine.strokes = line.strokes;
-                    cloneLine.type = line.type;
-                    cloneLine.active = false;
-                    cloneLine.isGuide = line.isGuide;
-                    cloneLines.Add(cloneLine);
-                }
-                cloneBox.guideLines.Add(cloneLines);
-            }
-
+            Box cloneBox = null;
+            Box cloneGuideBox = null;
             int n = this.sequenceIdx;
             while (++n < this.nSequence)
             {
@@ -1211,8 +1152,11 @@ namespace SketchPlatform
                     break;
                 }
             }
+			if (n == nSequence) --n;
             if (n < this.nSequence)
             {
+				Program.GetFormMain().setInsetPageNumber(this.pageNumber[n].ToString());
+				
                 this.tillNext = n + 1;
                 int nexbox = -1;
                 List<int> guideLinesIds;
@@ -1227,6 +1171,15 @@ namespace SketchPlatform
                 this.currSegmentClass.parseASequence(n, out this.currBoxIdx, out guideGroupIndex, out guideLinesIds,
                     out nexbox, out highlightFaceIndex, out drawFaceIndex, out showBlink, out showOnlyGuid,
                     out showArrow, out prevGuideGroupIds);
+                Box box = this.currSegmentClass.segments[this.currBoxIdx].boundingbox;
+                cloneBox = box.softClone() as Box;
+                if (cloneBox.arrows != null)
+                {
+                    foreach (Arrow3D arrow in cloneBox.arrows)
+                    {
+                        arrow.active = false;
+                    }
+                }           
                 if (this.showOnlyGuides)
                 {
                     if (box.guideBoxIdx != -1)
@@ -1234,17 +1187,26 @@ namespace SketchPlatform
                         int bIdx = box.guideBoxIdx;
                         int gIdx = box.guideBoxSeqGroupIdx;
                         Box guidebox = this.currSegmentClass.segments[bIdx].boundingbox;
-
+                        cloneGuideBox = guidebox.softClone() as Box;
                         for (int i = 0; i < cloneBox.guideBoxSeqenceIdx.Count; ++i)
                         {
-                            int sidx = box.guideBoxSeqenceIdx[i];
-                            GuideLine line = guidebox.guideLines[gIdx][sidx];
+                            int sidx = cloneBox.guideBoxSeqenceIdx[i];
+                            GuideLine line = cloneGuideBox.guideLines[gIdx][sidx];
                             line.active = true;
                         }
                     }
                 }
                 if (guideLinesIds.Count > 0)
                 {
+                    for (int i = 0; i < guideLinesIds[0]; ++i)
+                    {
+                        GuideLine line = cloneBox.guideLines[guideGroupIndex][i];
+                        if (line.isGuide)
+                        {
+                            line.active = true;
+                            line.color = SegmentClass.StrokeColor;
+                        }
+                    }
                     for (int i = 0; i < prevGuideGroupIds.Count; ++i)
                     {
                         foreach (GuideLine line in cloneBox.guideLines[prevGuideGroupIds[i]])
@@ -1252,7 +1214,7 @@ namespace SketchPlatform
                             if (line.isGuide)
                             {
                                 line.active = true;
-                                this.setStrokeStylePerLine(line, SegmentClass.GuideLineSize, SegmentClass.StrokeColor);
+                                line.color = SegmentClass.StrokeColor;
                             }
                         }
                     }
@@ -1265,6 +1227,7 @@ namespace SketchPlatform
                         int idx = guideLinesIds[i];
                         GuideLine line = cloneBox.guideLines[guideGroupIndex][idx];
                         line.active = true;
+                        line.color = line.isGuide ? SegmentClass.GuideLineWithTypeColor : SegmentClass.StrokeColor;
                         if (this.showArrows && cloneBox.arrows != null)
                         {
                             foreach (Arrow3D arrow in cloneBox.arrows)
@@ -1276,11 +1239,11 @@ namespace SketchPlatform
                 }
             }
 
-            this.insetViewer.accData(cloneBox);
+            this.insetViewer.accData(cloneBox, cloneGuideBox);
             //this.insetViewer.accModelView(this.currModelTransformMatrix);
             Program.GetFormMain().addInsetViewer(this.insetViewer);
             this.insetViewer.Refresh();
-        }//sendBoxtoInsetViewer
+        }//sendDataToInsetViewer
 
         public string nextSequence()
         {
@@ -1295,14 +1258,14 @@ namespace SketchPlatform
                 this.resetAllBoxes();
                 this.sequenceIdx++;
                 Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
-                this.sendBoxtoInsetViewer();
+                this.sendDataToInsetViewer();
                 return this.pageNumber[this.pageNumber.Count - 1];
             }
             else if (this.sequenceIdx == this.nSequence)
             {
                 MessageBox.Show("This is the last page.");
                 Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
-                this.sendBoxtoInsetViewer();
+                this.sendDataToInsetViewer();
                 return this.pageNumber[this.pageNumber.Count - 1];
             }
             this.sequenceIdx++;
@@ -1315,7 +1278,7 @@ namespace SketchPlatform
             this.lockView = true;
             Program.GetFormMain().setLockState(this.lockView);
             Program.GetFormMain().setPageNumber(this.pageNumber[this.boxStack.Count - 1]);
-            this.sendBoxtoInsetViewer();
+            this.sendDataToInsetViewer();
             return this.pageNumber[this.boxStack.Count - 1];
         }//nextSequence
 
@@ -1327,14 +1290,14 @@ namespace SketchPlatform
             if (this.nSequence <= 0)
             {
                 Program.GetFormMain().setPageNumber("0");
-                this.sendBoxtoInsetViewer();
+                this.sendDataToInsetViewer();
                 return "0";
             }
             if (this.sequenceIdx <= 0)
             {
                 MessageBox.Show("This is the first page.");
                 Program.GetFormMain().setPageNumber("1");
-                this.sendBoxtoInsetViewer();
+                this.sendDataToInsetViewer();
                 return this.pageNumber[0];
             }
             if (this.currBoxIdx >= 0)
@@ -1361,7 +1324,7 @@ namespace SketchPlatform
             this.activateGuideSequence(false);
             this.lockView = true;
             Program.GetFormMain().setLockState(this.lockView);
-            this.sendBoxtoInsetViewer();
+            this.sendDataToInsetViewer();
             if (this.sequenceIdx == nSequence)
             {
                 Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
@@ -1947,7 +1910,25 @@ namespace SketchPlatform
                 {
                     this.setStrokeStylePerLine(last, SegmentClass.GuideLineSize, GuideLineColor);
                 }
+                //// use the current line info to get the position of line type label
+                //int x = this.Location.X + this.Width / 2;
+                //int y = this.Location.Y + this.Height / 2 + 50;
+                //int off = 50;
+                //if (last.u2.y < last.v2.y)
+                //{
+                //    x = (int)last.v2.x + off;
+                //    y = (int)last.v2.y + off;
+                //}
+                //else
+                //{
+                //    x = (int)last.u2.x + off;
+                //    y = (int)last.u2.y + off;
+
+                //}
+                //Program.GetFormMain().setLineTypeLabelLoc(x, y);
             }
+            
+            
             // draw the arrows
             this.Refresh();
             if (this.showArrows && box.arrows != null)
@@ -2771,7 +2752,7 @@ namespace SketchPlatform
             {
                 if (visPnts[idx++] < 10)
                 {
-                    this.setStrokeStylePerLine(edge, (double)SegmentClass.StrokeSize / 2, SegmentClass.HiddenLineColor);
+                    this.setStrokeStylePerLine(edge, (double)SegmentClass.StrokeSize / 4, SegmentClass.HiddenLineColor);
                     // the hidden color might get modified
                     foreach (Stroke stroke in edge.strokes)
                     {
@@ -2879,7 +2860,7 @@ namespace SketchPlatform
                 {
                     if (visPnts[idx++] < 10)
                     {
-                        this.setStrokeStylePerLine(edge, SegmentClass.StrokeSize / 2, SegmentClass.HiddenLineColor);
+                        this.setStrokeStylePerLine(edge, SegmentClass.StrokeSize / 4, SegmentClass.HiddenLineColor);
                         foreach (Stroke stroke in edge.strokes)
                         {
                             stroke.strokeColor = SegmentClass.HiddenColor;
@@ -3517,21 +3498,37 @@ namespace SketchPlatform
             this.arcBall.mouseMove(x, y);
         }// viewMouseMove
 
-        
+		private int nPointPerspective = 3;
+		public void changePerspective()
+		{
+			if (this.nPointPerspective == 3)
+			{
+				this.nPointPerspective = 2;
+				this.resetView();
+			}
+			else
+			{
+				this.nPointPerspective = 3;
+				this.reloadView();
+			}
+			
+			this.insetViewer.accModelView(this.currModelTransformMatrix);
+			this.insetViewer.Refresh();
+		}
         private void viewMouseUp()
         {
-            this.currModelTransformMatrix = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
+            this.currModelTransformMatrix = this.arcBall.getTransformMatrix(this.nPointPerspective) * this.currModelTransformMatrix;
             int type = 0;
             if (this.arcBall.motion == ArcBall.MotionType.Pan)
             {
-                this.transMat = this.arcBall.getTransformMatrix() * this.transMat;
+				this.transMat = this.arcBall.getTransformMatrix(this.nPointPerspective) * this.transMat;
             }else if  (this.arcBall.motion == ArcBall.MotionType.Rotate)
             {
-                this.rotMat = this.arcBall.getTransformMatrix() * this.rotMat;
+				this.rotMat = this.arcBall.getTransformMatrix(this.nPointPerspective) * this.rotMat;
             }
             else
             {
-                this.scaleMat = this.arcBall.getTransformMatrix() * this.scaleMat;
+				this.scaleMat = this.arcBall.getTransformMatrix(this.nPointPerspective) * this.scaleMat;
                 type = 1;
             }
             this.arcBall.mouseUp();
@@ -3567,7 +3564,7 @@ namespace SketchPlatform
                     {
                         if (this.currMeshClass != null)
                         {
-                            Matrix4d m = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
+							Matrix4d m = this.arcBall.getTransformMatrix(this.nPointPerspective) * this.currModelTransformMatrix;
                             Gl.glMatrixMode(Gl.GL_MODELVIEW);
                             Gl.glPushMatrix();
                             Gl.glMultMatrixd(m.Transpose().ToArray());
@@ -3728,16 +3725,28 @@ namespace SketchPlatform
             //this.Refresh();
             this.cal2D();
             this.updateSketchStrokePositionToLocalCoord();
-            if (this.insetViewer != null)
-            {
-                int w = this.Width / 3, h = this.Height / 3;
-                this.insetViewer.Location = new Point(this.Location.X + this.Width - w - 10, this.Location.Y + this.Height - h - 10);
-                int x = this.Location.X + this.Width/2;
-                int y = this.Location.Y + this.Height/2 + 50;
-                Program.GetFormMain().setLineTypeLabelLoc(x, y);
-            }
+			this.updateInsetViewSize();
             this.Refresh();
         }
+
+		private void updateInsetViewSize()
+		{
+			if (this.insetViewer != null)
+			{
+				int h = this.Height / 3, w = h * 4 / 3;
+				int off = 50;
+				this.insetViewer.Location = new Point(this.Location.X + this.Width - w - off / 2,
+					(int)this.paperPos[2].pos2.y - h - off);
+				this.insetViewer.Size = new System.Drawing.Size(w, h);
+				int x = this.Location.X + this.Width / 2 + off / 2;
+				int y = this.Location.Y + this.Height / 2 + off;
+				Program.GetFormMain().setLineTypeLabelLoc(x, y);
+				Program.GetFormMain().setInsetPageNumberLocation(
+					this.insetViewer.Location.X + this.insetViewer.Width / 2 + off/2,
+					this.insetViewer.Location.Y - 20);
+				Program.GetFormMain().Refresh();
+			}
+		}
 
         public void acceptKeyData(KeyEventArgs e)
         {
@@ -3880,7 +3889,7 @@ namespace SketchPlatform
             this.Draw2D();
 
             this.SwapBuffers();
-
+			
         }// onPaint
 
         //######### Sketch #########//
@@ -3967,7 +3976,6 @@ namespace SketchPlatform
 
         private void storeSketchStrokePositionToLocalCoord(Stroke stroke)
         {
-            this.cal2D();
             Vector2d minCoord = Vector2d.MaxCoord(), maxCoord = Vector2d.MinCoord();
             this.calSegmentsBounds(out minCoord, out maxCoord);
             double wl = maxCoord.x - minCoord.x;
@@ -4362,7 +4370,7 @@ namespace SketchPlatform
                 }
             }
             //this.drawPoints3d(new Vector3d[1] { this.eye }, Color.DarkOrange, 10.0f);
-            Matrix4d m = this.arcBall.getTransformMatrix() * this.currModelTransformMatrix;
+			Matrix4d m = this.arcBall.getTransformMatrix(this.nPointPerspective) * this.currModelTransformMatrix;
             m = Matrix4d.TranslationMatrix(this.objectCenter) * m * Matrix4d.TranslationMatrix(
                 new Vector3d() - this.objectCenter);
             //m[1, 0] = 0;
@@ -5178,7 +5186,7 @@ namespace SketchPlatform
             Box box = seg.boundingbox;
             if (this.enableDepthTest)
             {
-                Gl.glDisable(Gl.GL_DEPTH_TEST);
+                Gl.glEnable(Gl.GL_DEPTH_TEST);
             }
             if (this.showBlinking && box.highlightFaceIndex != -1 && box.facesToHighlight != null)
             {
@@ -5231,7 +5239,7 @@ namespace SketchPlatform
             
             if (this.enableDepthTest)
             {
-                Gl.glEnable(Gl.GL_DEPTH_TEST);
+                Gl.glDisable(Gl.GL_DEPTH_TEST);
             }
         }// DrawHighlight3D
 
@@ -5278,7 +5286,7 @@ namespace SketchPlatform
 
         private void drawActiveBox_line(Segment seg)
         {
-            if (!this.inGuideMode) return;
+            //if (!this.inGuideMode) return;
             if (this.enableDepthTest)
             {
                 this.drawBoundingbox(seg.boundingbox, Color.White);
@@ -5667,6 +5675,7 @@ namespace SketchPlatform
                 for (int i = 0; i < vp1.Length; ++i)
                 {
                     Line3d line = box.vanLines[0][vp1[i]];
+                    if (!line.active) continue; // if not aligned with one vanishing dir
                     switch (this.vanishinglineDrawType)
                     {
                         case 0:
@@ -5685,6 +5694,7 @@ namespace SketchPlatform
                 for (int i = 0; i < vp2.Length; ++i)
                 {
                     Line3d line = box.vanLines[1][vp2[i]];
+                    if (!line.active) continue; // if not aligned with one vanishing dir
                     switch (this.vanishinglineDrawType)
                     {
                         case 0:
@@ -5708,13 +5718,27 @@ namespace SketchPlatform
                     {
                         if (this.showVanishingRay1)
                         {
-                            this.drawLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, width);
-                            this.drawLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, width);
+                            if (line.vanLines[0][0].active)
+                            {
+                                this.drawLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, width);
+                            }
+                            if (line.vanLines[0][1].active)
+                            {
+                                this.drawLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, width);
+                            }
                         }
                         if (this.showVanishingRay2)
                         {
-                            this.drawLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, width);
-                            this.drawLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, width);
+                            if (line.vanLines[1][0].active)
+                            {
+                                this.drawLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, width);
+								double acos = (line.u2 - line.v2).normalize().Dot((line.vanLines[1][0].u2- line.vanLines[1][0].v2).normalize());
+                            }
+                            if (line.vanLines[1][1].active)
+                            {
+                                this.drawLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, width);
+								double acos = (line.u2 - line.v2).normalize().Dot((line.vanLines[1][0].u2- line.vanLines[1][0].v2).normalize());
+                            }
                         }
                         break;
                     }
@@ -5722,13 +5746,25 @@ namespace SketchPlatform
                     {
                         if (this.showVanishingRay1)
                         {
-                            this.drawDashedLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, width);
-                            this.drawDashedLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, width);
+                            if (line.vanLines[0][0].active)
+                            {
+                                this.drawDashedLines2D(line.vanLines[0][0].u2, line.vanLines[0][0].v2, c, width);
+                            }
+                            if (line.vanLines[0][1].active)
+                            {
+                                this.drawDashedLines2D(line.vanLines[0][1].u2, line.vanLines[0][1].v2, c, width);
+                            }
                         }
                         if (this.showVanishingRay2)
                         {
-                            this.drawDashedLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, width);
-                            this.drawDashedLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, width);
+                            if (line.vanLines[1][0].active)
+                            {
+                                this.drawDashedLines2D(line.vanLines[1][0].u2, line.vanLines[1][0].v2, c, width);
+                            }
+                            if (line.vanLines[1][1].active)
+                            {
+                                this.drawDashedLines2D(line.vanLines[1][1].u2, line.vanLines[1][1].v2, c, width);
+                            }
                         }
                         break;
                     }

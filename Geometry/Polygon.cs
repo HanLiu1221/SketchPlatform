@@ -308,6 +308,7 @@ namespace Geometry
         public Vector3d v3;
         public Vector2d u2;
         public Vector2d v2;
+        public bool active = true;
 
         public Line3d(Vector3d v1, Vector3d v2)
         {

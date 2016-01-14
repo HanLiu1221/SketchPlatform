@@ -906,6 +906,7 @@ namespace Component
             }
             this.vanLines[vidx] = new Line3d[2];
             Vector2d[] points = new Vector2d[2] { this.u2, this.v2 };
+            Vector2d dir =  (this.v2-this.u2).normalize();
             for (int i = 0; i < points.Length; ++i)
             {
                 Vector2d vi = points[i];
@@ -915,6 +916,12 @@ namespace Component
                 ext = getRandomDoubleInRange(rand, 0, 20);
                 Vector2d v2 = v - ext * d;
                 Line3d line = new Line3d(v1, v2);
+                // check if the line dir aligns with the vanishing dir
+                double acos = dir.Dot(d);
+                if (Math.Abs(Math.Abs(acos) - 1) > 0.1)
+                {
+                    line.active = false;
+                }
                 this.vanLines[vidx][i] = line;
             }
         }
@@ -1322,6 +1329,41 @@ namespace Component
             return new Plane[2] {
 				this.planes[1], this.planes[4]
 			};
+        }
+
+        public Object softClone()
+        {
+            Box cloneBox = new Box();
+            // only change the active value
+            // for convenience, copy other values
+            cloneBox.points = this.points;
+            cloneBox.planes = this.planes;
+            cloneBox.vanLines = this.vanLines;
+            cloneBox.edges = this.edges;
+            cloneBox.guideLines = new List<List<GuideLine>>();
+            cloneBox.arrows = this.arrows;
+            cloneBox.facesToHighlight = this.facesToHighlight;
+            cloneBox.guideBoxSeqGroupIdx = this.guideBoxSeqGroupIdx;
+            cloneBox.guideBoxSeqenceIdx = this.guideBoxSeqenceIdx;
+            cloneBox.guideBoxIdx = this.guideBoxIdx;
+
+            foreach (List<GuideLine> lines in this.guideLines)
+            {
+                List<GuideLine> cloneLines = new List<GuideLine>();
+                foreach (GuideLine line in lines)
+                {
+                    GuideLine cloneLine = new GuideLine();
+                    cloneLine.hostPlane = line.hostPlane;
+                    cloneLine.strokes = line.strokes;
+                    cloneLine.type = line.type;
+                    cloneLine.active = false;
+                    cloneLine.isGuide = line.isGuide;
+                    cloneLines.Add(cloneLine);
+                }
+                cloneBox.guideLines.Add(cloneLines);
+            }
+
+            return cloneBox;
         }
 
         //public Vector2d GetVanishingPoints()

@@ -34,6 +34,8 @@ namespace SketchPlatform
         /******************** Variables ********************/
 
         private Box activeBox = null;
+        private Box guideBox = null; // previous
+		private List<Box> boxes = null;
         private Matrix4d modelViewMat = Matrix4d.IdentityMatrix();
         private Vector3d eye = new Vector3d(0,0,1.5);
 
@@ -42,10 +44,19 @@ namespace SketchPlatform
             this.modelViewMat = new Matrix4d(mat);
         }
 
-        public void accData(Box box)
+        public void accData(Box _box, Box guide_box)
         {
-            this.activeBox = box;
+            this.activeBox = _box;
+            this.guideBox = guide_box;
+			this.boxes = new List<Box>();
         }
+
+		public void accBoxes(List<Box> boxes)
+		{
+			this.activeBox = null;
+			this.guideBox = null;
+			this.boxes = boxes;
+		}
 
         protected override void OnPaint(System.Windows.Forms.PaintEventArgs e)
         {
@@ -55,9 +66,11 @@ namespace SketchPlatform
             this.clearScene();
 
             this.Draw3D();
-            //this.Draw2D();
+			this.Draw2D();
 
             this.SwapBuffers();
+
+			Program.GetFormMain().bringToFront();
         }
 
         private void clearScene()
@@ -87,7 +100,7 @@ namespace SketchPlatform
 
             Gl.glMatrixMode(Gl.GL_PROJECTION);
             Gl.glLoadIdentity();
-            Glu.gluPerspective(70, aspect, 0.1, 1000);
+            Glu.gluPerspective(60, aspect, 0.1, 1000);
 
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPushMatrix();
@@ -98,8 +111,17 @@ namespace SketchPlatform
             //Gl.glPushMatrix();
             Gl.glMultMatrixd(this.modelViewMat.Transpose().ToArray());
 
-            this.drawInsetBox();
-
+			if (this.boxes != null && this.boxes.Count > 0)
+			{
+				Gl.glEnable(Gl.GL_DEPTH_TEST);
+				drawAllBoxes();
+			}
+			
+			this.drawInsetBox();
+			if (this.boxes != null)
+			{
+				Gl.glDisable(Gl.GL_DEPTH_TEST);
+			}
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
         }
@@ -118,11 +140,39 @@ namespace SketchPlatform
             Gl.glLoadIdentity();
             Gl.glPushMatrix();
 
-            this.drawVanishingGuide2d();
+			//this.drawVanishingGuide2d();
+			// draw rectangle
+			this.drawFrame();
 
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPopMatrix();
         }
+
+		private void drawAllBoxes()
+		{
+			if (this.boxes == null) return;
+
+			foreach (Box box in this.boxes)
+			{
+				this.drawBoundingbox(box, Color.White);
+				foreach (GuideLine edge in box.edges)
+				{
+					foreach (Stroke stroke in edge.strokes)
+					{
+						this.drawLines3D(stroke.u3, stroke.v3, SegmentClass.HiddenColor, (float)stroke.weight);
+					}
+				}
+			}
+
+		}
+		public void drawBoundingbox(Box box, Color c)
+		{
+			if (box == null) return;
+			for (int i = 0; i < box.planes.Length; ++i)
+			{
+				this.drawQuad3d(box.planes[i], c);
+			}
+		}// drawBoundingbox
 
         private void drawInsetBox()
         {
@@ -166,6 +216,23 @@ namespace SketchPlatform
                         }
                     }
                     
+                }
+            }
+
+            if (this.guideBox != null)
+            {
+                foreach (List<GuideLine> lines in this.guideBox.guideLines)
+                {
+                    foreach (GuideLine line in lines)
+                    {
+                        if (line.active)
+                        {
+                            foreach (Stroke stroke in line.strokes)
+                            {
+                                this.drawLines3D(stroke.u3, stroke.v3, SegmentClass.GuideLineWithTypeColor, (float)stroke.weight);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -232,6 +299,36 @@ namespace SketchPlatform
 
             Gl.glLineWidth(1.0f);
         }
+
+		private void drawFrame()
+		{
+			Gl.glEnable(Gl.GL_BLEND);
+			Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+			Gl.glEnable(Gl.GL_LINE_SMOOTH);
+			Gl.glHint(Gl.GL_LINE_SMOOTH_HINT, Gl.GL_NICEST);
+
+			Color c = Color.CornflowerBlue;
+			float lineWidth = 4.0f;
+			Vector2d[] vs = new Vector2d[4];
+			vs[0] = new Vector2d();
+			vs[1] = vs[0] + new Vector2d(this.Width, 0);
+			vs[2] = vs[1] + new Vector2d(0, this.Height);
+			vs[3] = vs[0] + new Vector2d(0, this.Height);
+
+			Gl.glLineWidth(lineWidth);
+			Gl.glBegin(Gl.GL_LINE_LOOP);
+			Gl.glColor3ub(c.R, c.G, c.B);
+			for (int i = 0; i < 4; ++i)
+			{
+				Gl.glVertex2dv(vs[i].ToArray());
+			}
+				Gl.glEnd();
+
+			Gl.glDisable(Gl.GL_LINE_SMOOTH);
+			Gl.glDisable(Gl.GL_BLEND);
+
+			Gl.glLineWidth(1.0f);
+		}
 
             private void drawLines3D(Vector3d v1, Vector3d v2, Color c, float linewidth)
         {
