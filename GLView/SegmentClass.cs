@@ -307,10 +307,10 @@ namespace Component
                         seg.mesh = mesh;
                     }
                 }
-                if (meshfileName != "")
-                {
-                    seg.loadTrieMesh(meshfileName);
-                }
+				if (File.Exists(meshfileName))
+				{
+					seg.loadTrieMesh(meshfileName);
+				}
 
                 Box box = seg.boundingbox;
                 if (boxSequences[i].hasGuides != null && boxSequences[i].hasGuides.Count > 0)
@@ -544,6 +544,7 @@ namespace Component
             pageNumbers.Insert(0, "1");
             ++page;
             pageNumbers.Add(page.ToString());
+			sr.Close();
             return modelView;
         }//DeserializeJSON
 

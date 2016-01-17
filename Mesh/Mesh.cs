@@ -194,7 +194,7 @@ namespace Geometry
             for (int i = 0; i < m.VertexCount; ++i)
             {
                 List<int> index = new List<int>();
-                for (int j = 0; j < this.vertexFaceIndex[i].Count; ++j)
+                for (int j = 0; j < m.vertexFaceIndex[i].Count; ++j)
                 {
                     index.Add(m.vertexFaceIndex[i][j]);
                 }

@@ -1210,23 +1210,61 @@ namespace Component
             int s = 0;
             Plane plane = new Plane();
             int[] series = { 0, 3, 0, 5 };
-            for (int i = 0; i < 4; ++i)
-            {
-                plane = this.planes[series[i]].clone() as Plane;
-                edges[s++] = new GuideLine(this.points[i], this.points[(i + 1) % 4], plane, true);
-            }
-            series = new int[] { 5, 3, 3, 5 };
-            for (int i = 0; i < 4; ++i)
-            {
-                plane = this.planes[series[i]].clone() as Plane;
-                edges[s++] = new GuideLine(this.points[i], this.points[i + 4], plane, true);
-            }
-            series = new int[] { 1, 3, 1, 5 };
-            for (int i = 0; i < 4; ++i)
-            {
-                plane = this.planes[series[i]].clone() as Plane;
-                edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane, true);
-            }
+
+			for (int i = 0; i < 4; ++i)
+			{
+				plane = this.planes[series[i]].clone() as Plane;
+				edges[s++] = new GuideLine(this.points[i], this.points[(i + 1) % 4], plane, true);
+			}
+			series = new int[] { 5, 3, 3, 5 };
+			for (int i = 0; i < 4; ++i)
+			{
+				plane = this.planes[series[i]].clone() as Plane;
+				edges[s++] = new GuideLine(this.points[i], this.points[i + 4], plane, true);
+			}
+			series = new int[] { 1, 3, 1, 5 };
+			for (int i = 0; i < 4; ++i)
+			{
+				plane = this.planes[series[i]].clone() as Plane;
+				edges[s++] = new GuideLine(this.points[i + 4], this.points[4 + (i + 1) % 4], plane, true);
+			}
+			//Vector3d eye = new Vector3d(0, 0, 1.5);
+			//for (int i = 0; i < 4; ++i)
+			//{
+			//	plane = this.planes[series[i]].clone() as Plane;
+			//	Vector3d normal = plane.normal;
+			//	if ((eye - plane.center).Dot(normal) < 0)
+			//	{
+			//		normal *= -1;
+			//	}
+			//	Vector3d offset = 0.01 * normal;
+			//	edges[s++] = new GuideLine(this.points[i] + offset, this.points[(i + 1) % 4] + offset, plane, true);
+			//}
+			//series = new int[] { 5, 3, 3, 5 };
+			//for (int i = 0; i < 4; ++i)
+			//{
+			//	plane = this.planes[series[i]].clone() as Plane;
+			//	Vector3d normal = plane.normal;
+			//	if ((eye - plane.center).Dot(normal) < 0)
+			//	{
+			//		normal *= -1;
+			//	}
+			//	Vector3d offset = 0.01 * normal;
+			//	edges[s++] = new GuideLine(this.points[i] + offset, this.points[i + 4] + offset, plane, true);
+			//}
+			//series = new int[] { 1, 3, 1, 5 };
+			//for (int i = 0; i < 4; ++i)
+			//{
+			//	plane = this.planes[series[i]].clone() as Plane;
+			//	Vector3d normal = plane.normal;
+			//	if ((eye - plane.center).Dot(normal) > 0)
+			//	{
+			//		normal *= -1;
+			//	}
+			//	Vector3d offset = 0.01 * normal;
+			//	edges[s++] = new GuideLine(this.points[i + 4] + offset, this.points[4 + (i + 1) % 4] + offset, plane, true);
+			//}
+
             this.guideLines = new List<List<GuideLine>>();
             this.facesToDraw = new List<Plane>();
             this.facesToHighlight = new List<Plane>();

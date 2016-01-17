@@ -265,17 +265,20 @@ namespace SketchPlatform
 
         private void sequencePrevButton_Click(object sender, EventArgs e)
         {
-            string pageStr = this.glViewer.prevSequence();
-            this.pageNumber.Text = pageStr;
+            this.glViewer.prevSequence();
             this.lockView.Checked = this.glViewer.lockView;
             this.glViewer.Refresh();
         }
 
         private void sequenceNextButton_Click(object sender, EventArgs e)
         {
-            string pageStr = this.glViewer.nextSequence();
-            this.pageNumber.Text = pageStr;
+            this.glViewer.nextSequence();
             this.lockView.Checked = this.glViewer.lockView;
+
+			this.pageNumber.Hide();
+			this.glViewer.insetViewer.Hide();
+			this.insetPageNumber.Hide();
+
             this.glViewer.Refresh();
         }
 
@@ -296,25 +299,26 @@ namespace SketchPlatform
         public void setPageNumberLocation(int x, int y)
         {
             this.pageNumber.Location = new Point(x, y);
-			this.Refresh();
+			//this.Refresh();
         }
 
 		public void setInsetPageNumber(string s)
 		{
-			this.insetPageNumber.Text = s;
-			this.Refresh();
+			this.insetPageNumber.Text = "";// s;
+			//this.Refresh();
 		}
 
 		public void setInsetPageNumberLocation(int x, int y)
 		{
 			this.insetPageNumber.Location = new Point(x, y);
 			this.insetPageNumber.BringToFront();
-			this.Refresh();
+			//this.Refresh();
 		}
 
 		public void bringToFront()
 		{
-			this.insetPageNumber.BringToFront();
+			//this.insetPageNumber.BringToFront();
+			this.lineTypeLabel.BringToFront();
 		}
 
         public void setLockState(bool isLock)
@@ -558,7 +562,7 @@ namespace SketchPlatform
 
         private void exportSequenceToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.glViewer.exportSequenceDiv();
+            this.glViewer.exportSequencePS();
         }
 
         private void showSegbundary_CheckedChanged(object sender, EventArgs e)
@@ -616,7 +620,7 @@ namespace SketchPlatform
 
         private void moveCameraToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //this.glViewer.setUIMode(7);
+			this.glViewer.setUIMode(7);
             //this.glViewer.zoonIn = !this.glViewer.zoonIn;
             this.glViewer.Refresh();
         }
@@ -637,7 +641,7 @@ namespace SketchPlatform
 
         public void setLineTypeLabelLoc(int x, int y)
         {
-			this.lineTypeLabel.Hide();
+			//this.lineTypeLabel.Hide();
             this.lineTypeLabel.Location = new Point(x, y);
         }
 
@@ -645,6 +649,57 @@ namespace SketchPlatform
 		{
 			this.glViewer.changePerspective();
 			this.glViewer.Refresh();
+		}
+
+		private int pre_count = 0;
+		private int next_count = 0;
+		public void increaseNext()
+		{
+			this.next_count++;
+		}
+
+		public void increasePrev()
+		{
+			this.pre_count++;
+		}
+
+		private void loadUserDataToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			OpenFileDialog dialog = new OpenFileDialog();
+			dialog.Filter = "json file (*.json)|*.json|All Files(*.*)|*.*";
+			dialog.CheckFileExists = true;
+			if (dialog.ShowDialog(this) == DialogResult.OK)
+			{
+				string filename = dialog.FileName;
+				this.glViewer.readUserData(filename);
+				this.glViewer.Refresh();
+			}
+		}
+
+		private void programSharpEdgeContour_CheckedChanged(object sender, EventArgs e)
+		{
+			this.glViewer.showSharpEdge = !this.glViewer.showSharpEdge;
+			this.glViewer.computeContours();
+			this.glViewer.Refresh();
+		}
+
+		private void extractStrokesToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			this.glViewer.extractStrokeFromContours();
+			this.glViewer.showDrawnStroke = true;
+			this.glViewer.Refresh();
+		}
+
+		private void renderToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			SaveFileDialog dialog = new SaveFileDialog();
+			dialog.Filter = "image file (*.png)|*.png|All Files(*.*)|*.*";
+			if (dialog.ShowDialog(this) == DialogResult.OK)
+			{
+				string filename = dialog.FileName;
+				this.glViewer.renderToImage(filename);
+				this.glViewer.Refresh();
+			}
 		}
 
 	}

@@ -36,19 +36,22 @@ namespace SketchPlatform
         private Box activeBox = null;
         private Box guideBox = null; // previous
 		private List<Box> boxes = null;
+		private List<Box> drawnBoxes = null;
         private Matrix4d modelViewMat = Matrix4d.IdentityMatrix();
         private Vector3d eye = new Vector3d(0,0,1.5);
 
-        public void accModelView(Matrix4d mat)
+        public void accModelView(Matrix4d mat, Vector3d eye)
         {
             this.modelViewMat = new Matrix4d(mat);
+			this.eye = new Vector3d(eye);
         }
 
-        public void accData(Box _box, Box guide_box)
+        public void accData(Box _box, Box guide_box, List<Box> drawnBoxes)
         {
             this.activeBox = _box;
             this.guideBox = guide_box;
 			this.boxes = new List<Box>();
+			this.drawnBoxes = drawnBoxes;
         }
 
 		public void accBoxes(List<Box> boxes)
@@ -56,6 +59,14 @@ namespace SketchPlatform
 			this.activeBox = null;
 			this.guideBox = null;
 			this.boxes = boxes;
+		}
+
+		public void clear()
+		{
+			this.activeBox = null;
+			this.guideBox = null;
+			this.boxes = null;
+			this.drawnBoxes = null;
 		}
 
         protected override void OnPaint(System.Windows.Forms.PaintEventArgs e)
@@ -100,7 +111,7 @@ namespace SketchPlatform
 
             Gl.glMatrixMode(Gl.GL_PROJECTION);
             Gl.glLoadIdentity();
-            Glu.gluPerspective(60, aspect, 0.1, 1000);
+            Glu.gluPerspective(75, aspect, 0.1, 1000);
 
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPushMatrix();
@@ -116,7 +127,7 @@ namespace SketchPlatform
 				Gl.glEnable(Gl.GL_DEPTH_TEST);
 				drawAllBoxes();
 			}
-			
+			this.drawDrawnBoxes();
 			this.drawInsetBox();
 			if (this.boxes != null)
 			{
@@ -165,7 +176,21 @@ namespace SketchPlatform
 			}
 
 		}
-		public void drawBoundingbox(Box box, Color c)
+
+		private void drawDrawnBoxes()
+		{
+			if (this.drawnBoxes == null) return;
+			foreach (Box box in this.drawnBoxes)
+			{
+				foreach (GuideLine edge in box.edges)
+				{
+					Stroke stroke = edge.strokes[0];
+					this.drawLines3D(stroke.u3, stroke.v3, SegmentClass.HiddenColor, 0.5f);
+				}
+			}
+		}
+
+		private void drawBoundingbox(Box box, Color c)
 		{
 			if (box == null) return;
 			for (int i = 0; i < box.planes.Length; ++i)
@@ -187,11 +212,11 @@ namespace SketchPlatform
                 }
             }
 
-            if (this.activeBox.highlightFaceIndex != -1 && this.activeBox.facesToHighlight != null)
-            {
-                this.drawQuad3d(this.activeBox.facesToHighlight[this.activeBox.highlightFaceIndex], SegmentClass.FaceColor);
-                this.drawQuadEdge3d(this.activeBox.facesToHighlight[this.activeBox.highlightFaceIndex], SegmentClass.StrokeColor);
-            }
+			if (this.activeBox.highlightFaceIndex != -1 && this.activeBox.facesToHighlight != null)
+			{
+				this.drawQuad3d(this.activeBox.facesToHighlight[this.activeBox.highlightFaceIndex], Color.FromArgb(255,255,191));
+				this.drawQuadEdge3d(this.activeBox.facesToHighlight[this.activeBox.highlightFaceIndex], SegmentClass.StrokeColor);
+			}
 
             for (int g = 0; g < this.activeBox.guideLines.Count; ++g)
             {

@@ -52,6 +52,7 @@
 			this.sketchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.eraserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.screenCaptureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.extractStrokesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.renderOption = new System.Windows.Forms.ToolStripDropDownButton();
 			this.vertexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.wireFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -78,16 +79,18 @@
 			this.moveBoxToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.showSpecificFacesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.moveCameraToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.pointPerspectiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.clearAllStrokes = new System.Windows.Forms.ToolStripButton();
 			this.viewPanel = new System.Windows.Forms.SplitContainer();
 			this.fileNameTabs = new System.Windows.Forms.TabControl();
-			this.pageNumber = new System.Windows.Forms.Label();
-			this.insetPageNumber = new System.Windows.Forms.Label();
 			this.lineTypeLabel = new System.Windows.Forms.Label();
+			this.insetPageNumber = new System.Windows.Forms.Label();
+			this.pageNumber = new System.Windows.Forms.Label();
 			this.keyboardLabel = new System.Windows.Forms.Label();
 			this.statistics = new System.Windows.Forms.Label();
 			this.toolboxPanel = new System.Windows.Forms.Panel();
 			this.contourLabel = new System.Windows.Forms.GroupBox();
+			this.programSharpEdgeContour = new System.Windows.Forms.CheckBox();
 			this.showSegbundary = new System.Windows.Forms.CheckBox();
 			this.showSegApparentRidge = new System.Windows.Forms.CheckBox();
 			this.showSegSuggestiveContour = new System.Windows.Forms.CheckBox();
@@ -130,7 +133,7 @@
 			this.sharpEdge = new System.Windows.Forms.CheckBox();
 			this.strokeColorDialog = new System.Windows.Forms.ColorDialog();
 			this.glViewer = new SketchPlatform.GLViewer();
-			this.pointPerspectiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.renderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menu.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.viewPanel)).BeginInit();
 			this.viewPanel.Panel1.SuspendLayout();
@@ -264,7 +267,9 @@
             this.loadViewToolStripMenuItem,
             this.sketchToolStripMenuItem,
             this.eraserToolStripMenuItem,
-            this.screenCaptureToolStripMenuItem});
+            this.screenCaptureToolStripMenuItem,
+            this.extractStrokesToolStripMenuItem,
+            this.renderToolStripMenuItem});
 			this.tools.Image = ((System.Drawing.Image)(resources.GetObject("tools.Image")));
 			this.tools.ImageTransparentColor = System.Drawing.Color.Magenta;
 			this.tools.Name = "tools";
@@ -341,6 +346,13 @@
 			this.screenCaptureToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
 			this.screenCaptureToolStripMenuItem.Text = "Screen Capture";
 			this.screenCaptureToolStripMenuItem.Click += new System.EventHandler(this.screenCaptureToolStripMenuItem_Click);
+			// 
+			// extractStrokesToolStripMenuItem
+			// 
+			this.extractStrokesToolStripMenuItem.Name = "extractStrokesToolStripMenuItem";
+			this.extractStrokesToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+			this.extractStrokesToolStripMenuItem.Text = "Extract strokes";
+			this.extractStrokesToolStripMenuItem.Click += new System.EventHandler(this.extractStrokesToolStripMenuItem_Click);
 			// 
 			// renderOption
 			// 
@@ -563,6 +575,13 @@
 			this.moveCameraToolStripMenuItem.Text = "move camera";
 			this.moveCameraToolStripMenuItem.Click += new System.EventHandler(this.moveCameraToolStripMenuItem_Click);
 			// 
+			// pointPerspectiveToolStripMenuItem
+			// 
+			this.pointPerspectiveToolStripMenuItem.Name = "pointPerspectiveToolStripMenuItem";
+			this.pointPerspectiveToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
+			this.pointPerspectiveToolStripMenuItem.Text = "2_point perspective";
+			this.pointPerspectiveToolStripMenuItem.Click += new System.EventHandler(this.pointPerspectiveToolStripMenuItem_Click);
+			// 
 			// clearAllStrokes
 			// 
 			this.clearAllStrokes.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
@@ -586,10 +605,10 @@
 			// 
 			// viewPanel.Panel2
 			// 
+			this.viewPanel.Panel2.Controls.Add(this.lineTypeLabel);
+			this.viewPanel.Panel2.Controls.Add(this.insetPageNumber);
 			this.viewPanel.Panel2.Controls.Add(this.pageNumber);
 			this.viewPanel.Panel2.Controls.Add(this.glViewer);
-			this.viewPanel.Panel2.Controls.Add(this.insetPageNumber);
-			this.viewPanel.Panel2.Controls.Add(this.lineTypeLabel);
 			this.viewPanel.Panel2.Controls.Add(this.keyboardLabel);
 			this.viewPanel.Panel2.Controls.Add(this.statistics);
 			this.viewPanel.Panel2.Controls.Add(this.toolboxPanel);
@@ -607,9 +626,35 @@
 			this.fileNameTabs.Size = new System.Drawing.Size(860, 35);
 			this.fileNameTabs.TabIndex = 0;
 			// 
+			// lineTypeLabel
+			// 
+			this.lineTypeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.lineTypeLabel.AutoSize = true;
+			this.lineTypeLabel.BackColor = System.Drawing.Color.White;
+			this.lineTypeLabel.Font = new System.Drawing.Font("Book Antiqua", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.lineTypeLabel.Location = new System.Drawing.Point(817, 639);
+			this.lineTypeLabel.Name = "lineTypeLabel";
+			this.lineTypeLabel.Size = new System.Drawing.Size(46, 26);
+			this.lineTypeLabel.TabIndex = 7;
+			this.lineTypeLabel.Text = "line";
+			// 
+			// insetPageNumber
+			// 
+			this.insetPageNumber.Anchor = System.Windows.Forms.AnchorStyles.Right;
+			this.insetPageNumber.AutoSize = true;
+			this.insetPageNumber.BackColor = System.Drawing.Color.White;
+			this.insetPageNumber.Font = new System.Drawing.Font("Bookman Old Style", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.insetPageNumber.ForeColor = System.Drawing.Color.Black;
+			this.insetPageNumber.Location = new System.Drawing.Point(822, 512);
+			this.insetPageNumber.Name = "insetPageNumber";
+			this.insetPageNumber.Size = new System.Drawing.Size(23, 24);
+			this.insetPageNumber.TabIndex = 8;
+			this.insetPageNumber.Text = "0";
+			this.insetPageNumber.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			// 
 			// pageNumber
 			// 
-			this.pageNumber.Anchor = System.Windows.Forms.AnchorStyles.None;
+			this.pageNumber.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.pageNumber.AutoSize = true;
 			this.pageNumber.BackColor = System.Drawing.Color.White;
 			this.pageNumber.Font = new System.Drawing.Font("Bookman Old Style", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -620,30 +665,6 @@
 			this.pageNumber.TabIndex = 4;
 			this.pageNumber.Text = "0";
 			this.pageNumber.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-			// 
-			// insetPageNumber
-			// 
-			this.insetPageNumber.Anchor = System.Windows.Forms.AnchorStyles.None;
-			this.insetPageNumber.AutoSize = true;
-			this.insetPageNumber.BackColor = System.Drawing.Color.White;
-			this.insetPageNumber.Font = new System.Drawing.Font("Bookman Old Style", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.insetPageNumber.ForeColor = System.Drawing.Color.Black;
-			this.insetPageNumber.Location = new System.Drawing.Point(822, 536);
-			this.insetPageNumber.Name = "insetPageNumber";
-			this.insetPageNumber.Size = new System.Drawing.Size(0, 32);
-			this.insetPageNumber.TabIndex = 8;
-			this.insetPageNumber.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-			// 
-			// lineTypeLabel
-			// 
-			this.lineTypeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.lineTypeLabel.AutoSize = true;
-			this.lineTypeLabel.BackColor = System.Drawing.Color.Transparent;
-			this.lineTypeLabel.Font = new System.Drawing.Font("Book Antiqua", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lineTypeLabel.Location = new System.Drawing.Point(455, 646);
-			this.lineTypeLabel.Name = "lineTypeLabel";
-			this.lineTypeLabel.Size = new System.Drawing.Size(0, 26);
-			this.lineTypeLabel.TabIndex = 7;
 			// 
 			// keyboardLabel
 			// 
@@ -683,6 +704,7 @@
 			// 
 			// contourLabel
 			// 
+			this.contourLabel.Controls.Add(this.programSharpEdgeContour);
 			this.contourLabel.Controls.Add(this.showSegbundary);
 			this.contourLabel.Controls.Add(this.showSegApparentRidge);
 			this.contourLabel.Controls.Add(this.showSegSuggestiveContour);
@@ -694,6 +716,18 @@
 			this.contourLabel.TabIndex = 40;
 			this.contourLabel.TabStop = false;
 			this.contourLabel.Text = "Contour";
+			// 
+			// programSharpEdgeContour
+			// 
+			this.programSharpEdgeContour.AutoSize = true;
+			this.programSharpEdgeContour.Location = new System.Drawing.Point(81, 87);
+			this.programSharpEdgeContour.Name = "programSharpEdgeContour";
+			this.programSharpEdgeContour.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+			this.programSharpEdgeContour.Size = new System.Drawing.Size(74, 17);
+			this.programSharpEdgeContour.TabIndex = 20;
+			this.programSharpEdgeContour.Text = "contour_0";
+			this.programSharpEdgeContour.UseVisualStyleBackColor = true;
+			this.programSharpEdgeContour.CheckedChanged += new System.EventHandler(this.programSharpEdgeContour_CheckedChanged);
 			// 
 			// showSegbundary
 			// 
@@ -1215,12 +1249,12 @@
 			this.glViewer.StencilBits = ((byte)(0));
 			this.glViewer.TabIndex = 9;
 			// 
-			// pointPerspectiveToolStripMenuItem
+			// renderToolStripMenuItem
 			// 
-			this.pointPerspectiveToolStripMenuItem.Name = "pointPerspectiveToolStripMenuItem";
-			this.pointPerspectiveToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
-			this.pointPerspectiveToolStripMenuItem.Text = "2_point perspective";
-			this.pointPerspectiveToolStripMenuItem.Click += new System.EventHandler(this.pointPerspectiveToolStripMenuItem_Click);
+			this.renderToolStripMenuItem.Name = "renderToolStripMenuItem";
+			this.renderToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+			this.renderToolStripMenuItem.Text = "Render";
+			this.renderToolStripMenuItem.Click += new System.EventHandler(this.renderToolStripMenuItem_Click);
 			// 
 			// Interface
 			// 
@@ -1362,6 +1396,9 @@
 		private System.Windows.Forms.Label insetPageNumber;
 		private GLViewer glViewer;
 		private System.Windows.Forms.ToolStripMenuItem pointPerspectiveToolStripMenuItem;
+		private System.Windows.Forms.CheckBox programSharpEdgeContour;
+		private System.Windows.Forms.ToolStripMenuItem extractStrokesToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem renderToolStripMenuItem;
 
 	}
 }

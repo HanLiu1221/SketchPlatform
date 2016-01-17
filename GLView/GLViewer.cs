@@ -12,6 +12,9 @@ using System.Drawing;
 using Geometry;
 using Component;
 
+using System.Runtime.Serialization.Json;
+using System.Web.Script.Serialization;
+
 namespace SketchPlatform
 {
     public class GLViewer : SimpleOpenGlControl
@@ -75,12 +78,13 @@ namespace SketchPlatform
             this.insetViewer.BorderStyle = BorderStyle.None;
             this.insetViewer.AutoSwapBuffers = true;
             this.insetViewer.BackColor = System.Drawing.Color.Transparent;
-            this.insetViewer.accModelView(this.currModelTransformMatrix);
+            this.insetViewer.accModelView(this.currModelTransformMatrix, this.eye);
 			int h = this.Height / 3, w = h * 4 / 3;
 			int off = 50;
 			this.insetViewer.Location = new Point(this.Location.X + this.Width - w - off / 2,
-				this.Location.Y + this.Height - h - off);
+				this.Location.Y + off);
 			this.insetViewer.Size = new System.Drawing.Size(w, h);
+			//this.insetViewer.BringToFront();
         }
 
         private void initializeColors()
@@ -153,6 +157,7 @@ namespace SketchPlatform
 
         public bool showSharpEdge = false;
         public bool enableHiddencheck = true;
+		public bool condition = true;
 
         public bool showSegSilhouette = false;
         public bool showSegContour = false;
@@ -242,7 +247,6 @@ namespace SketchPlatform
         private double strokeLength = 0;
         private Stroke currStroke = null;
         private List<DrawStroke2d> drawStrokes = new List<DrawStroke2d>();
-
 
         //########## static vars ##########//
         public static Color[] ColorSet;
@@ -480,12 +484,24 @@ namespace SketchPlatform
                     this.pageNumber[i] += totalPageStr;
                 }
             }
+
+			Program.GetFormMain().setInsetPageNumber("");
+			Program.GetFormMain().setLineType("");
+
 			this.reloadView();
 
+			int x = this.Location.X + (int)this.paperPos[0].pos2.x;
+			int y = this.Location.Y + (int)this.paperPos[0].pos2.y + 20;
+			Program.GetFormMain().setPageNumberLocation(x, y);
+			Program.GetFormMain().setPageNumber("");
+			Program.GetFormMain().setInsetPageNumber("");
             this.loadSketches("");
-
-            
-            this.insetViewer.accModelView(this.currModelTransformMatrix);
+			if (this.insetViewer != null)
+			{
+				this.insetViewer.clear();
+				this.insetViewer.accModelView(this.currModelTransformMatrix, this.eye);
+				this.insetViewer.Refresh();
+			}
         }// loadJSONFile
 
         public int getSequenceNumber()
@@ -507,7 +523,7 @@ namespace SketchPlatform
             Gl.glLoadIdentity();
             double aspect = (double)this.Width / this.Height;
             Glu.gluPerspective(90, aspect, 0.1, 1000);
-            Glu.gluLookAt(0, 0, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);            
+            Glu.gluLookAt(this.eye.x, this.eye.y, this.eye.z, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);            
 
 
 
@@ -551,6 +567,8 @@ namespace SketchPlatform
                             Vector3d v3 = this.camera.Project(sp.pos3);
                             sp.pos2 = v3.ToVector2d();
                         }
+						stroke.u2 = this.camera.Project(stroke.u3).ToVector2d();
+						stroke.v2 = this.camera.Project(stroke.v3).ToVector2d();
                     }
                 }
                 foreach (Plane plane in seg.boundingbox.planes)
@@ -674,9 +692,9 @@ namespace SketchPlatform
             this.paperPosLines[6] = this.paperPos[3].pos2 + xd * off;
             this.paperPosLines[7] = this.paperPos[3].pos2 - yd * off;
 
-			int x = (int)this.paperPos[2].pos2.x;
+			int x = (int)this.paperPos[0].pos2.x;
 			int y = this.Location.Y + (int)this.paperPos[0].pos2.y + 20;
-			Program.GetFormMain().setPageNumberLocation(x, y);
+			Program.GetFormMain().setPageNumberLocation(this.Location.X + x, y);
 
 			this.updateInsetViewSize();
 			
@@ -917,7 +935,10 @@ namespace SketchPlatform
             }
             this.currSegmentClass.ChangeGuidelineStyle((int)SegmentClass.GuideLineStyle);
             this.calculateSketchMesh2d();
-            this.setHiddenLines();
+			if (this.condition)
+			{
+				this.setHiddenLines();
+			}
         }// setStrokeSketchyRate
 
         public void setSektchyEdgesColor(Color c)
@@ -1105,7 +1126,6 @@ namespace SketchPlatform
             }
         }
 
-        private int tillNext = 0;
         private int extractPageNum(string page)
         {
             int _idx = page.LastIndexOf("/");
@@ -1121,12 +1141,24 @@ namespace SketchPlatform
         public void sendDataToInsetViewer()
         {
             //if (this.sequenceIdx < tillNext) return;
-            string page = this.pageNumber[this.boxStack.Count - 1];
+			string page = "0";
+			//if (this.sequenceIdx == 0)
+			//{
+			//	Program.GetFormMain().setInsetPageNumber("0");
+			//	return;
+			//}
+			//if (this.sequenceIdx > 0)
+			//{
+			//	page = this.pageNumber[this.sequenceIdx - 1];
+			//}
+			page = this.pageNumber[this.sequenceIdx];
+
             this.prevPageIdx = this.currPageIdx;
             this.currPageIdx = this.extractPageNum(page);
-			if (this.sequenceIdx >= this.nSequence)
+
+			if (this.sequenceIdx > this.nSequence)
 			{
-				this.currPageIdx = this.extractPageNum(this.pageNumber[this.pageNumber.Count-1]);
+				this.currPageIdx = this.extractPageNum(this.pageNumber[this.pageNumber.Count - 1]);
 				List<Box> boxes = new List<Box>();
 				foreach (Segment seg in this.currSegmentClass.segments)
 				{
@@ -1142,6 +1174,12 @@ namespace SketchPlatform
 
             Box cloneBox = null;
             Box cloneGuideBox = null;
+			List<Box> drawnBox = new List<Box>();
+			foreach (Segment seg in this.currSegmentClass.segments)
+			{
+				if (!seg.active) continue;
+				drawnBox.Add(seg.boundingbox);
+			}
             int n = this.sequenceIdx;
             while (++n < this.nSequence)
             {
@@ -1153,11 +1191,10 @@ namespace SketchPlatform
                 }
             }
 			if (n == nSequence) --n;
+			//if (n == this.sequenceIdx) --n;
             if (n < this.nSequence)
             {
 				Program.GetFormMain().setInsetPageNumber(this.pageNumber[n].ToString());
-				
-                this.tillNext = n + 1;
                 int nexbox = -1;
                 List<int> guideLinesIds;
                 int guideGroupIndex;
@@ -1222,12 +1259,19 @@ namespace SketchPlatform
 
                     // 2. draw guidelines
                     // 3. show the target guide line (previous guidelines are computed for it)
+					GuideLine aimedLine = null;
                     for (int i = 0; i < guideLinesIds.Count; ++i)
                     {
                         int idx = guideLinesIds[i];
                         GuideLine line = cloneBox.guideLines[guideGroupIndex][idx];
                         line.active = true;
                         line.color = line.isGuide ? SegmentClass.GuideLineWithTypeColor : SegmentClass.StrokeColor;
+						if (line.isGuide)
+						{
+							aimedLine = line;
+							string type = this.getLineType(line.type);
+							Program.GetFormMain().setLineType(type);
+						}
                         if (this.showArrows && cloneBox.arrows != null)
                         {
                             foreach (Arrow3D arrow in cloneBox.arrows)
@@ -1236,22 +1280,28 @@ namespace SketchPlatform
                             }
                         }
                     }
+					if (aimedLine == null)
+					{
+						Program.GetFormMain().setLineType("box");
+					}
                 }
             }
 
-            this.insetViewer.accData(cloneBox, cloneGuideBox);
+            this.insetViewer.accData(cloneBox, cloneGuideBox, drawnBox);
             //this.insetViewer.accModelView(this.currModelTransformMatrix);
             Program.GetFormMain().addInsetViewer(this.insetViewer);
             this.insetViewer.Refresh();
         }//sendDataToInsetViewer
 
-        public string nextSequence()
+        public bool nextSequence()
         {
             this.inGuideMode = true;
+			this.showDrawnStroke = false;
+			Program.GetFormMain().increaseNext();
             if (this.nSequence <= 0)
             {
                 Program.GetFormMain().setPageNumber("0");
-                return "0";
+                return false;
             }
             if (this.sequenceIdx == this.nSequence - 1)
             {
@@ -1259,46 +1309,51 @@ namespace SketchPlatform
                 this.sequenceIdx++;
                 Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
                 this.sendDataToInsetViewer();
-                return this.pageNumber[this.pageNumber.Count - 1];
+				this.showDrawnStroke = true;
+                return false;
             }
             else if (this.sequenceIdx == this.nSequence)
             {
                 MessageBox.Show("This is the last page.");
                 Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
                 this.sendDataToInsetViewer();
-                return this.pageNumber[this.pageNumber.Count - 1];
+                return true;
             }
             this.sequenceIdx++;
             if (this.sequenceIdx == 0)
             {
                 this.clearBoxes();
                 this.boxStack = new List<int>();
+				//Program.GetFormMain().setPageNumber("0");
             }
             this.activateGuideSequence(true);
             this.lockView = true;
             Program.GetFormMain().setLockState(this.lockView);
-            Program.GetFormMain().setPageNumber(this.pageNumber[this.boxStack.Count - 1]);
+			if (this.sequenceIdx >= 0)
+			{
+				Program.GetFormMain().setPageNumber(this.pageNumber[this.sequenceIdx]);
+			}
             this.sendDataToInsetViewer();
-            return this.pageNumber[this.boxStack.Count - 1];
+            return false;
         }//nextSequence
 
         
-        public string prevSequence()
+        public void prevSequence()
         {
             this.inGuideMode = true;
-            this.tillNext--;
+			this.showDrawnStroke = false;
+			Program.GetFormMain().increasePrev();
             if (this.nSequence <= 0)
             {
                 Program.GetFormMain().setPageNumber("0");
                 this.sendDataToInsetViewer();
-                return "0";
             }
-            if (this.sequenceIdx <= 0)
+            if (this.sequenceIdx == 0)
             {
                 MessageBox.Show("This is the first page.");
-                Program.GetFormMain().setPageNumber("1");
-                this.sendDataToInsetViewer();
-                return this.pageNumber[0];
+                Program.GetFormMain().setPageNumber(this.pageNumber[0]);
+				--this.sequenceIdx;
+				return;
             }
             if (this.currBoxIdx >= 0)
             {
@@ -1328,12 +1383,10 @@ namespace SketchPlatform
             if (this.sequenceIdx == nSequence)
             {
                 Program.GetFormMain().setPageNumber(this.pageNumber[this.pageNumber.Count - 1]);
-                return this.pageNumber[this.pageNumber.Count - 1];
             }
-            else
+			else
             {
-                Program.GetFormMain().setPageNumber(this.pageNumber[this.boxStack.Count - 1]);
-                return this.pageNumber[this.boxStack.Count - 1];
+				Program.GetFormMain().setPageNumber(this.pageNumber[this.sequenceIdx	]);
             }
         }//prevSequence
 
@@ -1343,9 +1396,19 @@ namespace SketchPlatform
             this.sequenceIdx = -1;
             this.clearBoxes();
             this.boxStack = new List<int>();
+
+			
+			if (this.insetViewer != null)
+			{
+				this.insetViewer.clear();
+				this.insetViewer.Refresh();
+			}
+			Program.GetFormMain().setInsetPageNumber("");
+			Program.GetFormMain().setLineType("");
+
             this.nextSequence();
             this.lockView = true;
-            Program.GetFormMain().setLockState(this.lockView);
+			Program.GetFormMain().setLockState(this.lockView);
         }
 
         private bool checkBoxDrawnOrNot(int boxIdx, int back)
@@ -1416,6 +1479,8 @@ namespace SketchPlatform
             {
                 this.updateDepthVal();
             }
+			this.insetViewer.clear();
+			Program.GetFormMain().setLineType("");
         }
 
         public void twoBoxExample()
@@ -1722,7 +1787,10 @@ namespace SketchPlatform
                 }
                 this.setStrokeSize(SegmentClass.StrokeSize, activeSeg, SegmentClass.StrokeColor, GuideLineColor);
             }
-            this.setHiddenLines(activeSeg);
+			if (this.condition)
+			{
+				this.setHiddenLines(activeSeg);
+			}
         }// activateBox
 
 
@@ -1889,15 +1957,16 @@ namespace SketchPlatform
                 }
                 this.setStrokeStylePerLine(line, SegmentClass.GuideLineSize * 0.6, SegmentClass.HiddenGuideLinecolor);
             }
-            if (guide != null)
-            {
-                string type = this.getLineType(guide.type);
-                Program.GetFormMain().setLineType(type);
-            }
-            else
-            {
-                Program.GetFormMain().setLineType("construction line");
-            }
+			//// set eacj step (a line) the line type name
+			//if (guide != null)
+			//{
+			//	string type = this.getLineType(guide.type);
+			//	Program.GetFormMain().setLineType(type);
+			//}
+			//else if(this.sequenceIdx > 1)
+			//{
+			//	Program.GetFormMain().setLineType("construction line");
+			//}
             // the last one is now the current one to highlight
             if (guideLinesIds.Count > 0)
             {
@@ -1964,6 +2033,9 @@ namespace SketchPlatform
                 case 4:
                     s = "1/4 line";
                     break;
+				case 5:
+					s = "extend line";
+					break;
                 case 6:
                     s = "1/6 line";
                     break;
@@ -2115,6 +2187,9 @@ namespace SketchPlatform
             }
             this.currModelTransformMatrix = new Matrix4d(arr);
             this.fixedModelView = new Matrix4d(arr);
+
+			this.insetViewer.accModelView(this.currModelTransformMatrix, this.eye);
+			this.insetViewer.Refresh();
         }
 
 
@@ -2153,129 +2228,154 @@ namespace SketchPlatform
 
         public void computeContours()
         {
-            //return;
-            this.silhouettePoints = new List<Vector3d>();
-            this.contourPoints = new List<Vector3d>();
-            this.contourLines = new List<List<Vector3d>>();
-            this.apparentRidgePoints = new List<Vector3d>();
-            this.suggestiveContourPoints = new List<Vector3d>();
-            this.boundaryPoints = new List<Vector3d>();
+			//return;
+			if (this.currSegmentClass == null && this.meshClasses == null) return;
 
-            if (this.currSegmentClass != null)
-            {
-                if (!this.isShowContour()) return;
-                Matrix4d T = this.currModelTransformMatrix;
-                Matrix4d Tv = T.Inverse();
-                foreach (Segment seg in this.currSegmentClass.segments)
-                {
+			if (this.showSharpEdge)
+			{
+				this.contourPoints = new List<Vector3d>();
+				this.sharpEdges = new List<Vector3d>();
+				//this.currSegmentClass.calculateContourPoint(this.currModelTransformMatrix, this.eye);
+				if (this.currSegmentClass != null)
+				{
+					this.computeContourEdges();
+				}
+				else if (this.currMeshClass != null)
+				{
+					List<int> vidxs = this.computeMeshContour(this.currMeshClass.Mesh);
+					//this.regionGrowingContours(this.currMeshClass.Mesh, vidxs);
+					//this.computeContourByVisibility(this.currMeshClass.Mesh);
+					this.computeMeshSharpEdge(this.currMeshClass.Mesh);
+				}
+				if (this.contourPoints.Count > 0)
+				{
+					this.drawEdge = false;
+				}
+			}
+			else
+			{
+				this.silhouettePoints = new List<Vector3d>();
+				this.contourPoints = new List<Vector3d>();
+				this.contourLines = new List<List<Vector3d>>();
+				this.apparentRidgePoints = new List<Vector3d>();
+				this.suggestiveContourPoints = new List<Vector3d>();
+				this.boundaryPoints = new List<Vector3d>();
 
-                        foreach (GuideLine line in seg.boundingbox.edges)
-                        {
-                            foreach (Stroke stroke in line.strokes)
-                            {
-                                stroke.strokeColor = SegmentClass.HiddenColor;
-                            }
-                        }
-                    
-                    if (!seg.active) continue;
-                    seg.updateVertex(T);
-                    if(this.showSegSilhouette)
-                    {
-                        seg.computeSihouette(Tv, this.eye);
-                    }
-                    if (this.showSegContour)
-                    {
-                        seg.computeContour(Tv, this.eye);
-                    }
-                    if (this.showSegSuggestiveContour)
-                    {
-                        seg.computeSuggestiveContour(Tv, this.eye);
-                    }
-                    if (this.showSegApparentRidge)
-                    {
-                        seg.computeApparentRidge(Tv, this.eye);
-                    }
-                    if (this.showSegBoundary)
-                    {
-                        seg.computeBoundary(Tv, this.eye);
-                    }
-                }
-            }
-            if (this.currMeshClass != null && this.currMeshClass.TriMesh != null)
-            {
-                if (!this.isShowContour()) return;
-                
-                Mesh mesh = this.currMeshClass.Mesh;
-                double[] vertexPos = new double[mesh.VertexPos.Length];
-                List<int> vidxs = new List<int>();
-                for (int i = 0, j = 0; i < mesh.VertexCount; ++i, j += 3)
-                {
-                    Vector3d v0 = new Vector3d(mesh.VertexPos[j],
-                        mesh.VertexPos[j + 1],
-                        mesh.VertexPos[j + 2]);
-                    Vector3d v1 = (this.currModelTransformMatrix * new Vector4d(v0, 1)).ToVector3D();
-                    vertexPos[j] = v1.x;
-                    vertexPos[j + 1] = v1.y;
-                    vertexPos[j + 2] = v1.z;
-                }
-                this.silhouettePoints.Clear();
-                this.contourPoints.Clear();
-                this.suggestiveContourPoints.Clear();
-                this.apparentRidgePoints.Clear();
-                
-                if (this.showSegSilhouette)
-                {
-                    this.silhouettePoints = this.currMeshClass.computeContour(vertexPos, this.eye, 1);
-                    for (int i = 0; i < this.silhouettePoints.Count; ++i)
-                    {
-                        Vector3d v = this.silhouettePoints[i];
-                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
-                        this.silhouettePoints[i] = vt;
-                    }
-                }
-                if (this.showSegContour)
-                {
-                    this.contourPoints = this.currMeshClass.computeContour(vertexPos, this.eye, 2);
-                    for (int i = 0; i < this.contourPoints.Count; ++i)
-                    {
-                        Vector3d v = this.contourPoints[i];
-                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
-                        this.contourPoints[i] = vt;
-                    }
-                }
-                if (this.showSegSuggestiveContour)
-                {
-                    this.suggestiveContourPoints = this.currMeshClass.computeContour(vertexPos, this.eye, 3);
-                    for (int i = 0; i < this.suggestiveContourPoints.Count; ++i)
-                    {
-                        Vector3d v = this.suggestiveContourPoints[i];
-                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
-                        this.suggestiveContourPoints[i] = vt;
-                    }
-                }
-                if (this.showSegApparentRidge)
-                {
-                    this.apparentRidgePoints = this.currMeshClass.computeContour(vertexPos, this.eye, 4);
-                    for (int i = 0; i < this.apparentRidgePoints.Count; ++i)
-                    {
-                        Vector3d v = this.apparentRidgePoints[i];
-                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
-                        this.apparentRidgePoints[i] = vt;
-                    }
-                }
-                if (this.showSegBoundary)
-                {
-                    this.boundaryPoints = this.currMeshClass.computeContour(vertexPos, this.eye, 5);
-                    for (int i = 0; i < this.boundaryPoints.Count; ++i)
-                    {
-                        Vector3d v = this.boundaryPoints[i];
-                        Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
-                        this.boundaryPoints[i] = vt;
-                    }
-                }
-              
-            }
-            return;
+				if (this.currSegmentClass != null)
+				{
+					if (!this.isShowContour()) return;
+					Matrix4d T = this.currModelTransformMatrix;
+					Matrix4d Tv = T.Inverse();
+					foreach (Segment seg in this.currSegmentClass.segments)
+					{
+
+						foreach (GuideLine line in seg.boundingbox.edges)
+						{
+							foreach (Stroke stroke in line.strokes)
+							{
+								stroke.strokeColor = SegmentClass.HiddenColor;
+							}
+						}
+
+						if (!seg.active) continue;
+						seg.updateVertex(T);
+						if (this.showSegSilhouette)
+						{
+							seg.computeSihouette(Tv, this.eye);
+						}
+						if (this.showSegContour)
+						{
+							seg.computeContour(Tv, this.eye);
+						}
+						if (this.showSegSuggestiveContour)
+						{
+							seg.computeSuggestiveContour(Tv, this.eye);
+						}
+						if (this.showSegApparentRidge)
+						{
+							seg.computeApparentRidge(Tv, this.eye);
+						}
+						if (this.showSegBoundary)
+						{
+							seg.computeBoundary(Tv, this.eye);
+						}
+					}
+				}
+				if (this.currMeshClass != null && this.currMeshClass.TriMesh != null)
+				{
+					if (!this.isShowContour()) return;
+
+					Mesh mesh = this.currMeshClass.Mesh;
+					double[] vertexPos = new double[mesh.VertexPos.Length];
+					List<int> vidxs = new List<int>();
+					for (int i = 0, j = 0; i < mesh.VertexCount; ++i, j += 3)
+					{
+						Vector3d v0 = new Vector3d(mesh.VertexPos[j],
+							mesh.VertexPos[j + 1],
+							mesh.VertexPos[j + 2]);
+						Vector3d v1 = (this.currModelTransformMatrix * new Vector4d(v0, 1)).ToVector3D();
+						vertexPos[j] = v1.x;
+						vertexPos[j + 1] = v1.y;
+						vertexPos[j + 2] = v1.z;
+					}
+					this.silhouettePoints.Clear();
+					this.contourPoints.Clear();
+					this.suggestiveContourPoints.Clear();
+					this.apparentRidgePoints.Clear();
+
+					if (this.showSegSilhouette)
+					{
+						this.silhouettePoints = this.currMeshClass.computeContour(vertexPos, this.eye, 1);
+						for (int i = 0; i < this.silhouettePoints.Count; ++i)
+						{
+							Vector3d v = this.silhouettePoints[i];
+							Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+							this.silhouettePoints[i] = vt;
+						}
+					}
+					if (this.showSegContour)
+					{
+						this.contourPoints = this.currMeshClass.computeContour(vertexPos, this.eye, 2);
+						for (int i = 0; i < this.contourPoints.Count; ++i)
+						{
+							Vector3d v = this.contourPoints[i];
+							Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+							this.contourPoints[i] = vt;
+						}
+					}
+					if (this.showSegSuggestiveContour)
+					{
+						this.suggestiveContourPoints = this.currMeshClass.computeContour(vertexPos, this.eye, 3);
+						for (int i = 0; i < this.suggestiveContourPoints.Count; ++i)
+						{
+							Vector3d v = this.suggestiveContourPoints[i];
+							Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+							this.suggestiveContourPoints[i] = vt;
+						}
+					}
+					if (this.showSegApparentRidge)
+					{
+						this.apparentRidgePoints = this.currMeshClass.computeContour(vertexPos, this.eye, 4);
+						for (int i = 0; i < this.apparentRidgePoints.Count; ++i)
+						{
+							Vector3d v = this.apparentRidgePoints[i];
+							Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+							this.apparentRidgePoints[i] = vt;
+						}
+					}
+					if (this.showSegBoundary)
+					{
+						this.boundaryPoints = this.currMeshClass.computeContour(vertexPos, this.eye, 5);
+						for (int i = 0; i < this.boundaryPoints.Count; ++i)
+						{
+							Vector3d v = this.boundaryPoints[i];
+							Vector3d vt = (this.currModelTransformMatrix.Inverse() * new Vector4d(v, 1)).ToVector3D();
+							this.boundaryPoints[i] = vt;
+						}
+					}
+
+				}
+			}
 
             #region
             //// my implementation
@@ -2467,8 +2567,10 @@ namespace SketchPlatform
         private List<int> computeMeshContour(Mesh mesh)
         {
             double thresh = 0.1;
-            double[] vertexPos = new double[mesh.VertexPos.Length];
             List<int> vidxs = new List<int>();
+			if (mesh == null || mesh.VertexPos == null) return vidxs;
+			double[] vertexPos = new double[mesh.VertexPos.Length];
+			
             for (int i = 0, j = 0; i < mesh.VertexCount; ++i, j += 3)
             {
                 Vector3d v0 = new Vector3d(mesh.VertexPos[j],
@@ -2554,6 +2656,7 @@ namespace SketchPlatform
 
         private void computeMeshSharpEdge(Mesh mesh)
         {
+			if (mesh == null || mesh.VertexPos == null) return;
             double thresh = 0.1;
             double[] vertexPos = new double[mesh.VertexPos.Length];
             for (int i = 0, j = 0; i < mesh.VertexCount; ++i, j += 3)
@@ -2858,7 +2961,7 @@ namespace SketchPlatform
                 if (!seg.active) continue;
                 foreach (GuideLine edge in seg.boundingbox.edges)
                 {
-                    if (visPnts[idx++] < 10)
+                    if (visPnts[idx++] ==0)
                     {
                         this.setStrokeStylePerLine(edge, SegmentClass.StrokeSize / 4, SegmentClass.HiddenLineColor);
                         foreach (Stroke stroke in edge.strokes)
@@ -3275,10 +3378,37 @@ namespace SketchPlatform
             }
         }//recoverHiddenlines
 
+		public void renderToImage(string filename)
+		{
+			//uint FramerbufferName = 0;
+			//Gl.glGenFramebuffersEXT(1, out FramerbufferName);
+			//Gl.glBindFramebufferEXT(Gl.GL_FRAMEBUFFER_EXT, FramerbufferName);
+			this.Draw3D();
+			int w = this.Width, h = this.Height;
+			Bitmap bmp = new Bitmap(w, h);
+			Rectangle rect = new Rectangle(0,0,w,h);
+			System.Drawing.Imaging.BitmapData data =
+				bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.WriteOnly,
+				System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+				//System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
 
-        public void exportSequenceDiv()
+			Gl.glReadPixels(0, 0, w, h, Gl.GL_BGR, Gl.GL_UNSIGNED_BYTE, data.Scan0);
+			bmp.UnlockBits(data);
+			bmp.RotateFlip(RotateFlipType.Rotate180FlipX);
+			bmp.Save(filename, System.Drawing.Imaging.ImageFormat.Png);
+		}
+
+
+        public void exportSequencePS()
         {
             if(this.currSegmentClass == null) return;
+			//this.setViewMatrix();
+			//this.currModelTransformMatrix = this.arcBall.getTransformMatrix(this.nPointPerspective) * this.currModelTransformMatrix;
+			//this.updateCamera();
+			//this.calculate2D();
+
+			this.cal2D();
+
             int idx = this.sequenceIdx;
             string folder = this.foldername + "\\pdfs";
             if (!Directory.Exists(folder))
@@ -3286,10 +3416,26 @@ namespace SketchPlatform
                 Directory.CreateDirectory(folder);
             }
             string divName = folder + "\\seq_" + idx.ToString() + ".ps";
-            this.calculate2D();
+            
             StreamWriter sw = new StreamWriter(divName);
             sw.WriteLine("<</PageSize[" + this.Width.ToString() + " " + this.Height.ToString() + "]>>setpagedevice");
             //sw.WriteLine("0 50 translate");
+			//// test
+			//Vector2d v1 = new Vector2d(100, 100);
+			//Vector2d v2 = new Vector2d(200, 100);
+			//sw.WriteLine("newpath");
+			//sw.Write(v1.x.ToString() + " ");
+			//sw.Write(v1.y.ToString() + " ");
+			//sw.WriteLine("moveto ");
+			//sw.Write(v2.x.ToString() + " ");
+			//sw.Write(v2.y.ToString() + " ");
+			//sw.WriteLine("lineto ");
+			//sw.WriteLine("gsave");
+			//sw.WriteLine(SegmentClass.StrokeSize.ToString() + " " + "setlinewidth");
+			//sw.WriteLine(0.ToString() + " " +
+			//	0.ToString() + " " +
+			//	0.ToString() + " setrgbcolor");
+			//sw.WriteLine("stroke");
             foreach(Segment seg in this.currSegmentClass.segments){
                 if (!seg.active) continue;
                 foreach (GuideLine line in seg.boundingbox.edges)
@@ -3297,17 +3443,23 @@ namespace SketchPlatform
                     foreach (Stroke stroke in line.strokes)
                     {
                         sw.WriteLine("newpath");
-                        sw.Write(stroke.u2.x.ToString() + " ");
-                        sw.Write(stroke.u2.y.ToString() + " ");
+						double x = stroke.u2.x;
+						double y = stroke.u2.y;
+                        sw.Write(x.ToString() + " ");
+                        sw.Write(y.ToString() + " ");
                         sw.WriteLine("moveto ");
-                        sw.Write(stroke.v2.x.ToString() + " ");
-                        sw.Write(stroke.v2.y.ToString() + " "); 
+						x = stroke.v2.x;
+						y = stroke.v2.y;
+                        sw.Write(x.ToString() + " ");
+                        sw.Write(y.ToString() + " "); 
                         sw.WriteLine("lineto ");
                         sw.WriteLine("gsave");
                         sw.WriteLine(stroke.weight.ToString() + " " + "setlinewidth");
-                        sw.WriteLine(stroke.strokeColor.R.ToString() + " " +
-                            stroke.strokeColor.G.ToString() + " " +
-                            stroke.strokeColor.B.ToString() + " setrgbcolor");
+						float[] c = {(float)stroke.strokeColor.R/255, (float)stroke.strokeColor.G/255,
+									(float)stroke.strokeColor.B/255};
+                        sw.WriteLine(c[0].ToString() + " " +
+                            c[1].ToString() + " " +
+                            c[2].ToString() + " setrgbcolor");
                         sw.WriteLine("stroke");
                     }
                 }
@@ -3326,7 +3478,9 @@ namespace SketchPlatform
             }
             sw.WriteLine("showpage");
             sw.Close();
-        }//exportSequenceDiv
+			Gl.glMatrixMode(Gl.GL_MODELVIEW);
+			Gl.glPopMatrix();
+        }//exportSequencePS
         
 
         //########## set modes ##########//
@@ -3348,9 +3502,12 @@ namespace SketchPlatform
                 case 4:
                     this.currUIMode = UIMode.FaceSelection;
                     break;
-                case 5:
-                    this.currUIMode = UIMode.Sketch;
-                    break;
+				case 5:
+					{
+						this.currUIMode = UIMode.Sketch;
+						this.cal2D();
+					}
+					break;
                 case 6:
                     this.currUIMode = UIMode.Eraser;
                     break;
@@ -3399,7 +3556,7 @@ namespace SketchPlatform
             this.transMat = Matrix4d.IdentityMatrix();
             this.updateDepthVal();
             this.cal2D();
-            if (this.enableHiddencheck)
+            if (this.enableHiddencheck || this.condition)
             {
                 this.setHiddenLines();
             }
@@ -3415,7 +3572,7 @@ namespace SketchPlatform
             this.modelTransformMatrix = Matrix4d.IdentityMatrix();
             this.updateDepthVal();
             this.cal2D();
-            if (this.enableHiddencheck)
+			if (this.enableHiddencheck || this.condition)
             {
                 this.setHiddenLines();
             }
@@ -3464,6 +3621,15 @@ namespace SketchPlatform
                 this.enableDepthTest = false;
             }
         }
+
+		public void readUserData(string filename)
+		{
+			StreamReader sr = new StreamReader(filename);
+			string str = sr.ReadToEnd();
+			UserInfo userData = new JavaScriptSerializer().Deserialize<UserInfo>(str);
+
+			sr.Close();
+		}
         //########## Mouse ##########//
 
         private void viewMouseDown(MouseEventArgs e)
@@ -3512,7 +3678,7 @@ namespace SketchPlatform
 				this.reloadView();
 			}
 			
-			this.insetViewer.accModelView(this.currModelTransformMatrix);
+			this.insetViewer.accModelView(this.currModelTransformMatrix, this.eye);
 			this.insetViewer.Refresh();
 		}
         private void viewMouseUp()
@@ -3542,7 +3708,7 @@ namespace SketchPlatform
             //}
 
             this.updateDepthVal();
-            if (this.enableHiddencheck)
+			if (this.enableHiddencheck || this.condition)
             {
                 this.setHiddenLines();
             }
@@ -3658,11 +3824,12 @@ namespace SketchPlatform
                             if (Math.Abs(trans.y) > Math.Abs(trans.x))
                             {
                                 this.eye.y += trans.y;
+								this.currModelTransformMatrix[1,3] += trans.y;
                             }
-                            else
-                            {
-                                this.eye.z += trans.x;
-                            }
+							//else
+							//{
+							//	this.eye.x += trans.x;
+							//}
                         }
                         break;
                     }
@@ -3725,7 +3892,7 @@ namespace SketchPlatform
             //this.Refresh();
             this.cal2D();
             this.updateSketchStrokePositionToLocalCoord();
-			this.updateInsetViewSize();
+			//this.updateInsetViewSize();
             this.Refresh();
         }
 
@@ -3736,17 +3903,21 @@ namespace SketchPlatform
 				int h = this.Height / 3, w = h * 4 / 3;
 				int off = 50;
 				this.insetViewer.Location = new Point(this.Location.X + this.Width - w - off / 2,
+					//this.Location.Y + (int)this.paperPos[0].pos2.y + off);
 					(int)this.paperPos[2].pos2.y - h - off);
 				this.insetViewer.Size = new System.Drawing.Size(w, h);
-				int x = this.Location.X + this.Width / 2 + off / 2;
-				int y = this.Location.Y + this.Height / 2 + off;
+				int x = this.insetViewer.Location.X + off;
+				int y = this.insetViewer.Location.Y - 10;
 				Program.GetFormMain().setLineTypeLabelLoc(x, y);
 				Program.GetFormMain().setInsetPageNumberLocation(
-					this.insetViewer.Location.X + this.insetViewer.Width / 2 + off/2,
-					this.insetViewer.Location.Y - 20);
-				Program.GetFormMain().Refresh();
+					this.insetViewer.Location.X + this.insetViewer.Width - 60,
+					this.insetViewer.Location.Y);
+				Program.GetFormMain().bringToFront();
+				this.insetViewer.Refresh();
+				//Program.GetFormMain().Refresh();
 			}
 		}
+
 
         public void acceptKeyData(KeyEventArgs e)
         {
@@ -3808,7 +3979,7 @@ namespace SketchPlatform
                     }
                 case Keys.S:
                     {
-                        this.currUIMode = UIMode.Sketch;
+                        this.setUIMode(5); // sketch
                         break;
                     }
                 case Keys.E:
@@ -3932,13 +4103,15 @@ namespace SketchPlatform
 
         public void SketchMouseUp()
         {
-            if (this.currSketchPoints.Count > 5) {
-                bool isLongEnough = strokeLength >= 5;
+            if (this.currSketchPoints.Count > 3) {
+                bool isLongEnough = strokeLength >= 3;
                 if (isLongEnough)
                 {
                     CubicSpline2 spline = new CubicSpline2(this.currSketchPoints.ToArray());
-                    this.currStroke = new Stroke(this.currSketchPoints, SegmentClass.PenSize);
-                    this.currStroke.smooth();
+					this.currStroke = new Stroke(this.currSketchPoints, SegmentClass.PenSize);
+					//this.currStroke.smooth();
+					//this.findClosestVertex(this.currSketchPoints);
+					//this.currStroke = new Stroke(this.currSketchPoints, SegmentClass.PenSize);
                     this.currStroke.strokeColor = SegmentClass.PenColor;
                     this.storeSketchStrokePositionToLocalCoord(this.currStroke);
                     this.addADrawStroke(this.currStroke);
@@ -3947,6 +4120,8 @@ namespace SketchPlatform
             this.currStroke = new Stroke();
             this.currSketchPoints = new List<Vector2d>();
         }//SketchMouseUp
+
+
 
 
         private void addADrawStroke(Stroke stroke)
@@ -3961,17 +4136,34 @@ namespace SketchPlatform
 
         private void findClosestVertex(List<Vector2d> points)
         {
-            if (this.currSegmentClass == null) return;
-            List<Vector2d> meshPoints2d = new List<Vector2d>();
-            foreach (Segment seg in this.currSegmentClass.segments)
-            {
-                if (seg.mesh == null) continue;
-                for (int i = 0, j = 0; i < seg.mesh.VertexCount; ++i, j += 3)
-                {
-                    Vector3d v = new Vector3d(seg.mesh.VertexPos[j], seg.mesh.VertexPos[j + 1], seg.mesh.VertexPos[j + 2]);
+			if (this.contourPoints.Count == 0 && this.sharpEdges.Count == 0) return;
+			double thresh = 2.0f;
+			for (int i = 0; i < points.Count; ++i) 
+			{
+				Vector2d p = points[i];
+				//double mind = double.MaxValue;
+				//Vector3d closed = 
+				foreach (Vector3d v in this.contourPoints)
+				{
+					Vector2d v2 = this.camera.Project(v).ToVector2d();
+					if ((p - v2).Length() < thresh)
+					{
+						points[i] = new Vector2d(v2);
+						break;
+					}
+				}
+			}
+			//if (this.currSegmentClass == null) return;
+			//List<Vector2d> meshPoints2d = new List<Vector2d>();
+			//foreach (Segment seg in this.currSegmentClass.segments)
+			//{
+			//	if (seg.mesh == null) continue;
+			//	for (int i = 0, j = 0; i < seg.mesh.VertexCount; ++i, j += 3)
+			//	{
+			//		Vector3d v = new Vector3d(seg.mesh.VertexPos[j], seg.mesh.VertexPos[j + 1], seg.mesh.VertexPos[j + 2]);
                     
-                }
-            }
+			//	}
+			//}
         }
 
         private void storeSketchStrokePositionToLocalCoord(Stroke stroke)
@@ -4053,6 +4245,92 @@ namespace SketchPlatform
 
         }
 
+		public void extractStrokeFromContours()
+		{
+			if (this.contourPoints.Count == 0 && this.sharpEdges.Count == 0) return;
+
+
+			List<Vector3d> allpoints = this.contourPoints;
+			allpoints.AddRange(this.sharpEdges);
+			List<List<Vector2d>> lines = new List<List<Vector2d>>();
+			List<Vector2d> line = new List<Vector2d>();
+			double thr = 5;
+			int n_thr = 10;
+			// vis test
+			this.clearScene();
+			int n = allpoints.Count / 2; ;
+			int[] queryIDs = new int[n];
+			Gl.glGenQueries(n, queryIDs);
+			Gl.glEnable(Gl.GL_DEPTH_TEST);
+			
+			this.setViewMatrix();
+
+			this.updateCamera();
+
+			foreach (Segment seg in this.currSegmentClass.segments)
+			{
+				this.drawMeshFace(seg.mesh, Color.Black, true);
+			}
+			for (int i = 0; i < allpoints.Count; i += 2)
+			{
+				Gl.glBeginQuery(Gl.GL_SAMPLES_PASSED, queryIDs[i/2]);
+				this.drawLines3D(allpoints[i], allpoints[i + 1], Color.White, 4.0f);
+				Gl.glEndQuery(Gl.GL_SAMPLES_PASSED);
+
+			}
+			Gl.glDisable(Gl.GL_DEPTH_TEST);
+			Gl.glMatrixMode(Gl.GL_MODELVIEW);
+			Gl.glPopMatrix();
+			//this.SwapBuffers();
+
+			// get # passed samples
+			int[] visPnts = new int[n];
+			int maxv = 0;
+			for (int i = 0; i < n; ++i)
+			{
+				int queryReady = Gl.GL_FALSE;
+				int count = 1000;
+				while (queryReady != Gl.GL_TRUE && count-- > 0)
+				{
+					Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
+				}
+				if (queryReady == Gl.GL_FALSE)
+				{
+					count = 1000;
+					while (queryReady != Gl.GL_TRUE && count-- > 0)
+					{
+						Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT_AVAILABLE, out queryReady);
+					}
+				}
+				Gl.glGetQueryObjectiv(queryIDs[i], Gl.GL_QUERY_RESULT, out visPnts[i]);
+			}
+			Gl.glDeleteQueries(n, queryIDs);
+
+			
+			this.drawStrokes = new List<DrawStroke2d>();
+			for (int i = 0; i < allpoints.Count - 4; ++i)
+			{
+				if (visPnts[i / 2] == 0) continue;
+				Vector3d pre = allpoints[i + 1];
+				Vector3d nex = allpoints[i + 2];
+				Vector2d p2 = this.camera.Project(pre).ToVector2d();
+				Vector2d n2 = this.camera.Project(nex).ToVector2d();
+				line.Add(this.camera.Project(allpoints[i]).ToVector2d());
+				line.Add(p2);
+				if ((p2 - n2).Length() > thr)
+				{
+					if (line.Count > n_thr)
+					{
+						lines.Add(line);
+						Stroke stroke = new Stroke(line, 2.0f);
+						DrawStroke2d drawStroke = new DrawStroke2d(stroke);
+						this.drawStrokes.Add(drawStroke);
+					}
+					line = new List<Vector2d>();
+				}
+			}
+		}
+
         private List<DrawStroke2d> currEraseStrokes;
         private double penRadius = 8.0f;
         private void selectEraseStroke(Vector2d p)
@@ -4068,6 +4346,10 @@ namespace SketchPlatform
                     if ((sp.pos2 - pos).Length() < this.penRadius)
                     {
                         this.currEraseStrokes.Add(drawStroke);
+						if (!this.editedStrokes.Contains(drawStroke))
+						{
+							editedStrokes.Add(drawStroke);
+						}
                         break;
                     }
                 }
@@ -4141,7 +4423,13 @@ namespace SketchPlatform
             pos = new Vector2d(pos.x, this.Height - pos.y);
             for (int s = 0; s < this.currEraseStrokes.Count; ++s)
             {
-                DrawStroke2d drawStroke = this.currEraseStrokes[s];
+				int idx = this.drawStrokes.IndexOf(this.currEraseStrokes[s]);
+				DrawStroke2d drawStroke = this.drawStrokes[idx];
+				int ns = drawStroke.strokes.Count;
+				for (int i = 1; i < ns; ++i)
+				{
+					this.drawStrokes[idx].strokes.RemoveAt(1);
+				}
                 Stroke stroke = drawStroke.strokes[0];
                 // get the set of points that is on the radius
                 List<int> point_in_radii = new List<int>();
@@ -4277,8 +4565,10 @@ namespace SketchPlatform
             }
         }
 
+		List<DrawStroke2d> editedStrokes = new List<DrawStroke2d>();
         private void EraserMouseDown(Vector2d p, MouseEventArgs e)
         {
+			this.editedStrokes.Clear();
             this.selectEraseStroke(p);
             if(e.Button == System.Windows.Forms.MouseButtons.Left){
                 this.toneStroke(p);
@@ -4307,13 +4597,20 @@ namespace SketchPlatform
 
         private void EraserMouseUp()
         {
+			if (!this.isMouseDown) return;
             this.currEraseStrokes = new List<DrawStroke2d>();
+			for(int i = 0; i < this.editedStrokes.Count; ++i) 
+			{
+				DrawStroke2d drawStroke = this.editedStrokes[i];
+				int idx = this.drawStrokes.IndexOf(drawStroke);
+				if (idx != -1) {
+					this.drawStrokes[idx] = new DrawStroke2d(this.drawStrokes[idx].strokes[0]);
+				}
+			}
         }//EraserMouseUp
 
         //######### end- Sketch #########//
 
-
-        private bool isTwoPointPerspective = false;
         private void setViewMatrix()
         {
             int w = this.Width;
@@ -4351,10 +4648,10 @@ namespace SketchPlatform
             Gl.glMatrixMode(Gl.GL_MODELVIEW);
             Gl.glPushMatrix();
 
-            if (this.isTwoPointPerspective)
+            if (this.nPointPerspective == 2)
             {
-                float q = 1.5f;
-                float[] cam = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,(float)( Math.Sin(q) / this.eye.x), 0, (float)(Math.Cos(q) / this.eye.z), 1 };
+                float q = 3.0f;
+                float[] cam = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,(float)( Math.Sin(q) / this.eye.z), 0, (float)(Math.Cos(q) / this.eye.z), 1 };
                 Gl.glLoadMatrixf(cam);
             }
             else
@@ -4494,21 +4791,23 @@ namespace SketchPlatform
             foreach (DrawStroke2d drawStroke in this.drawStrokes)
             {
                 //this.drawTriMeshShaded2D(drawStroke.strokes[0], false, this.showOcclusion);
-                for (int i = 1; i < drawStroke.strokes.Count; ++i) 
-                {
-                    Stroke stroke = drawStroke.strokes[i];
-                    if (this.drawShadedOrTexturedStroke)
-                    {
-                        this.drawTriMeshShaded2D(stroke, false, this.showOcclusion);
-                    }
-                    else
-                    {
-                        this.drawTriMeshTextured2D(stroke, this.showOcclusion);
-                    }
-                }
+				for (int i = 1; i < drawStroke.strokes.Count; ++i)
+				{
+					Stroke stroke = drawStroke.strokes[i];
+					if (this.drawShadedOrTexturedStroke)
+					{
+						this.drawTriMeshShaded2D(stroke, false, this.showOcclusion);
+					}
+					else
+					{
+						this.drawTriMeshTextured2D(stroke, this.showOcclusion);
+					}
+				}
                 this.drawTriMeshShaded2D(drawStroke.strokes[0], false, this.showOcclusion);
             }
         }// drawSketchStrokes
+
+
 
         public void saveSketches(string filename)
         {
@@ -4539,6 +4838,7 @@ namespace SketchPlatform
             {
                 filename = this.foldername + "\\contour.sketch";
             }
+			this.drawStrokes = new List<DrawStroke2d>();
             if (!File.Exists(filename)) return;
             this.cal2D();
             StreamReader sr = new StreamReader(filename);
@@ -4808,7 +5108,8 @@ namespace SketchPlatform
             float width = 6.0f;
             if (this.showSegSilhouette)
             {
-                this.drawSegmentSilhouette(Color.FromArgb(252, 141, 98), width);
+				//this.drawSegmentSilhouette(Color.FromArgb(252, 141, 98), width);
+				this.drawSegmentSilhouette(Color.Black, width);
             }
 
             if (this.showSegContour)
@@ -4828,7 +5129,8 @@ namespace SketchPlatform
 
             if (this.showSegBoundary)
             {
-                this.drawSegmentBoundary(Color.FromArgb(251, 106, 74), width);
+				//this.drawSegmentBoundary(Color.FromArgb(251, 106, 74), width);
+				this.drawSegmentBoundary(Color.Black, width);
             }
             Gl.glDisable(Gl.GL_DEPTH_TEST);
         }//drawContours
@@ -5007,7 +5309,14 @@ namespace SketchPlatform
                     for (int i = 0; i < nstrokes; ++i)
                     {
                         Stroke stroke = edge.strokes[i];
-                        this.drawLines3D(stroke.u3, stroke.v3, stroke.strokeColor, (float)stroke.weight);
+						if (this.showDrawnStroke && this.drawStrokes.Count > 0)
+						{
+							this.drawLines3D(stroke.u3, stroke.v3, SegmentClass.HiddenColor, (float)stroke.weight);
+						}
+						else
+						{
+							this.drawLines3D(stroke.u3, stroke.v3, stroke.strokeColor, (float)stroke.weight);
+						}
                     }
                 }
             }
@@ -7069,8 +7378,9 @@ namespace SketchPlatform
             Gl.glEnable(Gl.GL_POINT_SMOOTH);
             Gl.glHint(Gl.GL_POINT_SMOOTH_HINT, Gl.GL_NICEST);
 
-            Gl.glLineWidth(10.0f);
-            Gl.glColor3ub(253, 141, 60);
+            Gl.glLineWidth(5.0f);
+			//Gl.glColor3ub(253, 141, 60);
+			Gl.glColor3ub(0,0,0);
             Gl.glBegin(Gl.GL_LINES);
 
             for (int i = 0; i < this.contourPoints.Count; i++)
@@ -7108,11 +7418,11 @@ namespace SketchPlatform
 
             Gl.glPointSize(10.0f);
             Gl.glBegin(Gl.GL_POINTS);
-            for (int i = 0; i < this.contourPoints.Count; i++)
-            {
-                Vector3d p1 = this.contourPoints[i];
-                Gl.glVertex3dv(p1.ToArray());
-            }
+			//for (int i = 0; i < this.contourPoints.Count; i++)
+			//{
+			//	Vector3d p1 = this.contourPoints[i];
+			//	Gl.glVertex3dv(p1.ToArray());
+			//}
 
 
             for (int i = 0; i < this.suggestiveContourPoints.Count; i++)
@@ -7187,14 +7497,14 @@ namespace SketchPlatform
             {
                 return;
             }
-
+			Gl.glEnable(Gl.GL_DEPTH_TEST);
             for (int i = 0; i < this.sharpEdges.Count; i += 2)
             {
                 Vector3d p1 = this.sharpEdges[i];
                 Vector3d p2 = this.sharpEdges[i + 1];
-                this.drawLines3D(p1, p2, Color.Pink, 2.0f);
+                this.drawLines3D(p1, p2, Color.Black, 2.0f);
             }
-
+			Gl.glDisable(Gl.GL_DEPTH_TEST);
         }//drawContourLine
 
 
