@@ -8,6 +8,9 @@ using System.Drawing;
 using Tao.OpenGl;
 using Tao.Platform.Windows;
 
+//using OpenTK.Graphics.OpenGL;
+//using OpenTK.Platform.Windows;
+
 using Component;
 using Geometry;
 
@@ -185,7 +188,7 @@ namespace SketchPlatform
 				foreach (GuideLine edge in box.edges)
 				{
 					Stroke stroke = edge.strokes[0];
-					this.drawLines3D(stroke.u3, stroke.v3, SegmentClass.HiddenColor, 0.5f);
+					this.drawLines3D(stroke.u3, stroke.v3, SegmentClass.HiddenColor, 1f);
 				}
 			}
 		}
@@ -208,7 +211,7 @@ namespace SketchPlatform
             {
                 foreach (Stroke stroke in edge.strokes)
                 {
-                    this.drawLines3D(stroke.u3, stroke.v3, SegmentClass.HiddenColor, (float)stroke.weight);
+                    this.drawLines3D(stroke.u3, stroke.v3, SegmentClass.HiddenColor, (float)stroke.weight * 0.6f);
                 }
             }
 

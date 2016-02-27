@@ -184,6 +184,8 @@ namespace Geometry
                 return v2;
             }
         }//FindLinesegmentCircleIntersection
+
+
     }// Polygon
 
     public class Quad2d : Polygon
@@ -354,6 +356,11 @@ namespace Geometry
             Vector3d lineDir = (p2-p1).normalize();
             Vector3d c = p2 - lineDir * d;
             Vector3d dir = normal.Cross(lineDir).normalize();
+			dir = normal;
+			if (double.IsNaN(dir.x) || double.IsNaN(dir.y) || double.IsNaN(dir.z))
+			{
+				dir = normal.Cross(lineDir).normalize();
+			}
             double d2 = d * 0.8;
             Vector3d v1 = c + dir * d2;
             Vector3d v2 = c - dir * d2;

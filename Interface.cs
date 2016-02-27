@@ -321,6 +321,11 @@ namespace SketchPlatform
 			this.lineTypeLabel.BringToFront();
 		}
 
+		public void hide()
+		{
+			this.lineTypeLabel.Hide();
+		}
+
         public void setLockState(bool isLock)
         {
             this.lockView.Checked = isLock;
@@ -562,7 +567,7 @@ namespace SketchPlatform
 
         private void exportSequenceToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.glViewer.exportSequencePS();
+			this.glViewer.exportAllSequenceToPS();
         }
 
         private void showSegbundary_CheckedChanged(object sender, EventArgs e)
@@ -635,7 +640,7 @@ namespace SketchPlatform
 
         public void setLineType(string s)
         {
-            this.lineTypeLabel.Text = s;
+			this.lineTypeLabel.Text = "";// s;
             this.Refresh();
         }
 
@@ -701,6 +706,27 @@ namespace SketchPlatform
 				this.glViewer.Refresh();
 			}
 		}
+
+		private void getTransformationToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+
+		}
+
+		private void clearAllToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			this.glViewer.clearContext();
+			this.glViewer.Refresh();
+		}
+
+        private void capturePDFToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.exportSequencePS(1);
+        }
+
+        private void capPDFVanToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.glViewer.exportSequencePS(0);
+        }
 
 	}
 }

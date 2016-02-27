@@ -307,10 +307,10 @@ namespace Component
                         seg.mesh = mesh;
                     }
                 }
-				if (File.Exists(meshfileName))
-				{
-					seg.loadTrieMesh(meshfileName);
-				}
+				//if (File.Exists(meshfileName))
+				//{
+				//	seg.loadTrieMesh(meshfileName);
+				//}
 
                 Box box = seg.boundingbox;
                 if (boxSequences[i].hasGuides != null && boxSequences[i].hasGuides.Count > 0)
@@ -407,7 +407,7 @@ namespace Component
                         lines.Add(line);
                     }
                     Vector3d v1 = lines[0].v - lines[0].u;
-                    Vector3d v2 = lines[1].v - lines[1].u;
+                    Vector3d v2 = lines[1].v - lines[0].u; /// be careful, might on the same line dir
                     Vector3d normal = v1.Cross(v2).normalize();
                     Vector3d ends = (maxcoord - mincoord).normalize();
                     double len = (maxcoord - mincoord).Length() / 2;

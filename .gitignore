@@ -13,3 +13,10 @@ Data/
 *.config
 *.t23
 *.2ou
+*.bin
+*.obj
+*.vssettings
+*.xml
+*.suo
+*.dll
+Visual Studio 2013/

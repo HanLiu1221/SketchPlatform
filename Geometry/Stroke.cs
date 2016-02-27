@@ -676,6 +676,110 @@ namespace Component
             }
             this.changeStyle2d((int)SegmentClass.strokeStyle);
         }
+
+		public void TryRectifyToLine()
+		{
+			double thres = 0.02 * this.get2DLength();
+			Vector2d p, q;
+			if (!this.LineRegression(out p, out  q))
+				return;
+
+			List<StrokePoint> new_stroke_points = new List<StrokePoint>();
+			bool error_detected = false;
+			double error = 0;
+			foreach (StrokePoint pt in this.strokePoints)
+			{
+				Vector2d foot = Polygon.FindPointTolineFootPrint(pt.pos2,p,q);
+				new_stroke_points.Add(new StrokePoint(foot));
+				if (double.IsNaN(foot.x) || double.IsNaN(foot.y))
+					error_detected = true;
+				error += (foot - pt.pos2).Length();
+			}
+			error /= this.strokePoints.Count;
+			if (!error_detected && error < 3)
+			{
+				this.strokePoints = new_stroke_points;
+				this.u2 = p;
+				this.v2 = q;
+				this.changeStyle2d((int)SegmentClass.strokeStyle);
+			}
+		}
+
+		public bool LineRegression(out Vector2d p, out Vector2d q) // returns the regression error
+		{
+			p = new Vector2d();
+			q = new Vector2d();
+			if (this.strokePoints.Count < 2) return false;
+			double thresh = 1e-4;
+			// regress a line to fit the stroke points
+			int npoints = this.strokePoints.Count;
+			int nvars = 1;
+			double[,] xy = new double[npoints, nvars + 1];
+			int i = 0;
+			List<Vector2d> points2 = new List<Vector2d>();
+			
+			foreach (StrokePoint v in this.strokePoints)
+			{
+				xy[i, 0] = v.pos2.x;
+				xy[i, 1] = v.pos2.y;
+				points2.Add(v.pos2);
+				i++;
+			}
+
+			// perform linear regression
+			int info;
+			alglib.linearmodel lrmodel;
+			alglib.lrreport lrreport;
+			alglib.lrbuild(xy, npoints, nvars, out info, out lrmodel, out lrreport);
+			if (info == 1)
+			{ // successful 
+				double[] coef;
+				alglib.lrunpack(lrmodel, out coef, out nvars);
+				double a = coef[0], b = coef[1], c = 0;	 // y = ax + b  is the line formula
+
+				// using non-linear optimization -- for case when there is a vetical line which causes the linear regression unstable
+				LineOptimizer opt = new LineOptimizer();
+				opt.Init(points2, new double[3] { a, -1, b });
+				double[] abc = opt.Optimize();
+				a = abc[0]; b = abc[1]; c = abc[2];
+				double error = opt.GetFittingError(abc);
+
+				if (a == 0 && b == 0)
+					throw new ArgumentException("line regression failed!");
+
+				Vector2d pt = new Vector2d(0, -c / b);				// a point on line
+				if (b == 0) pt = new Vector2d(-c / a, 0);		// a point on line
+				Vector2d d = new Vector2d(-b, a).normalize();	// line direction
+				double min = double.MaxValue, max = double.MinValue;
+
+				foreach (StrokePoint v in this.strokePoints)
+				{
+					double x = (v.pos2 - pt).Dot(d);
+					if (x > max)
+					{
+						max = x;
+						p = pt + d * x;
+					}
+					if (x < min)
+					{
+						min = x;
+						q = pt + d * x;
+					}
+				}
+				// for the type of x = c
+				double dist_max = (this.strokePoints[0].pos2 - this.strokePoints[this.strokePoints.Count - 1].pos2).Length();
+				double dist = (p - q).Length();
+				dist_max *= 2;
+				if (dist > thresh && dist < dist_max)
+				{
+					return true;
+				}
+			}
+
+			Console.WriteLine("line regression failed, will use start - end points");
+			
+			return false;
+		}
        
     }//Stroke
 
@@ -772,11 +876,11 @@ namespace Component
             Vector3d lineDir = (v - u).normalize();
             if (!this.isBoxEdge)
             {
-                this.nSketch = rand.Next(1, 2);
+				this.nSketch = 2;// rand.Next(1, 2);
             }
             else
             {
-                this.nSketch = rand.Next(1, 4);
+                this.nSketch = rand.Next(3, 4);
             }
             // now the first one is always the correct one without errors
             double dis = this.getRandomDoubleInRange(rand, -len/4, len);
@@ -786,7 +890,7 @@ namespace Component
             }
             Stroke line = new Stroke(u - dis * lineDir, v + dis * lineDir, this.isBoxEdge);
             this.strokes.Add(line);
-            double dirfloating = 0.01;
+			
             for (int i = 1; i < this.nSketch; ++i)
             {
                 Vector3d[] endpoints = new Vector3d[2];
@@ -801,6 +905,15 @@ namespace Component
                         normal1[k] = this.getRandomDoubleInRange(rand, -1, 1);
                     }
                     normal1.normalize();
+					double dirfloating = this.getRandomDoubleInRange(rand, 0, len / 2);
+
+					if (!this.isBoxEdge)
+					{
+						dis = this.getRandomDoubleInRange(rand, -len *0.6, len *0.6);
+						dirfloating = this.getRandomDoubleInRange(rand, 0, len / 3);
+					}
+
+
                     Vector3d step1 = this.getRandomDoubleInRange(rand, -dirfloating, dirfloating) * normal1;
                     Vector3d normal2 = new Vector3d();
                     for (int k = 0; k < 3; ++k)
@@ -817,20 +930,15 @@ namespace Component
                     //}    
                     Vector3d step2 = new Vector3d() - step1;
 
-                    if (!this.isBoxEdge)
-                    {
-                        dis = this.getRandomDoubleInRange(rand, 0, len/2);
-                        step1 = new Vector3d();
-                        step2 = new Vector3d();
-                    }
+                   
                     if (j == 0)
                     {
                         endpoints[j] = u + dis * lineDir;
                         endpoints[j] += step1;
-                        if (!this.isBoxEdge)
-                        {
-                            endpoints[j] = u - dis * lineDir;
-                        }
+						//if (!this.isBoxEdge)
+						//{
+						//	endpoints[j] = u - dis * lineDir + step1;
+						//}
                     }
                     else
                     {
@@ -1014,11 +1122,12 @@ namespace Component
             double len = strokeLen / 10;
             Vector2d lineDir = (v2 - u2).normalize();
             int n = rand.Next(2, 4);
+			
             //return;
             //n = n > 2 ? 2 : n;
             //n = 1;
             // now the first one is always the correct one without errors
-            double angle = 0.3;
+            double angle = 0.1;
             int npoints = this.strokes[0].strokePoints.Count;
             for (int i = 1; i < n; ++i)
             {
@@ -1035,7 +1144,7 @@ namespace Component
                 //    Vector2d vr = this.strokes[0].strokePoints[j].pos2.rotate(theta);
                 //    points.Add(vr);
                 //}
-                double dist = this.getRandomDoubleInRange(rand, 5, len);
+                double dist = this.getRandomDoubleInRange(rand, 0, len/2);
                 double d = dist / idx;
                 for (int j = 0; j <= idx; ++j)
                 {
@@ -1045,7 +1154,7 @@ namespace Component
                     Vector2d trans = this.strokes[0].strokePoints[j].pos2 + d * (idx - j) * norm;
                     points.Add(trans);
                 }
-                dist = this.getRandomDoubleInRange(rand, 0, len);
+                dist = this.getRandomDoubleInRange(rand, 0, len/2);
                 d = dist / (this.strokes[0].strokePoints.Count - idx);
                 for (int j = idx + 1; j < this.strokes[0].strokePoints.Count; ++j)
                 {
